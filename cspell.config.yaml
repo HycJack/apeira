@@ -1,0 +1,14 @@
+version: "0.2"
+ignorePaths: []
+dictionaryDefinitions: []
+dictionaries: []
+words:
+  - antfu
+  - apeira
+  - bumpp
+  - eslintcache
+  - moeru
+  - pkgroll
+  - xsai
+ignoreWords: []
+import: []

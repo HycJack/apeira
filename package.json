@@ -1,0 +1,21 @@
+{
+  "type": "module",
+  "version": "0.0.1",
+  "private": true,
+  "packageManager": "pnpm@10.15.0",
+  "scripts": {
+    "build": "pnpm -r build",
+    "bump": "bumpp",
+    "lint": "eslint --flag unstable_native_nodejs_ts_config --cache ."
+  },
+  "devDependencies": {
+    "@antfu/eslint-config": "catalog:",
+    "@moeru/eslint-config": "catalog:",
+    "@moeru/tsconfig": "catalog:",
+    "bumpp": "catalog:",
+    "eslint": "catalog:",
+    "pkgroll": "catalog:",
+    "tsx": "catalog:",
+    "typescript": "catalog:"
+  }
+}
