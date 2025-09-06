@@ -31,5 +31,10 @@
   },
   "scripts": {
     "build": "pkgroll"
+  },
+  "dependencies": {
+    "@xsai/generate-text": "catalog:xsai",
+    "@xsai/shared-chat": "catalog:xsai",
+    "@xsai/stream-text": "catalog:xsai"
   }
 }

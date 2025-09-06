@@ -10,10 +10,10 @@ catalogs:
       specifier: ^5.2.1
       version: 5.2.2
     '@moeru/eslint-config':
-      specifier: ^0.1.0-beta.8
+      specifier: ^0.1.0-beta.9
       version: 0.1.0-beta.9
     '@moeru/tsconfig':
-      specifier: ^0.1.0-beta.8
+      specifier: ^0.1.0-beta.9
       version: 0.1.0-beta.9
     bumpp:
       specifier: ^10.2.3
@@ -30,6 +30,16 @@ catalogs:
     typescript:
       specifier: ~5.8.3
       version: 5.8.3
+  xsai:
+    '@xsai/generate-text':
+      specifier: ^0.4.0-beta.3
+      version: 0.4.0-beta.3
+    '@xsai/shared-chat':
+      specifier: ^0.4.0-beta.3
+      version: 0.4.0-beta.3
+    '@xsai/stream-text':
+      specifier: ^0.4.0-beta.3
+      version: 0.4.0-beta.3
 
 importers:
 
@@ -60,7 +70,17 @@ importers:
         specifier: 'catalog:'
         version: 5.8.3
 
-  packages/core: {}
+  packages/core:
+    dependencies:
+      '@xsai/generate-text':
+        specifier: catalog:xsai
+        version: 0.4.0-beta.3
+      '@xsai/shared-chat':
+        specifier: catalog:xsai
+        version: 0.4.0-beta.3
+      '@xsai/stream-text':
+        specifier: catalog:xsai
+        version: 0.4.0-beta.3
 
 packages:
 
@@ -704,6 +724,18 @@ packages:
 
   '@vue/shared@3.5.21':
     resolution: {integrity: sha512-+2k1EQpnYuVuu3N7atWyG3/xoFWIVJZq4Mz8XNOdScFI0etES75fbny/oU4lKWk/577P1zmg0ioYvpGEDZ3DLw==}
+
+  '@xsai/generate-text@0.4.0-beta.3':
+    resolution: {integrity: sha512-g1kZwurde2O3+OU7Q0B6xRO74mt7rz0XT3Y3L7wQikd7pIBn4SPUxoQmTGxQ983WLy6t7OqNOf6AxQGKWt9Q2A==}
+
+  '@xsai/shared-chat@0.4.0-beta.3':
+    resolution: {integrity: sha512-WL7+j6Yl+6/7otRCGRJ8ADoqlPTOCx9GTZSjuVLxLNn0apYnCs8z5982AMAjptlk+UKYvlWINb1C/qCh5tpoJg==}
+
+  '@xsai/shared@0.4.0-beta.3':
+    resolution: {integrity: sha512-IOqe0CzSdRbaj5vgfL3pAjzOk/u2NCm0RrcsYgvvRc6VyTIPGsgAUuDpWXD+OfWEtCK4t24Q6qhjLkhgo2S9rA==}
+
+  '@xsai/stream-text@0.4.0-beta.3':
+    resolution: {integrity: sha512-/4eh77W5Wb6C0tQ2tYFEUK1gXXMgix0gZt8vHrwqusPse9XAv5YtRcx8UV1XB0BYT9LIEwpO145r1EOekWtn4w==}
 
   acorn-jsx@5.3.2:
     resolution: {integrity: sha512-rq9s+JNhf0IChjtDXxllJ7g41oZk5SlXtp0LHwyA5cejwn7vKmKp4pPri6YEePv2PU65sAsegbXtIinmDFDXgQ==}
@@ -2453,6 +2485,21 @@ snapshots:
       '@vue/shared': 3.5.21
 
   '@vue/shared@3.5.21': {}
+
+  '@xsai/generate-text@0.4.0-beta.3':
+    dependencies:
+      '@xsai/shared': 0.4.0-beta.3
+      '@xsai/shared-chat': 0.4.0-beta.3
+
+  '@xsai/shared-chat@0.4.0-beta.3':
+    dependencies:
+      '@xsai/shared': 0.4.0-beta.3
+
+  '@xsai/shared@0.4.0-beta.3': {}
+
+  '@xsai/stream-text@0.4.0-beta.3':
+    dependencies:
+      '@xsai/shared-chat': 0.4.0-beta.3
 
   acorn-jsx@5.3.2(acorn@8.15.0):
     dependencies:
