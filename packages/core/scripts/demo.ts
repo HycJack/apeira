@@ -18,6 +18,8 @@ const rl = readline.createInterface({ input, output })
 
 let messages: Message[] | undefined
 
+await agent.start()
+
 try {
   while (true) {
     const content = await rl.question('> Write a message... ')

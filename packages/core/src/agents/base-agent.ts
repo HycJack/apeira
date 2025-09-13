@@ -8,6 +8,7 @@ export interface BaseAgentOptions {
 export interface BaseAgentPlugin {
   close?: () => Promise<void> | void
   name: string
+  start?: () => Promise<void> | void
   version: string
 }
 
@@ -53,5 +54,13 @@ export class BaseAgent<I = unknown, O = unknown, I2 = undefined> {
 
   public run(_task: I, _extraOptions?: I2): O {
     throw new Error(`'run' for ${this.constructor.name} is not implemented.`)
+  }
+
+  public async start() {
+    await Promise.all(this.plugins
+      .filter(plugin => 'start' in plugin)
+      .map(async plugin => plugin.start!()))
+
+    await Promise.all(this.agents.map(async agent => agent.start()))
   }
 }
