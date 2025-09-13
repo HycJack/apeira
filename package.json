@@ -6,12 +6,14 @@
   "scripts": {
     "build": "pnpm -r build",
     "bump": "bumpp",
+    "dev": "tsx packages/core/scripts/demo.ts",
     "lint": "eslint --flag unstable_native_nodejs_ts_config --cache ."
   },
   "devDependencies": {
     "@antfu/eslint-config": "catalog:",
     "@moeru/eslint-config": "catalog:",
     "@moeru/tsconfig": "catalog:",
+    "@types/node": "catalog:",
     "bumpp": "catalog:",
     "eslint": "catalog:",
     "pkgroll": "catalog:",
