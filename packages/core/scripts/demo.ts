@@ -14,11 +14,11 @@ const agent = new ChatAgent({
   name: 'chat-agent',
 })
 
-const rl = readline.createInterface({ input, output })
+await agent.start()
 
 let messages: Message[] | undefined
 
-await agent.start()
+const rl = readline.createInterface({ input, output })
 
 try {
   while (true) {
