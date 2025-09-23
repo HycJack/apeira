@@ -16,6 +16,7 @@ export interface ChatAgentOptions extends BaseAgentOptions {
 export interface ChatAgentPlugin extends BaseAgentPlugin {
   onEvent?: StreamTextOptions['onEvent']
   onFinish?: StreamTextOptions['onFinish']
+  onRun?: (content: CommonContentPart[] | string, options?: ChatAgentRunOptions) => void
   onStepFinish?: StreamTextOptions['onStepFinish']
   tools?: Tool[]
   transformMessages?: (message: Message[]) => Message[]
@@ -45,6 +46,10 @@ export class ChatAgent extends BaseAgent implements BaseAgent<
   }
 
   public run(content: CommonContentPart[] | string, options?: ChatAgentRunOptions) {
+    this.plugins
+      .filter(plugin => 'onRun' in plugin)
+      .forEach(plugin => (plugin as ChatAgentPlugin).onRun!(content, options))
+
     let messages = options?.messages ?? [{
       content: this.instruction,
       role: 'system',

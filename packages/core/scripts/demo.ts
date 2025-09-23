@@ -1,9 +1,8 @@
-import type { Message } from '@xsai/shared-chat'
-
 import { stdin as input, stdout as output } from 'node:process'
 import * as readline from 'node:readline/promises'
 
 import { ChatAgent } from '../src/agents/chat-agent'
+import { autoSaveMessages } from '../src/plugins/auto-save-messages'
 
 const agent = new ChatAgent({
   instruction: 'You\'re a helpful assistant.',
@@ -12,11 +11,12 @@ const agent = new ChatAgent({
     model: 'gpt-oss',
   },
   name: 'chat-agent',
+  plugins: [
+    autoSaveMessages(),
+  ],
 })
 
 await agent.start()
-
-let messages: Message[] | undefined
 
 const rl = readline.createInterface({ input, output })
 
@@ -24,12 +24,10 @@ try {
   while (true) {
     const content = await rl.question('> Write a message... ')
 
-    const { messages: pm, textStream } = agent.run(content, { messages })
+    const { textStream } = agent.run(content)
 
     for await (const textPart of textStream)
       output.write(textPart)
-
-    messages = await pm
 
     console.log('\n')
   }
