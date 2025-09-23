@@ -9,7 +9,7 @@ const agent = new ChatAgent({
   instruction: 'You\'re a helpful assistant.',
   llm: {
     baseURL: 'http://localhost:11434/v1/',
-    model: 'aya-expanse:32b',
+    model: 'gpt-oss',
   },
   name: 'chat-agent',
 })
