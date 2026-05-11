@@ -16,6 +16,7 @@ catalog:
 
 catalogs:
   xsai:
-    '@xsai/generate-text': &xsai ^0.5.0-beta.4
+    '@xsai-ext/responses': &xsai ^0.5.0-beta.4
+    '@xsai/generate-text': *xsai
     '@xsai/shared-chat': *xsai
     '@xsai/stream-text': *xsai

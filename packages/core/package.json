@@ -33,6 +33,7 @@
     "build": "pkgroll"
   },
   "dependencies": {
+    "@xsai-ext/responses": "catalog:xsai",
     "@xsai/generate-text": "catalog:xsai",
     "@xsai/shared-chat": "catalog:xsai",
     "@xsai/stream-text": "catalog:xsai"

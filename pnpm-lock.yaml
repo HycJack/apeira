@@ -34,6 +34,9 @@ catalogs:
       specifier: ~6.0.3
       version: 6.0.3
   xsai:
+    '@xsai-ext/responses':
+      specifier: ^0.5.0-beta.4
+      version: 0.5.0-beta.4
     '@xsai/generate-text':
       specifier: ^0.5.0-beta.4
       version: 0.5.0-beta.4
@@ -78,6 +81,9 @@ importers:
 
   packages/core:
     dependencies:
+      '@xsai-ext/responses':
+        specifier: catalog:xsai
+        version: 0.5.0-beta.4
       '@xsai/generate-text':
         specifier: catalog:xsai
         version: 0.5.0-beta.4
@@ -156,10 +162,6 @@ packages:
 
   '@babel/helper-string-parser@7.27.1':
     resolution: {integrity: sha512-qMlSxKbpRlAridDExk92nSobyDdpPijUq2DW6oDnUqd0iOGxmQjyqhMIihI9+zv4LPyZdRje2cavWPbCbWm3eA==}
-    engines: {node: '>=6.9.0'}
-
-  '@babel/helper-validator-identifier@7.27.1':
-    resolution: {integrity: sha512-D2hP9eA+Sqx1kBZgzxZh0y1trbuU+JoDkiEwqhQ36nodYqJwyEIhPSdMNd7lOm/4io72luTPWH20Yda0xOuUow==}
     engines: {node: '>=6.9.0'}
 
   '@babel/helper-validator-identifier@7.28.5':
@@ -978,6 +980,9 @@ packages:
   '@vue/shared@3.5.21':
     resolution: {integrity: sha512-+2k1EQpnYuVuu3N7atWyG3/xoFWIVJZq4Mz8XNOdScFI0etES75fbny/oU4lKWk/577P1zmg0ioYvpGEDZ3DLw==}
 
+  '@xsai-ext/responses@0.5.0-beta.4':
+    resolution: {integrity: sha512-eZLZFys07PBLC7tK299ZJBpxTpZrY1grdVf8bWtBQiEoCl4p6cCUgOFoEIk6m3YmhkoHn76NXuuedOEHe9ivMw==}
+
   '@xsai/generate-text@0.5.0-beta.4':
     resolution: {integrity: sha512-ZrnJytWnYobuU1r739Wz5gFpGiQcNIIGNtM04d5/EZTLJqnsxvZUzLzVXpeLJHUOjYwie4ApufmRYnmhp1nHUA==}
 
@@ -993,6 +998,9 @@ packages:
   '@xsai/stream-text@0.5.0-beta.4':
     resolution: {integrity: sha512-ZGLvSXO+21BeMSUCsTVbvbOFkkUfOQ1Pl1qv80J1SLeA0OMy+j5RoyhvfisbLXiJj/D1YKZnJRHU4hb4xOccjA==}
 
+  '@xsai/tool@0.5.0-beta.4':
+    resolution: {integrity: sha512-x22Iv+y9Qezcb6pvQIWB1elg7IydvEUjOGU/RDPSvbHOy1zguGi6s48jYOIwoZQjUhyIFUibd+JckR0V6qQp2w==}
+
   acorn-jsx@5.3.2:
     resolution: {integrity: sha512-rq9s+JNhf0IChjtDXxllJ7g41oZk5SlXtp0LHwyA5cejwn7vKmKp4pPri6YEePv2PU65sAsegbXtIinmDFDXgQ==}
     peerDependencies:
@@ -1007,9 +1015,6 @@ packages:
     resolution: {integrity: sha512-UVJyE9MttOsBQIDKw1skb9nAwQuR5wuGD3+82K6JgJlm/Y+KI92oNsMNGZCYdDsVtRHSak0pcV5Dno5+4jh9sw==}
     engines: {node: '>=0.4.0'}
     hasBin: true
-
-  ajv@6.12.6:
-    resolution: {integrity: sha512-j3fVLgvTo527anyYyJOGTYJbG+vnnQYvE0m5mmkc1TK+nxAppkCLMIL0aZ4dblVCNoGShhm+kzE4ZUykBoMg4g==}
 
   ajv@6.15.0:
     resolution: {integrity: sha512-fgFx7Hfoq60ytK2c7DhnF8jIvzYgOMxfugjLOSMHjLIPgenqa7S7oaagATUq99mV6IYvN2tRmC0wnTYX6iPbMw==}
@@ -1655,9 +1660,6 @@ packages:
   longest-streak@3.1.0:
     resolution: {integrity: sha512-9Ri+o0JYgehTaVBBDoMqIl8GXtbWg711O3srftcHhZ0dqnETqLaoIK0x17fUw9rFSlK/0NlsKe0Ahhyl5pXE2g==}
 
-  magic-string@0.30.18:
-    resolution: {integrity: sha512-yi8swmWbO17qHhwIBNeeZxTceJMeBvWJaId6dyvTSOwTipqeHhMhOrz6513r1sOKnpvQ7zkhlG8tPrpilwTxHQ==}
-
   magic-string@0.30.21:
     resolution: {integrity: sha512-vd2F4YUyEXKGcLHoq+TEyCjxueSeHnFxyyjNp80yg0XV4vUhnDer/lvvlqM/arB5bXQN5K2/3oinyCRyx8T2CQ==}
 
@@ -2155,6 +2157,29 @@ packages:
     resolution: {integrity: sha512-ICP2e+jsHvAj2E2lIHxa5tjXRlKDJo4IdvPvCXbXQGdzSfmSpNVyIKMvoZHjDY9DP0zV17iI85o90vRFXNccRw==}
     engines: {node: '>=12'}
 
+  xsschema@0.5.0-beta.4:
+    resolution: {integrity: sha512-83qmJX9EEJ4AN+KgMZxVTS1c8k9ZPQhbJ8AXWL1W7Vn88ztuZ3esZfLPZMpIdKPSRPJk7igRFD1MonrBz/MpbA==}
+    peerDependencies:
+      '@valibot/to-json-schema': ^1.0.0
+      arktype: ^2.1.20
+      effect: ^3.16.0
+      sury: ^10.0.0 || ^11.0.0-alpha
+      zod: ^3.25.0 || ^4.0.0
+      zod-to-json-schema: ^3.25.0
+    peerDependenciesMeta:
+      '@valibot/to-json-schema':
+        optional: true
+      arktype:
+        optional: true
+      effect:
+        optional: true
+      sury:
+        optional: true
+      zod:
+        optional: true
+      zod-to-json-schema:
+        optional: true
+
   yaml-eslint-parser@2.0.0:
     resolution: {integrity: sha512-h0uDm97wvT2bokfwwTmY6kJ1hp6YDFL0nRHwNKz8s/VD1FH/vvZjAKoMUE+un0eaYBSG7/c6h+lJTP+31tjgTw==}
     engines: {node: ^20.19.0 || ^22.13.0 || >=24}
@@ -2235,8 +2260,6 @@ snapshots:
 
   '@babel/helper-string-parser@7.27.1': {}
 
-  '@babel/helper-validator-identifier@7.27.1': {}
-
   '@babel/helper-validator-identifier@7.28.5': {}
 
   '@babel/parser@7.28.4':
@@ -2246,7 +2269,7 @@ snapshots:
   '@babel/types@7.28.4':
     dependencies:
       '@babel/helper-string-parser': 7.27.1
-      '@babel/helper-validator-identifier': 7.27.1
+      '@babel/helper-validator-identifier': 7.28.5
 
   '@clack/core@1.3.0':
     dependencies:
@@ -2777,7 +2800,7 @@ snapshots:
       '@typescript-eslint/parser': 8.59.2(eslint@10.3.0(jiti@2.7.0))(typescript@6.0.3)
       '@typescript-eslint/typescript-estree': 8.59.2(typescript@6.0.3)
       '@typescript-eslint/utils': 8.59.2(eslint@10.3.0(jiti@2.7.0))(typescript@6.0.3)
-      ajv: 6.12.6
+      ajv: 6.15.0
       eslint: 10.3.0(jiti@2.7.0)
       json-stable-stringify-without-jsonify: 1.0.1
       lodash.merge: 4.6.2
@@ -2872,7 +2895,7 @@ snapshots:
       '@vue/compiler-ssr': 3.5.21
       '@vue/shared': 3.5.21
       estree-walker: 2.0.2
-      magic-string: 0.30.18
+      magic-string: 0.30.21
       postcss: 8.5.6
       source-map-js: 1.2.1
 
@@ -2882,6 +2905,20 @@ snapshots:
       '@vue/shared': 3.5.21
 
   '@vue/shared@3.5.21': {}
+
+  '@xsai-ext/responses@0.5.0-beta.4':
+    dependencies:
+      '@xsai/shared': 0.5.0-beta.4
+      '@xsai/shared-chat': 0.5.0-beta.4
+      '@xsai/shared-stream': 0.5.0-beta.4
+      '@xsai/tool': 0.5.0-beta.4
+    transitivePeerDependencies:
+      - '@valibot/to-json-schema'
+      - arktype
+      - effect
+      - sury
+      - zod
+      - zod-to-json-schema
 
   '@xsai/generate-text@0.5.0-beta.4':
     dependencies:
@@ -2904,6 +2941,19 @@ snapshots:
       '@xsai/shared-chat': 0.5.0-beta.4
       '@xsai/shared-stream': 0.5.0-beta.4
 
+  '@xsai/tool@0.5.0-beta.4':
+    dependencies:
+      '@xsai/shared': 0.5.0-beta.4
+      '@xsai/shared-chat': 0.5.0-beta.4
+      xsschema: 0.5.0-beta.4
+    transitivePeerDependencies:
+      - '@valibot/to-json-schema'
+      - arktype
+      - effect
+      - sury
+      - zod
+      - zod-to-json-schema
+
   acorn-jsx@5.3.2(acorn@8.15.0):
     dependencies:
       acorn: 8.15.0
@@ -2915,13 +2965,6 @@ snapshots:
   acorn@8.15.0: {}
 
   acorn@8.16.0: {}
-
-  ajv@6.12.6:
-    dependencies:
-      fast-deep-equal: 3.1.3
-      fast-json-stable-stringify: 2.1.0
-      json-schema-traverse: 0.4.1
-      uri-js: 4.4.1
 
   ajv@6.15.0:
     dependencies:
@@ -3620,10 +3663,6 @@ snapshots:
   lodash.merge@4.6.2: {}
 
   longest-streak@3.1.0: {}
-
-  magic-string@0.30.18:
-    dependencies:
-      '@jridgewell/sourcemap-codec': 1.5.5
 
   magic-string@0.30.21:
     dependencies:
@@ -4328,6 +4367,8 @@ snapshots:
   word-wrap@1.2.5: {}
 
   xml-name-validator@4.0.0: {}
+
+  xsschema@0.5.0-beta.4: {}
 
   yaml-eslint-parser@2.0.0:
     dependencies:
