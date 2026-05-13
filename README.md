@@ -1,5 +1,7 @@
 # Apeira
 
+stream-first Agent Runtime.
+
 ## Usage
 
 ```ts
