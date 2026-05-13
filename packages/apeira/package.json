@@ -1,5 +1,5 @@
 {
-  "name": "@apeira/core",
+  "name": "apeira",
   "type": "module",
   "version": "0.0.1",
   "description": "stream-first Agent Runtime.",
@@ -9,7 +9,7 @@
   "repository": {
     "type": "git",
     "url": "git+https://github.com/moeru-ai/apeira.git",
-    "directory": "packages/core"
+    "directory": "packages/apeira"
   },
   "bugs": "https://github.com/moeru-ai/apeira/issues",
   "keywords": [
@@ -34,13 +34,9 @@
     "types": "./dist/index.d.ts"
   },
   "scripts": {
-    "build": "pkgroll",
-    "test": "vitest run"
+    "build": "pkgroll"
   },
   "dependencies": {
-    "@xsai-ext/responses": "catalog:xsai",
-    "@xsai/shared": "catalog:xsai",
-    "@xsai/shared-chat": "catalog:xsai",
-    "p-limit": "catalog:"
+    "@apeira/core": "workspace:"
   }
 }
