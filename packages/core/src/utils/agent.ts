@@ -1,5 +1,6 @@
 import type { ResponsesOptions, Event as XSAIEvent } from '@xsai-ext/responses'
 
+import type { AgentContext } from '../types/context'
 import type { ApeiraEvent } from '../types/event'
 import type { AgentEventListener } from '../types/event-listener'
 import type { ItemParam } from '../types/responses'
@@ -10,9 +11,10 @@ import { responses, stepCountAtLeast } from '@xsai-ext/responses'
 
 import { linkedAbort } from './linked-abort'
 
-export interface Agent {
+export interface Agent<T> {
   abort: (reason?: unknown) => void
   clear: () => void
+  getContext: () => AgentContext<T>
   send: (input: ItemParam, signal?: AbortSignal) => string
   subscribe: (eventListener: AgentEventListener) => (() => boolean)
 }
@@ -23,23 +25,33 @@ export interface AgentRunningTurn {
   input: ItemParam
 }
 
-export interface CreateAgentOptions {
+export interface CreateAgentOptions<T> {
+  context?: AgentContext<T>
   input?: ItemParam[]
-  instructions: string
+  instructions: ((context: AgentContext<T>) => Promise<string> | string) | string
   name: string
   options: Omit<ResponsesOptions, 'abortSignal' | 'input' | 'instructions'>
 }
 
-export const createAgent = (options: CreateAgentOptions): Agent => {
+export const createAgent = <T>(options: CreateAgentOptions<T>): Agent<T> => {
   const eventListeners = new Set<AgentEventListener>()
   const pending = pLimit(1)
 
   let running: AgentRunningTurn | undefined
-  let history: ItemParam[] = options.input ?? []
+  let history: ItemParam[] = [...(options.input ?? [])]
   let historyVersion = 0
 
-  const emit = (id: string, event: ApeiraEvent | XSAIEvent) =>
-    eventListeners.forEach(fn => fn({ ...event, turnId: id }))
+  const ctx: AgentContext<T> = options.context ?? {} as AgentContext<T>
+  const getContext: Agent<T>['getContext'] = () => ctx
+
+  const emit = (id: string, event: ApeiraEvent | XSAIEvent) => {
+    for (const fn of [...eventListeners]) {
+      try {
+        fn({ ...event, turnId: id })
+      }
+      catch {}
+    }
+  }
 
   const turn = async (id: string, input: ItemParam, signal?: AbortSignal) => {
     const controller = linkedAbort(signal)
@@ -60,8 +72,10 @@ export const createAgent = (options: CreateAgentOptions): Agent => {
         ...options.options,
         abortSignal: controller.signal,
         input: nextInput,
-        instructions: options.instructions,
-        stopWhen: stepCountAtLeast(20),
+        instructions: typeof options.instructions === 'function'
+          ? await options.instructions(ctx)
+          : options.instructions,
+        stopWhen: options.options.stopWhen ?? stepCountAtLeast(20),
       })
 
       void result.input.catch(() => undefined)
@@ -88,7 +102,7 @@ export const createAgent = (options: CreateAgentOptions): Agent => {
     }
   }
 
-  const send: Agent['send'] = (input, signal) => {
+  const send: Agent<T>['send'] = (input, signal) => {
     const id = crypto.randomUUID()
 
     void pending(async () => turn(id, input, signal))
@@ -96,19 +110,19 @@ export const createAgent = (options: CreateAgentOptions): Agent => {
     return id
   }
 
-  const subscribe: Agent['subscribe'] = (eventListener) => {
+  const subscribe: Agent<T>['subscribe'] = (eventListener) => {
     eventListeners.add(eventListener)
     return () => eventListeners.delete(eventListener)
   }
 
-  const abort: Agent['abort'] = reason =>
+  const abort: Agent<T>['abort'] = reason =>
     running?.controller.abort(reason)
 
-  const clear: Agent['clear'] = () => {
+  const clear: Agent<T>['clear'] = () => {
     abort('cleared')
     pending.clearQueue()
 
-    history = []
+    history = [...(options.input ?? [])]
     historyVersion += 1
 
     // emit(crypto.randomUUID(), { type: 'turn.clear' })
@@ -117,6 +131,7 @@ export const createAgent = (options: CreateAgentOptions): Agent => {
   return {
     abort,
     clear,
+    getContext,
     send,
     subscribe,
   }
