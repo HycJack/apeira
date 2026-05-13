@@ -1,7 +1,7 @@
 import type { ResponsesOptions, Event as XSAIEvent } from '@xsai-ext/responses'
 
 import type { AgentContext } from '../types/context'
-import type { ApeiraEvent } from '../types/event'
+import type { AgentEvent, ApeiraEvent } from '../types/event'
 import type { AgentEventListener } from '../types/event-listener'
 import type { ItemParam } from '../types/responses'
 
@@ -15,6 +15,7 @@ export interface Agent<T> {
   abort: (reason?: unknown) => void
   clear: () => void
   getContext: () => AgentContext<T>
+  run: (input: ItemParam, signal?: AbortSignal) => ReadableStream<AgentEvent>
   send: (input: ItemParam, signal?: AbortSignal) => string
   subscribe: (eventListener: AgentEventListener) => (() => boolean)
 }
@@ -102,10 +103,13 @@ export const createAgent = <T>(options: CreateAgentOptions<T>): Agent<T> => {
     }
   }
 
+  const enqueue = async (id: string, input: ItemParam, signal?: AbortSignal) =>
+    pending(async () => turn(id, input, signal)).catch(() => undefined)
+
   const send: Agent<T>['send'] = (input, signal) => {
     const id = crypto.randomUUID()
 
-    void pending(async () => turn(id, input, signal))
+    void enqueue(id, input, signal)
 
     return id
   }
@@ -113,6 +117,36 @@ export const createAgent = <T>(options: CreateAgentOptions<T>): Agent<T> => {
   const subscribe: Agent<T>['subscribe'] = (eventListener) => {
     eventListeners.add(eventListener)
     return () => eventListeners.delete(eventListener)
+  }
+
+  const run: Agent<T>['run'] = (input, signal) => {
+    const id = crypto.randomUUID()
+    let unsubscribe: (() => boolean) | undefined
+
+    return new ReadableStream<AgentEvent>({
+      cancel: () => {
+        unsubscribe?.()
+      },
+      start: (controller) => {
+        unsubscribe = subscribe((event) => {
+          if (event.turnId !== id)
+            return
+
+          controller.enqueue(event)
+
+          if (
+            event.type === 'turn.aborted'
+            || event.type === 'turn.done'
+            || event.type === 'turn.failed'
+          ) {
+            unsubscribe?.()
+            controller.close()
+          }
+        })
+
+        void enqueue(id, input, signal)
+      },
+    })
   }
 
   const abort: Agent<T>['abort'] = reason =>
@@ -132,6 +166,7 @@ export const createAgent = <T>(options: CreateAgentOptions<T>): Agent<T> => {
     abort,
     clear,
     getContext,
+    run,
     send,
     subscribe,
   }

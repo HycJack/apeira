@@ -58,6 +58,27 @@ const waitForTurnAborted = async (events: AgentEvent[], turnId: string) =>
     }, 10)
   })
 
+const readEventStream = async (stream: ReadableStream<AgentEvent>) => {
+  const events: AgentEvent[] = []
+  const reader = stream.getReader()
+
+  try {
+    while (true) {
+      const { done, value } = await reader.read()
+
+      if (done)
+        break
+
+      events.push(value)
+    }
+  }
+  finally {
+    reader.releaseLock()
+  }
+
+  return events
+}
+
 describe('createAgent', () => {
   it('runs a turn against local Ollama responses API', async () => {
     const events: AgentEvent[] = []
@@ -102,6 +123,40 @@ describe('createAgent', () => {
     expect(eventTypes).not.toContain('turn.aborted')
     expect(stepDone?.output?.length).toBeGreaterThan(0)
     expect(stepDone?.usage?.totalTokens).toBeGreaterThan(0)
+  })
+
+  it('returns a stream for a run', async () => {
+    const agent = createAgent({
+      instructions: 'You are a behavior test assistant. Answer briefly.',
+      name: 'ollama-run-stream-test',
+      options: {
+        apiKey: 'ollama',
+        baseURL: OLLAMA_BASE_URL,
+        maxOutputTokens: 128,
+        model: OLLAMA_MODEL,
+        temperature: 0,
+      },
+    })
+
+    const events = await readEventStream(agent.run({
+      content: 'Say stream in one short response.',
+      role: 'user',
+      type: 'message',
+    }))
+
+    const eventTypes = events.map(event => event.type)
+    const turnIds = new Set(events.map(event => event.turnId))
+    const stepDone = events.find(event => event.type === 'step.done')
+
+    expect(turnIds.size).toBe(1)
+    expect([...turnIds][0]).toEqual(expect.any(String))
+    expect(eventTypes).toContain('turn.start')
+    expect(eventTypes).toContain('step.start')
+    expect(eventTypes).toContain('step.done')
+    expect(eventTypes).toContain('turn.done')
+    expect(eventTypes).not.toContain('turn.failed')
+    expect(eventTypes).not.toContain('turn.aborted')
+    expect(stepDone?.output?.length).toBeGreaterThan(0)
   })
 
   it('queues submitted turns and runs them one at a time', async () => {
