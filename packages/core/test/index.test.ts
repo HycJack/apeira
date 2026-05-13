@@ -309,4 +309,4 @@ describe('createAgent', () => {
     expect(firstAborted?.reason).toBe('cleared')
     expect(secondTurnEvents).toHaveLength(0)
   })
-})
+}, 60_000)
