@@ -14,6 +14,8 @@ words:
   - ollama
   - pkgroll
   - qwen
+  - sonarjs
+  - vitepress
   - vitest
   - xsai
 ignoreWords: []

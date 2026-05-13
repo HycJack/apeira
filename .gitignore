@@ -22,8 +22,8 @@ dist-ssr
 *.sln
 *.sw?
 
-# demo messages
-demo.messages.json
+# docs
+**/.vitepress/cache
 
 # codex
 .codex

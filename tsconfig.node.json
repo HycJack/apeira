@@ -2,6 +2,7 @@
   "extends": "@moeru/tsconfig/tsconfig.node.json",
   "include": [
     "**/*.config.ts",
-    "**/scripts/*.ts"
+    "**/scripts/*.ts",
+    "**/.vitepress/*.ts"
   ]
 }

@@ -1,0 +1,125 @@
+# Core API
+
+The core API is exported from both `apeira` and `@apeira/core`.
+
+```ts
+import { createAgent } from 'apeira'
+// or
+import { createAgent } from '@apeira/core'
+```
+
+## createAgent()
+
+```ts
+const agent = createAgent({
+  instructions: 'You are a concise assistant.',
+  name: 'assistant',
+  options: {
+    apiKey: process.env.OPENAI_API_KEY,
+    baseURL: 'https://api.openai.com/v1/',
+    model: 'gpt-5.5',
+  },
+})
+```
+
+### Options
+
+```ts
+interface CreateAgentOptions<T> {
+  context?: AgentContext<T>
+  input?: ItemParam[]
+  instructions: ((context: AgentContext<T>) => Promise<string> | string) | string
+  name: string
+  options: Omit<ResponsesOptions, 'abortSignal' | 'input' | 'instructions'>
+}
+```
+
+`options` are xsAI response options. Apeira owns the input state, instructions,
+and abort signal for each turn.
+
+## Agent
+
+```ts
+interface Agent<T> {
+  abort: (reason?: unknown) => void
+  clear: () => void
+  getContext: () => AgentContext<T>
+  run: (input: ItemParam, signal?: AbortSignal) => ReadableStream<AgentEvent>
+  send: (input: ItemParam, signal?: AbortSignal) => string
+  subscribe: (eventListener: AgentEventListener) => () => boolean
+}
+```
+
+### run()
+
+Submits a turn and returns a stream of events for that turn.
+
+```ts
+const stream = agent.run({
+  content: 'Say hello.',
+  role: 'user',
+  type: 'message',
+})
+```
+
+The stream closes after `turn.done`, `turn.failed`, or `turn.aborted`.
+
+### send()
+
+Submits a turn and returns its id immediately.
+
+```ts
+const turnId = agent.send({
+  content: 'Say hello.',
+  role: 'user',
+  type: 'message',
+})
+```
+
+Use `subscribe()` to observe progress.
+
+### subscribe()
+
+Subscribes to all events from the agent.
+
+```ts
+const unsubscribe = agent.subscribe((event) => {
+  console.log(event.turnId, event.type)
+})
+```
+
+The returned function removes the listener and returns whether it was present.
+
+### abort()
+
+Aborts the currently running turn.
+
+```ts
+agent.abort('user cancelled')
+```
+
+### clear()
+
+Aborts the running turn, clears queued turns, and resets in-memory history.
+
+```ts
+agent.clear()
+```
+
+### getContext()
+
+Returns the agent context object.
+
+```ts
+const context = agent.getContext()
+```
+
+## Types
+
+```ts
+type AgentEvent = WithTurnId<ApeiraEvent | XSAIEvent>
+
+type AgentEventListener = (event: AgentEvent) => unknown
+
+type ItemParam = Exclude<ResponsesOptions['input'], string>[number]
+```

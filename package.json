@@ -7,7 +7,9 @@
   "scripts": {
     "build": "pnpm -r build",
     "bump": "bumpp",
-    "dev": "tsx packages/core/scripts/demo.ts",
+    "docs:build": "vitepress build docs",
+    "docs:dev": "vitepress dev docs",
+    "docs:preview": "vitepress preview docs",
     "lint": "eslint --flag unstable_native_nodejs_ts_config --cache ."
   },
   "devDependencies": {
@@ -20,6 +22,7 @@
     "pkgroll": "catalog:",
     "tsx": "catalog:",
     "typescript": "catalog:",
+    "vitepress": "catalog:",
     "vitest": "catalog:"
   }
 }

@@ -11,7 +11,7 @@ const agent = createAgent({
   options: {
     apiKey: process.env.OPENAI_API_KEY,
     baseURL: 'https://api.openai.com/v1/',
-    model: 'gpt-5.4',
+    model: 'gpt-5.5',
   },
 })
 
