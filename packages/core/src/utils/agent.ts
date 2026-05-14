@@ -5,11 +5,10 @@ import type { AgentEvent, ApeiraEvent } from '../types/event'
 import type { AgentEventListener } from '../types/event-listener'
 import type { ItemParam } from '../types/responses'
 
-import pLimit from 'p-limit'
-
 import { responses, stepCountAtLeast } from '@xsai-ext/responses'
 
 import { linkedAbort } from './linked-abort'
+import { createQueue } from './queue'
 
 export interface Agent<T> {
   abort: (reason?: unknown) => void
@@ -20,10 +19,21 @@ export interface Agent<T> {
   subscribe: (eventListener: AgentEventListener) => (() => boolean)
 }
 
+export interface AgentPendingInput {
+  input: ItemParam
+  signal?: AbortSignal
+}
+
 export interface AgentRunningTurn {
   controller: AbortController
   id: string
   input: ItemParam
+}
+
+export interface AgentTurnJob {
+  id: string
+  input: ItemParam
+  signal?: AbortSignal
 }
 
 export interface CreateAgentOptions<T> {
@@ -36,8 +46,11 @@ export interface CreateAgentOptions<T> {
 
 export const createAgent = <T>(options: CreateAgentOptions<T>): Agent<T> => {
   const eventListeners = new Set<AgentEventListener>()
-  const pending = pLimit(1)
+  const pendingTurns = createQueue<AgentTurnJob>()
+  const pendingInput = createQueue<AgentPendingInput>()
 
+  let pumping = false
+  let acceptingInputTurnId: string | undefined
   let running: AgentRunningTurn | undefined
   let history: ItemParam[] = [...(options.input ?? [])]
   let historyVersion = 0
@@ -54,7 +67,40 @@ export const createAgent = <T>(options: CreateAgentOptions<T>): Agent<T> => {
     }
   }
 
-  const turn = async (id: string, input: ItemParam, signal?: AbortSignal) => {
+  const runResponse = async (
+    id: string,
+    input: ItemParam[],
+    controller: AbortController,
+    version: number,
+  ) => {
+    const nextInput = [...history, ...input]
+
+    const result = responses({
+      ...options.options,
+      abortSignal: controller.signal,
+      input: nextInput,
+      instructions: typeof options.instructions === 'function'
+        ? await options.instructions(ctx)
+        : options.instructions,
+      stopWhen: options.options.stopWhen ?? stepCountAtLeast(20),
+    })
+
+    void result.input.catch(() => undefined)
+    void result.steps.catch(() => undefined)
+    void result.usage.catch(() => undefined)
+    void result.totalUsage.catch(() => undefined)
+
+    for await (const event of result.eventStream)
+      emit(id, event)
+
+    if (version === historyVersion)
+      history = await result.input
+  }
+
+  const drainLivePendingInput = () =>
+    Array.from(pendingInput.drain()).filter(item => item.signal?.aborted !== true)
+
+  const runRegularTask = async ({ id, input, signal }: AgentTurnJob) => {
     const controller = linkedAbort(signal)
     const version = historyVersion
 
@@ -63,36 +109,38 @@ export const createAgent = <T>(options: CreateAgentOptions<T>): Agent<T> => {
       id,
       input,
     }
+    acceptingInputTurnId = id
 
     try {
-      const nextInput = [...history, input]
-
       emit(id, { type: 'turn.start' })
 
-      const result = responses({
-        ...options.options,
-        abortSignal: controller.signal,
-        input: nextInput,
-        instructions: typeof options.instructions === 'function'
-          ? await options.instructions(ctx)
-          : options.instructions,
-        stopWhen: options.options.stopWhen ?? stepCountAtLeast(20),
-      })
+      let nextInput = [input]
 
-      void result.input.catch(() => undefined)
-      void result.steps.catch(() => undefined)
-      void result.usage.catch(() => undefined)
-      void result.totalUsage.catch(() => undefined)
+      while (true) {
+        await runResponse(id, nextInput, controller, version)
 
-      for await (const event of result.eventStream)
-        emit(id, event)
+        if (controller.signal.aborted)
+          throw controller.signal.reason
 
-      if (version === historyVersion)
-        history = await result.input
+        const drained = drainLivePendingInput()
+        if (drained.length === 0)
+          break
+
+        emit(id, { count: drained.length, type: 'turn.input_drained' })
+        nextInput = drained.map(item => item.input)
+      }
+
+      if (acceptingInputTurnId === id)
+        acceptingInputTurnId = undefined
 
       emit(id, { type: 'turn.done' })
     }
     catch (error) {
+      pendingInput.clear()
+
+      if (acceptingInputTurnId === id)
+        acceptingInputTurnId = undefined
+
       emit(id, controller.signal.aborted
         ? { reason: controller.signal.reason, type: 'turn.aborted' }
         : { error, type: 'turn.failed' })
@@ -100,16 +148,55 @@ export const createAgent = <T>(options: CreateAgentOptions<T>): Agent<T> => {
     finally {
       if (running?.id === id)
         running = undefined
+
+      if (acceptingInputTurnId === id)
+        acceptingInputTurnId = undefined
     }
   }
 
-  const enqueue = async (id: string, input: ItemParam, signal?: AbortSignal) =>
-    pending(async () => turn(id, input, signal)).catch(() => undefined)
+  const pumpTurns = async () => {
+    if (pumping)
+      return
+
+    pumping = true
+
+    try {
+      while (true) {
+        const job = pendingTurns.dequeue()
+        if (job == null)
+          break
+
+        await runRegularTask(job)
+      }
+    }
+    finally {
+      pumping = false
+
+      if (pendingTurns.size > 0)
+        void pumpTurns()
+    }
+  }
+
+  const enqueueTurn = (id: string, input: ItemParam, signal?: AbortSignal) => {
+    emit(id, { type: 'turn.queued' })
+    pendingTurns.enqueue({ id, input, signal })
+
+    void pumpTurns()
+  }
 
   const send: Agent<T>['send'] = (input, signal) => {
+    const targetTurnId = acceptingInputTurnId ?? pendingTurns.peek()?.id
+
+    if (targetTurnId != null) {
+      pendingInput.enqueue({ input, signal })
+      emit(targetTurnId, { type: 'turn.input_queued' })
+
+      return targetTurnId
+    }
+
     const id = crypto.randomUUID()
 
-    void enqueue(id, input, signal)
+    enqueueTurn(id, input, signal)
 
     return id
   }
@@ -144,7 +231,7 @@ export const createAgent = <T>(options: CreateAgentOptions<T>): Agent<T> => {
           }
         })
 
-        void enqueue(id, input, signal)
+        enqueueTurn(id, input, signal)
       },
     })
   }
@@ -153,8 +240,13 @@ export const createAgent = <T>(options: CreateAgentOptions<T>): Agent<T> => {
     running?.controller.abort(reason)
 
   const clear: Agent<T>['clear'] = () => {
+    acceptingInputTurnId = undefined
     abort('cleared')
-    pending.clearQueue()
+
+    pendingInput.clear()
+
+    for (const job of pendingTurns.drain())
+      emit(job.id, { reason: 'cleared', type: 'turn.aborted' })
 
     history = [...(options.input ?? [])]
     historyVersion += 1

@@ -24,9 +24,6 @@ catalogs:
     eslint:
       specifier: ^10.3.0
       version: 10.3.0
-    p-limit:
-      specifier: ^7.3.0
-      version: 7.3.0
     pkgroll:
       specifier: ^2.27.0
       version: 2.27.0
@@ -42,6 +39,9 @@ catalogs:
     vitest:
       specifier: ^4.1.6
       version: 4.1.6
+    yocto-queue:
+      specifier: ^1.2.2
+      version: 1.2.2
   xsai:
     '@xsai-ext/responses':
       specifier: ^0.5.0-beta.4
@@ -108,9 +108,9 @@ importers:
       '@xsai/shared-chat':
         specifier: catalog:xsai
         version: 0.5.0-beta.4
-      p-limit:
+      yocto-queue:
         specifier: 'catalog:'
-        version: 7.3.0
+        version: 1.2.2
 
 packages:
 
@@ -2105,10 +2105,6 @@ packages:
   p-limit@3.1.0:
     resolution: {integrity: sha512-TYOanM3wGwNGsZN2cVTYPArw454xnXj5qmWF1bEoAc4+cU/ol7GVh7odevjp1FNHduHc3KZMcFduxU5Xc6uJRQ==}
     engines: {node: '>=10'}
-
-  p-limit@7.3.0:
-    resolution: {integrity: sha512-7cIXg/Z0M5WZRblrsOla88S4wAK+zOQQWeBYfV3qJuJXMr+LnbYjaadrFaS0JILfEDPVqHyKnZ1Z/1d6J9VVUw==}
-    engines: {node: '>=20'}
 
   p-locate@5.0.0:
     resolution: {integrity: sha512-LaNjtRWUBY++zB5nE/NwcaoMylSPk+S+ZHNB1TzdbMJMny6dynpAGt7X/tl/QYq3TIeE6nxHppbo2LGymrG5Pw==}
@@ -4728,10 +4724,6 @@ snapshots:
   p-limit@3.1.0:
     dependencies:
       yocto-queue: 0.1.0
-
-  p-limit@7.3.0:
-    dependencies:
-      yocto-queue: 1.2.2
 
   p-locate@5.0.0:
     dependencies:
