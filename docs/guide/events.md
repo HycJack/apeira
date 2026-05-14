@@ -73,9 +73,9 @@ The stream closes after `turn.done`, `turn.failed`, or `turn.aborted`.
 `subscribe()` receives all agent events.
 
 ```ts
-const unsubscribe = agent.subscribe((event) => {
+const unsubscribe = agent.subscribe(event =>
   console.log(event.turnId, event.type)
-})
+)
 
 unsubscribe()
 ```

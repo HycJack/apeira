@@ -33,9 +33,9 @@ closes when the turn emits `turn.done`, `turn.failed`, or `turn.aborted`.
 For fire-and-forget submission, subscribe to all agent events and use `send()`:
 
 ```ts
-const unsubscribe = agent.subscribe((event) => {
+const unsubscribe = agent.subscribe(event =>
   console.log(event.turnId, event.type)
-})
+)
 
 const turnId = agent.send({
   content: 'Say hello.',

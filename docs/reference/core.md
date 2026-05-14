@@ -87,9 +87,9 @@ Use `subscribe()` to observe progress.
 Subscribes to all events from the agent.
 
 ```ts
-const unsubscribe = agent.subscribe((event) => {
+const unsubscribe = agent.subscribe(event =>
   console.log(event.turnId, event.type)
-})
+)
 ```
 
 The returned function removes the listener and returns whether it was present.
