@@ -13,6 +13,7 @@ export interface AgentRuntime {
   abort: (reason?: unknown) => void
   clear: () => void
   enqueueTurn: (id: string, input: ItemParam, signal?: AbortSignal) => void
+  interrupt: (input: ItemParam, reason?: unknown, signal?: AbortSignal) => string
   send: (input: ItemParam, signal?: AbortSignal) => string
 }
 
@@ -174,10 +175,22 @@ export const createAgentRuntime = <T>(options: AgentRuntimeOptions<T>): AgentRun
     return id
   }
 
+  const interrupt: AgentRuntime['interrupt'] = (input, reason = 'interrupted', signal) => {
+    const turn = activeTurn
+
+    if (turn != null && turn.controller.signal.aborted !== true) {
+      options.emit(turn.id, { reason, type: 'turn.interrupted' })
+      turn.controller.abort(reason)
+    }
+
+    return send(input, signal)
+  }
+
   return {
     abort,
     clear,
     enqueueTurn,
+    interrupt,
     send,
   }
 }
