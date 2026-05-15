@@ -1,0 +1,61 @@
+name: check
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          run_install: false
+      - uses: actions/setup-node@v4
+        with:
+          cache: pnpm
+          node-version: latest
+          registry-url: https://registry.npmjs.org
+
+      - run: pnpm install
+      - run: pnpm lint
+
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          run_install: false
+      - uses: actions/setup-node@v4
+        with:
+          cache: pnpm
+          node-version: latest
+          registry-url: https://registry.npmjs.org
+
+      # - uses: actions/cache@v4
+      #   with:
+      #     path: .turbo
+      #     key: ${{ runner.os }}-turbo-${{ github.sha }}
+      #     restore-keys: |
+      #       ${{ runner.os }}-turbo-
+
+      - run: pnpm install
+      - run: pnpm build
+
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          run_install: false
+      - uses: actions/setup-node@v4
+        with:
+          cache: pnpm
+          node-version: latest
+          registry-url: https://registry.npmjs.org
+
+      - run: pnpm install
+      - run: pnpm test
