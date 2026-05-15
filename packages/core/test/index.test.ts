@@ -84,6 +84,7 @@ const createResponseStream = (
 
 const createResponsesFetch = (delayMs = 0) => {
   const inputs: unknown[][] = []
+  const instructions: unknown[] = []
 
   const fetch: typeof globalThis.fetch = async (_url, init) => {
     const signal = init?.signal instanceof AbortSignal
@@ -93,8 +94,9 @@ const createResponsesFetch = (delayMs = 0) => {
     if (signal?.aborted)
       throw signal.reason ?? new DOMException('Aborted', 'AbortError')
 
-    const body = JSON.parse(String(init?.body)) as { input: unknown[] }
+    const body = JSON.parse(String(init?.body)) as { input: unknown[], instructions?: unknown }
     inputs.push(body.input)
+    instructions.push(body.instructions)
 
     return createResponseStream(`response ${inputs.length}`, delayMs, signal)
   }
@@ -102,6 +104,7 @@ const createResponsesFetch = (delayMs = 0) => {
   return {
     fetch,
     inputs,
+    instructions,
   }
 }
 
@@ -123,6 +126,7 @@ const createTestAgent = (delayMs = 0) => {
   return {
     agent,
     inputs: responsesFetch.inputs,
+    instructions: responsesFetch.instructions,
   }
 }
 
@@ -230,6 +234,209 @@ describe('createThreadStore', () => {
 })
 
 describe('createAgent', () => {
+  it('merges agent, thread, and run context for instructions', async () => {
+    interface Context {
+      locale: string
+      product: string
+      requestId?: string
+      userId?: string
+    }
+
+    const responsesFetch = createResponsesFetch()
+    const agent = createAgent<Context>({
+      context: {
+        locale: 'en-US',
+        product: 'docs',
+      },
+      instructions: context => JSON.stringify(context),
+      name: 'context-test',
+      options: {
+        apiKey: 'test',
+        baseURL: 'https://example.test/v1/',
+        fetch: responsesFetch.fetch,
+        model: 'test-model',
+      },
+    })
+    const thread = agent.thread({
+      context: {
+        locale: 'zh-CN',
+        userId: 'u_123',
+      },
+    })
+
+    await readEventStream(thread.run(message('Use merged context.'), {
+      context: {
+        requestId: 'req_123',
+      },
+    }))
+
+    expect(JSON.parse(String(responsesFetch.instructions[0]))).toEqual({
+      locale: 'zh-CN',
+      product: 'docs',
+      requestId: 'req_123',
+      userId: 'u_123',
+    })
+  })
+
+  it('keeps agent and thread setContext persistent and run context transient', async () => {
+    interface Context {
+      locale: string
+      product: string
+      requestId?: string
+    }
+
+    const responsesFetch = createResponsesFetch()
+    const agent = createAgent<Context>({
+      context: {
+        locale: 'en-US',
+        product: 'docs',
+      },
+      instructions: context => JSON.stringify(context),
+      name: 'context-test',
+      options: {
+        apiKey: 'test',
+        baseURL: 'https://example.test/v1/',
+        fetch: responsesFetch.fetch,
+        model: 'test-model',
+      },
+    })
+    const thread = agent.thread()
+
+    agent.setContext({ product: 'help' })
+    thread.setContext({ locale: 'ja-JP' })
+
+    await readEventStream(thread.run(message('Run with request context.'), {
+      context: { requestId: 'req_123' },
+    }))
+    await readEventStream(thread.run(message('Run without request context.')))
+
+    expect(JSON.parse(String(responsesFetch.instructions[0]))).toMatchObject({
+      locale: 'ja-JP',
+      requestId: 'req_123',
+    })
+    expect(JSON.parse(String(responsesFetch.instructions[1]))).toMatchObject({
+      locale: 'ja-JP',
+      product: 'help',
+    })
+    expect(JSON.parse(String(responsesFetch.instructions[1]))).not.toHaveProperty('requestId')
+    expect(agent.getContext()).toEqual({
+      locale: 'en-US',
+      product: 'help',
+    })
+  })
+
+  it('merges context into an existing thread by id without replacing history', async () => {
+    interface Context {
+      locale: string
+      product: string
+      userId?: string
+    }
+
+    const responsesFetch = createResponsesFetch()
+    const agent = createAgent<Context>({
+      context: {
+        locale: 'en-US',
+        product: 'docs',
+      },
+      instructions: context => JSON.stringify(context),
+      name: 'context-test',
+      options: {
+        apiKey: 'test',
+        baseURL: 'https://example.test/v1/',
+        fetch: responsesFetch.fetch,
+        model: 'test-model',
+      },
+    })
+
+    const thread = agent.thread({
+      context: { userId: 'u_123' },
+      id: 'existing-thread',
+    })
+    const sameThread = agent.thread({
+      context: { locale: 'zh-CN' },
+      id: 'existing-thread',
+    })
+
+    expect(sameThread).toBe(thread)
+
+    await readEventStream(thread.run(message('Use updated thread context.')))
+
+    expect(JSON.parse(String(responsesFetch.instructions[0]))).toMatchObject({
+      locale: 'zh-CN',
+      product: 'docs',
+      userId: 'u_123',
+    })
+  })
+
+  it('throws when initial input is provided for an existing thread', () => {
+    const { agent } = createTestAgent()
+
+    agent.thread({ id: 'existing-thread' })
+
+    expect(() => agent.thread({
+      id: 'existing-thread',
+      input: [message('initial input')],
+    })).toThrow('Thread already exists: existing-thread')
+  })
+
+  it('runs different threads with isolated queues and contexts', async () => {
+    interface Context {
+      locale: string
+      product: string
+      userId?: string
+    }
+
+    const events: AgentEvent[] = []
+    const responsesFetch = createResponsesFetch(2)
+    const agent = createAgent<Context>({
+      context: {
+        locale: 'en-US',
+        product: 'docs',
+      },
+      instructions: context => JSON.stringify(context),
+      name: 'multi-thread-test',
+      options: {
+        apiKey: 'test',
+        baseURL: 'https://example.test/v1/',
+        fetch: responsesFetch.fetch,
+        model: 'test-model',
+      },
+    })
+    const unsubscribe = agent.subscribe(event => events.push(event))
+    const first = agent.thread({
+      context: { userId: 'first' },
+      id: 'first-thread',
+    })
+    const second = agent.thread({
+      context: { userId: 'second' },
+      id: 'second-thread',
+    })
+
+    try {
+      await Promise.all([
+        readEventStream(first.run(message('First thread.'))),
+        readEventStream(second.run(message('Second thread.'))),
+      ])
+    }
+    finally {
+      unsubscribe()
+    }
+
+    expect(new Set(events.map(event => event.threadId))).toEqual(new Set([
+      'first-thread',
+      'second-thread',
+    ]))
+    const userIds = responsesFetch.instructions.map((value) => {
+      const context = JSON.parse(String(value)) as Context
+      return context.userId
+    }).sort((left, right) => String(left).localeCompare(String(right)))
+
+    expect(userIds).toEqual([
+      'first',
+      'second',
+    ])
+  })
+
   it('runs a turn and returns a stream for run', async () => {
     const { agent } = createTestAgent()
 
@@ -461,6 +668,54 @@ describe('createAgent', () => {
     expect(inputs.at(-1)?.at(-1)).toMatchObject({ content: 'After abort.' })
   })
 
+  it('does not send input to an already aborted queued turn', async () => {
+    const events: AgentEvent[] = []
+    const { agent, inputs } = createTestAgent(2)
+    const controller = new AbortController()
+    let firstTurnId: string | undefined
+    let sentTurnId: string | undefined
+    controller.abort('stale queued turn')
+
+    const unsubscribe = agent.subscribe((event) => {
+      events.push(event)
+      firstTurnId ??= event.turnId
+
+      if (
+        event.turnId === firstTurnId
+        && event.type === 'turn.done'
+        && sentTurnId == null
+      ) {
+        sentTurnId = agent.send(message('After stale queued turn.'))
+      }
+    })
+
+    const first = readEventStream(agent.run(message('First turn.')))
+    const second = readEventStream(agent.run(message('Already aborted queued turn.'), {
+      signal: controller.signal,
+    }))
+
+    try {
+      const [, secondEvents] = await Promise.all([first, second])
+      expect(sentTurnId).toEqual(expect.any(String))
+      await waitForTurnDone(events, sentTurnId!)
+
+      const secondEventTypes = secondEvents.map(event => event.type)
+      expect(secondEventTypes).toEqual(['turn.queued', 'turn.aborted'])
+      expect(sentTurnId).not.toBe(secondEvents[0]?.turnId)
+    }
+    finally {
+      unsubscribe()
+    }
+
+    expect(inputs).toHaveLength(2)
+    expect(inputs.at(-1)?.at(-1)).toMatchObject({ content: 'After stale queued turn.' })
+    expect(inputs.flat().some(item =>
+      typeof item === 'object'
+      && item != null
+      && 'content' in item
+      && item.content === 'Already aborted queued turn.')).toBe(false)
+  })
+
   it('interrupts the active turn and sends input to the next turn', async () => {
     const events: AgentEvent[] = []
     const { agent, inputs } = createTestAgent(2)
@@ -513,7 +768,9 @@ describe('createAgent', () => {
       interrupted = true
       queueMicrotask(() => {
         controller.abort('stale interrupt')
-        agent.interrupt(message('Stale interrupting input.'), 'test interrupt', controller.signal)
+        agent.interrupt(message('Stale interrupting input.'), 'test interrupt', {
+          signal: controller.signal,
+        })
       })
     })
 
