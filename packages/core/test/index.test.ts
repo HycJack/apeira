@@ -394,6 +394,40 @@ describe('createAgent', () => {
     expect(secondEvents.map(event => event.type)).toContain('turn.done')
   })
 
+  it('queues send input to the next turn when the active turn is aborted', async () => {
+    const events: AgentEvent[] = []
+    const { agent, inputs } = createTestAgent(2)
+    let injectedTurnId: string | undefined
+    let aborted = false
+    const unsubscribe = agent.subscribe((event) => {
+      events.push(event)
+
+      if (event.type !== 'turn.start' || aborted)
+        return
+
+      aborted = true
+      queueMicrotask(() => {
+        agent.abort('test abort')
+        injectedTurnId = agent.send(message('After abort.'))
+      })
+    })
+
+    const first = readEventStream(agent.run(message('Abort this turn.')))
+    const second = readEventStream(agent.run(message('This queued turn should receive input.')))
+    const [firstEvents, secondEvents] = await Promise.all([first, second])
+    unsubscribe()
+
+    const firstTurnId = firstEvents[0]?.turnId
+    const secondTurnId = secondEvents[0]?.turnId
+
+    expect(injectedTurnId).toBe(secondTurnId)
+    expect(events.some(event =>
+      event.turnId === firstTurnId && event.type === 'turn.input_queued')).toBe(false)
+    expect(events.some(event =>
+      event.turnId === secondTurnId && event.type === 'turn.input_drained')).toBe(true)
+    expect(inputs.at(-1)?.at(-1)).toMatchObject({ content: 'After abort.' })
+  })
+
   it('clears the running turn, queued turns, and pending input', async () => {
     const { agent } = createTestAgent(2)
     let cleared = false

@@ -155,7 +155,10 @@ export const createAgentRuntime = <T>(options: AgentRuntimeOptions<T>): AgentRun
   }
 
   const send: AgentRuntime['send'] = (input, signal) => {
-    const targetTurnId = acceptingInputTurnId ?? pendingTurns.peek()?.id
+    const activeTurnId = activeTurn?.controller.signal.aborted === true
+      ? undefined
+      : acceptingInputTurnId
+    const targetTurnId = activeTurnId ?? pendingTurns.peek()?.id
 
     if (targetTurnId != null) {
       pendingInput.enqueue(targetTurnId, { input, signal })
