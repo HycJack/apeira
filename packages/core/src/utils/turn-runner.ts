@@ -252,26 +252,20 @@ export const runTurn = async <T>(options: RunTurnParams<T>): Promise<TurnComplet
     options.emit(options.turn.id, { type: 'turn.start' })
 
     let nextInput: Array<QueuedInput<T> | QueuedTurn<T>> = [options.turn]
-    let responseContext: ResponseContext<T> | undefined
 
     while (true) {
-      responseContext = await runResponse(options, nextInput)
+      const responseContext = await runResponse(options, nextInput)
 
       if (options.controller.signal.aborted)
         throw options.controller.signal.reason
 
       const drained = options.drainInput()
       if (drained.length === 0)
-        break
+        return { context: responseContext, type: 'done' }
 
       options.emit(options.turn.id, { count: drained.length, type: 'turn.input_drained' })
       nextInput = drained
     }
-
-    if (responseContext == null)
-      throw new Error('Turn completed without a response context.')
-
-    return { context: responseContext, type: 'done' }
   }
   catch (error) {
     if (options.controller.signal.aborted)

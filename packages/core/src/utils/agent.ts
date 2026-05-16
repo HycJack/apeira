@@ -282,28 +282,13 @@ export const createAgent = <T = unknown>(options: CreateAgentOptions<T>): Agent<
     input: options.input,
   })
 
-  const run: Agent<T>['run'] = (input, runOptions) =>
-    defaultThread.run(input, runOptions)
-
-  const abort: Agent<T>['abort'] = reason =>
-    defaultThread.abort(reason)
-
-  const clear: Agent<T>['clear'] = () =>
-    defaultThread.clear()
-
-  const interrupt: Agent<T>['interrupt'] = (input, reason, runOptions) =>
-    defaultThread.interrupt(input, reason, runOptions)
-
-  const send: Agent<T>['send'] = (input, runOptions) =>
-    defaultThread.send(input, runOptions)
-
   return {
-    abort,
-    clear,
+    abort: reason => defaultThread.abort(reason),
+    clear: () => defaultThread.clear(),
     getContext,
-    interrupt,
-    run,
-    send,
+    interrupt: (input, reason, runOptions) => defaultThread.interrupt(input, reason, runOptions),
+    run: (input, runOptions) => defaultThread.run(input, runOptions),
+    send: (input, runOptions) => defaultThread.send(input, runOptions),
     setContext,
     subscribe,
     thread,

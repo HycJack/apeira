@@ -48,10 +48,9 @@ const createTurnAbortedBoundary = (): ItemParam => ({
 })
 
 export const createAgentRuntime = <T>(options: AgentRuntimeOptions<T>): AgentRuntime<T> => {
-  const initialInput = [...(options.input ?? [])]
   const pendingInput = createPendingInput<T>()
   const pendingTurns = createQueue<QueuedTurn<T>>()
-  const thread = createThreadStore(initialInput)
+  const thread = createThreadStore(options.input)
 
   let acceptingInputTurnId: string | undefined
   let activeTurn: ActiveTurn | undefined
