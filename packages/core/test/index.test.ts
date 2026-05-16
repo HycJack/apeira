@@ -1,3 +1,5 @@
+import type { Tool } from '@xsai/shared-chat'
+
 import type { AgentEvent } from '../src/index'
 import type { ItemParam } from '../src/types/responses'
 
@@ -83,6 +85,7 @@ const createResponseStream = (
 }
 
 const createResponsesFetch = (delayMs = 0) => {
+  const bodies: Array<{ input: unknown[], instructions?: unknown, tools?: unknown[] }> = []
   const inputs: unknown[][] = []
   const instructions: unknown[] = []
 
@@ -94,7 +97,8 @@ const createResponsesFetch = (delayMs = 0) => {
     if (signal?.aborted)
       throw signal.reason ?? new DOMException('Aborted', 'AbortError')
 
-    const body = JSON.parse(String(init?.body)) as { input: unknown[], instructions?: unknown }
+    const body = JSON.parse(String(init?.body)) as { input: unknown[], instructions?: unknown, tools?: unknown[] }
+    bodies.push(body)
     inputs.push(body.input)
     instructions.push(body.instructions)
 
@@ -102,6 +106,7 @@ const createResponsesFetch = (delayMs = 0) => {
   }
 
   return {
+    bodies,
     fetch,
     inputs,
     instructions,
@@ -234,6 +239,376 @@ describe('createThreadStore', () => {
 })
 
 describe('createAgent', () => {
+  it('loads persisted thread state before clear saves reset state', async () => {
+    const savedSnapshots: unknown[] = []
+    const agent = createAgent({
+      instructions: 'You are a plugin test assistant.',
+      name: 'clear-storage-test',
+      options: {
+        apiKey: 'test',
+        baseURL: 'https://example.test/v1/',
+        fetch: createResponsesFetch().fetch,
+        model: 'test-model',
+      },
+      plugins: [{
+        loadThread: () => ({
+          items: [message('persisted history')],
+          version: 10,
+        }),
+        name: 'storage',
+        saveThread: ({ snapshot }) => {
+          savedSnapshots.push(snapshot)
+        },
+      }],
+    })
+
+    agent.clear()
+    await wait()
+
+    expect(savedSnapshots).toEqual([{
+      items: [],
+      version: 11,
+    }])
+  })
+
+  it('retries loading thread state after loadThread fails', async () => {
+    const responsesFetch = createResponsesFetch()
+    const events: AgentEvent[] = []
+    let loadAttempts = 0
+    const agent = createAgent({
+      instructions: 'You are a plugin test assistant.',
+      name: 'load-retry-test',
+      options: {
+        apiKey: 'test',
+        baseURL: 'https://example.test/v1/',
+        fetch: responsesFetch.fetch,
+        model: 'test-model',
+      },
+      plugins: [{
+        loadThread: () => {
+          loadAttempts += 1
+
+          if (loadAttempts === 1)
+            throw new Error('temporary storage failure')
+        },
+        name: 'storage',
+      }],
+    })
+
+    const unsubscribe = agent.subscribe(event => events.push(event))
+    const failedTurnId = agent.send(message('first'))
+
+    try {
+      for (let i = 0; i < 200; i += 1) {
+        if (events.some(event => event.turnId === failedTurnId && event.type === 'turn.failed'))
+          break
+
+        await wait(5)
+      }
+
+      const streamEvents = await readEventStream(agent.run(message('second')))
+
+      expect(streamEvents.at(-1)?.type).toBe('turn.done')
+      expect(loadAttempts).toBe(2)
+    }
+    finally {
+      unsubscribe()
+    }
+  })
+
+  it('serializes response save and clear save', async () => {
+    const saves: string[] = []
+    const agent = createAgent({
+      instructions: 'You are a plugin test assistant.',
+      name: 'save-race-test',
+      options: {
+        apiKey: 'test',
+        baseURL: 'https://example.test/v1/',
+        fetch: createResponsesFetch().fetch,
+        model: 'test-model',
+      },
+      plugins: [{
+        name: 'storage',
+        saveThread: async (context) => {
+          saves.push(`${context.reason}:start`)
+
+          if (context.reason === 'response') {
+            agent.clear()
+            await wait(10)
+          }
+
+          saves.push(`${context.reason}:end`)
+        },
+      }],
+    })
+
+    const events = await readEventStream(agent.run(message('race')))
+    await wait()
+
+    expect(events.at(-1)?.type).toBe('turn.aborted')
+    expect(saves).toEqual([
+      'response:start',
+      'response:end',
+      'clear:start',
+      'clear:end',
+    ])
+  })
+
+  it('aborts a dequeued turn while loading thread state', async () => {
+    const events: AgentEvent[] = []
+    let resolveLoad: (() => void) | undefined
+    let loadStarted = false
+    const agent = createAgent({
+      instructions: 'You are a plugin test assistant.',
+      name: 'clear-during-load-test',
+      options: {
+        apiKey: 'test',
+        baseURL: 'https://example.test/v1/',
+        fetch: createResponsesFetch().fetch,
+        model: 'test-model',
+      },
+      plugins: [{
+        loadThread: async () => {
+          loadStarted = true
+          await new Promise<void>((resolve) => {
+            resolveLoad = resolve
+          })
+        },
+        name: 'storage',
+      }],
+    })
+    const unsubscribe = agent.subscribe(event => events.push(event))
+    const turnId = agent.send(message('slow load'))
+
+    try {
+      for (let i = 0; i < 200; i += 1) {
+        if (loadStarted)
+          break
+
+        await wait(5)
+      }
+
+      expect(loadStarted).toBe(true)
+
+      agent.clear()
+      resolveLoad?.()
+
+      for (let i = 0; i < 200; i += 1) {
+        if (events.some(event => event.turnId === turnId && event.type === 'turn.aborted'))
+          break
+
+        await wait(5)
+      }
+
+      expect(events.some(event => event.turnId === turnId && event.type === 'turn.aborted')).toBe(true)
+    }
+    finally {
+      unsubscribe()
+    }
+  })
+
+  it('runs plugin setup sequentially in plugin order', async () => {
+    const calls: string[] = []
+    const agent = createAgent({
+      instructions: 'You are a plugin test assistant.',
+      name: 'setup-order-test',
+      options: {
+        apiKey: 'test',
+        baseURL: 'https://example.test/v1/',
+        fetch: createResponsesFetch().fetch,
+        model: 'test-model',
+      },
+      plugins: [{
+        name: 'first',
+        setup: async (api) => {
+          await wait()
+          api.subscribe('setup', () => calls.push('first heard'))
+          calls.push('first setup')
+        },
+      }, {
+        name: 'second',
+        setup: (api) => {
+          calls.push('second setup')
+          api.emit('setup', 'ready')
+        },
+      }],
+    })
+
+    await readEventStream(agent.run(message('use plugin')))
+
+    expect(calls).toEqual([
+      'first setup',
+      'second setup',
+      'first heard',
+    ])
+  })
+
+  it('runs plugins through thread, turn, response, and storage hooks', async () => {
+    const calls: string[] = []
+    const responsesFetch = createResponsesFetch()
+    const weatherTool: Tool = {
+      execute: () => 'sunny',
+      function: {
+        name: 'weather',
+        parameters: {},
+      },
+      type: 'function',
+    }
+    const agent = createAgent({
+      instructions: 'You are a plugin test assistant.',
+      name: 'plugin-test',
+      options: {
+        apiKey: 'test',
+        baseURL: 'https://example.test/v1/',
+        fetch: responsesFetch.fetch,
+        model: 'test-model',
+      },
+      plugins: [false, [{
+        loadThread: () => {
+          calls.push('loadThread')
+          return {
+            items: [message('loaded history')],
+            version: 0,
+          }
+        },
+        name: 'test-plugin',
+        onEvent: (event) => {
+          if (!(event.type.startsWith('turn.')))
+            return
+
+          calls.push(`event:${event.type}`)
+        },
+        onFinish: () => {
+          calls.push('onFinish')
+        },
+        onStepFinish: () => {
+          calls.push('onStepFinish')
+        },
+        onThreadInit: () => {
+          calls.push('onThreadInit')
+        },
+        onTurnDone: () => {
+          calls.push('onTurnDone')
+        },
+        onTurnStart: () => {
+          calls.push('onTurnStart')
+        },
+        resolveTools: ({ tools }) => {
+          calls.push(`resolveTools:${tools.length}`)
+          return [weatherTool]
+        },
+        saveThread: ({ snapshot }) => {
+          calls.push(`saveThread:${snapshot.items.length}`)
+        },
+        setup: () => {
+          calls.push('setup')
+        },
+      }], null],
+    })
+
+    const events = await readEventStream(agent.run(message('use plugin')))
+    await wait()
+
+    expect(events.at(-1)?.type).toBe('turn.done')
+    expect(responsesFetch.inputs[0]).toEqual([
+      message('loaded history'),
+      message('use plugin'),
+    ])
+    expect(responsesFetch.bodies[0]?.tools).toEqual([{
+      description: null,
+      name: 'weather',
+      parameters: {},
+      strict: true,
+      type: 'function',
+    }])
+    expect(calls).toEqual(expect.arrayContaining([
+      'setup',
+      'onThreadInit',
+      'loadThread',
+      'onTurnStart',
+      'resolveTools:0',
+      'onStepFinish',
+      'onFinish',
+      'saveThread:3',
+      'onTurnDone',
+      'event:turn.queued',
+      'event:turn.start',
+      'event:turn.done',
+    ]))
+  })
+
+  it('uses the current response context for drained input hooks', async () => {
+    const records: Array<{ hook: string, lastInput?: unknown, requestId?: string }> = []
+    const responsesFetch = createResponsesFetch(2)
+    const agent = createAgent<{ requestId?: string }>({
+      context: {},
+      instructions: 'You are a plugin test assistant.',
+      name: 'response-context-test',
+      options: {
+        apiKey: 'test',
+        baseURL: 'https://example.test/v1/',
+        fetch: responsesFetch.fetch,
+        model: 'test-model',
+      },
+      plugins: [{
+        name: 'context-recorder',
+        onTurnDone: ({ context, input }) => {
+          records.push({ hook: 'onTurnDone', lastInput: input.at(-1), requestId: context.requestId })
+        },
+        saveThread: (context) => {
+          if (context.reason !== 'response')
+            return
+
+          records.push({
+            hook: 'saveThread',
+            lastInput: context.input.at(-1),
+            requestId: context.context.requestId,
+          })
+        },
+      }],
+    })
+    const events: AgentEvent[] = []
+    let turnId: string
+    let injectedTurnId: string | undefined
+
+    const unsubscribe = agent.subscribe((event) => {
+      events.push(event)
+
+      if (
+        event.turnId === turnId
+        && event.type === 'step.start'
+        && injectedTurnId == null
+      ) {
+        injectedTurnId = agent.send(message('Follow up.'), {
+          context: { requestId: 'follow' },
+        })
+      }
+    })
+
+    turnId = agent.send(message('Initial turn.'), {
+      context: { requestId: 'initial' },
+    })
+
+    try {
+      await waitForTurnDone(events, turnId)
+    }
+    finally {
+      unsubscribe()
+    }
+
+    expect(injectedTurnId).toBe(turnId)
+    expect(records.at(-1)).toEqual({
+      hook: 'onTurnDone',
+      lastInput: message('Follow up.'),
+      requestId: 'follow',
+    })
+    expect(records).toContainEqual({
+      hook: 'saveThread',
+      lastInput: message('Follow up.'),
+      requestId: 'follow',
+    })
+  })
+
   it('merges agent, thread, and run context for instructions', async () => {
     interface Context {
       locale: string
