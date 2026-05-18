@@ -13,6 +13,7 @@ import { useMemo } from 'react'
 
 import { BrowserApeiraAgent } from './utils/agent'
 import { AGENT_ID, AGENT_NAME, DEFAULT_BASE_URL, DEFAULT_INSTRUCTIONS, DEFAULT_MODEL } from './utils/const'
+import { weatherTool } from './utils/tools/weather'
 
 import '@copilotkit/react-ui/v2/styles.css'
 
@@ -28,6 +29,9 @@ export const App = () => {
       apiKey,
       baseURL,
       model,
+      tools: [
+        weatherTool,
+      ],
     },
     plugins: [
       {

@@ -14,10 +14,12 @@
     "@apeira/plugin-ag-ui": "workspace:",
     "@copilotkit/react-core": "catalog:",
     "@copilotkit/react-ui": "catalog:",
+    "@xsai/tool": "catalog:",
     "foxact": "catalog:",
     "react": "catalog:",
     "react-dom": "catalog:",
-    "rxjs": "catalog:"
+    "rxjs": "catalog:",
+    "zod": "catalog:"
   },
   "devDependencies": {
     "@types/react": "catalog:",
