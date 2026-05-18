@@ -1,7 +1,6 @@
 {
   "extends": "@moeru/tsconfig",
   "include": [
-    "examples/**/src",
     "packages/**/src",
     "packages/**/test"
   ]

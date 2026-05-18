@@ -3,6 +3,7 @@ ignorePaths: []
 dictionaryDefinitions: []
 dictionaries: []
 words:
+  - agui
   - antfu
   - apeira
   - bumpp
@@ -15,6 +16,8 @@ words:
   - pkgroll
   - qwen
   - sonarjs
+  - vite
+  - vitejs
   - vitepress
   - vitest
   - xsai

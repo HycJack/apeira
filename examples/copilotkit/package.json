@@ -1,0 +1,27 @@
+{
+  "name": "@apeira/example-copilotkit",
+  "type": "module",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "build": "tsc -b && vite build",
+    "dev": "vite",
+    "lint": "eslint .",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@apeira/core": "workspace:",
+    "@apeira/plugin-ag-ui": "workspace:",
+    "@copilotkit/react-core": "catalog:",
+    "@copilotkit/react-ui": "catalog:",
+    "foxact": "catalog:",
+    "react": "catalog:",
+    "react-dom": "catalog:",
+    "rxjs": "catalog:"
+  },
+  "devDependencies": {
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
+    "@vitejs/plugin-react": "catalog:"
+  }
+}
