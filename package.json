@@ -6,11 +6,12 @@
   "packageManager": "pnpm@10.33.0",
   "scripts": {
     "build": "pnpm -r build",
+    "build:docs": "vitepress build docs",
     "bump": "bumpp",
-    "docs:build": "vitepress build docs",
-    "docs:dev": "vitepress dev docs",
-    "docs:preview": "vitepress preview docs",
+    "dev:copilotkit": "pnpm -F @apeira/example-copilotkit dev",
+    "dev:docs": "vitepress dev docs",
     "lint": "eslint --flag unstable_native_nodejs_ts_config --cache .",
+    "preview:docs": "vitepress preview docs",
     "test": "pnpm -r test"
   },
   "devDependencies": {
