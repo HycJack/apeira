@@ -1,0 +1,18 @@
+{
+  "name": "@apeira/example-pi-tui",
+  "type": "module",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "tsx src/index.ts",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@apeira/core": "workspace:",
+    "@earendil-works/pi-tui": "catalog:",
+    "@pnpm/find-workspace-dir": "catalog:",
+    "@xsai/tool": "catalog:xsai",
+    "tinyrainbow": "catalog:",
+    "zod": "catalog:"
+  }
+}
