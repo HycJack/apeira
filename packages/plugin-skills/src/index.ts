@@ -1,4 +1,4 @@
-import type { AgentPlugin } from '@apeira/core'
+import type { AgentPlugin, MaybePromise } from '@apeira/core'
 
 import { tool } from '@xsai/tool'
 import { z } from 'zod'
@@ -61,8 +61,6 @@ export interface SkillsRegistrySnapshot {
   diagnostics: SkillDiagnostic[]
   skills: Skill[]
 }
-
-type MaybePromise<T> = Promise<T> | T
 
 const escapeXml = (value: string) =>
   value

@@ -4,6 +4,7 @@ import type { Tool } from '@xsai/shared-chat'
 import type { ThreadState } from '../utils/thread-store'
 import type { AgentContext } from './context'
 import type { AgentEvent } from './event'
+import type { MaybePromise } from './maybe-promise'
 import type { ItemParam } from './responses'
 
 export interface AgentPlugin<T = unknown> {
@@ -94,5 +95,3 @@ export interface TurnStartOptions<T = unknown> {
 }
 
 export type { ThreadState }
-
-type MaybePromise<T> = Promise<T> | T

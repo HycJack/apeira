@@ -1,6 +1,6 @@
 import type { QueuedInput } from './turn-runner'
 
-import { createQueue } from './queue'
+import Queue from 'yocto-queue'
 
 export interface PendingInput<T> {
   clear: () => void
@@ -10,14 +10,14 @@ export interface PendingInput<T> {
 }
 
 export const createPendingInput = <T = unknown>(): PendingInput<T> => {
-  const entries = new Map<string, ReturnType<typeof createQueue<QueuedInput<T>>>>()
+  const entries = new Map<string, Queue<QueuedInput<T>>>()
 
   const queueFor = (turnId: string) => {
     const existing = entries.get(turnId)
     if (existing != null)
       return existing
 
-    const queue = createQueue<QueuedInput<T>>()
+    const queue = new Queue<QueuedInput<T>>()
     entries.set(turnId, queue)
     return queue
   }

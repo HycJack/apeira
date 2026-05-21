@@ -3,11 +3,12 @@ import type { Tool } from '@xsai/shared-chat'
 import type { AgentEvent } from '../src/index'
 import type { ItemParam } from '../src/types/responses'
 
+import Queue from 'yocto-queue'
+
 import { describe, expect, it } from 'vitest'
 
 import { createAgent } from '../src/index'
 import { createPendingInput } from '../src/utils/pending-input'
-import { createQueue } from '../src/utils/queue'
 import { createThreadStore } from '../src/utils/thread-store'
 
 const createMemoryStorage = (initial: Record<string, string> = {}) => {
@@ -194,10 +195,10 @@ const readEventStream = async (stream: ReadableStream<AgentEvent>) => {
 
 describe('createQueue', () => {
   it('dequeues and drains in FIFO order', () => {
-    const queue = createQueue<{ value: number }>()
+    const queue = new Queue<{ value: number }>()
 
-    expect(queue.enqueue({ value: 1 })).toBe(1)
-    expect(queue.enqueue({ value: 2 })).toBe(2)
+    expect(queue.enqueue({ value: 1 })).toBe(undefined)
+    expect(queue.enqueue({ value: 2 })).toBe(undefined)
     expect(queue.size).toBe(2)
     expect(queue.dequeue()).toEqual({ value: 1 })
     expect(Array.from(queue.drain())).toEqual([{ value: 2 }])

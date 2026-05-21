@@ -6,9 +6,10 @@ import type { ItemParam } from '../types/responses'
 import type { ThreadState } from './thread-store'
 import type { EmitTurnEvent, QueuedInput, QueuedTurn, TurnCompletion, TurnOptions } from './turn-runner'
 
+import Queue from 'yocto-queue'
+
 import { linkedAbort } from './linked-abort'
 import { createPendingInput } from './pending-input'
-import { createQueue } from './queue'
 import { createThreadStore } from './thread-store'
 import { runTurn } from './turn-runner'
 
@@ -51,7 +52,7 @@ const createTurnAbortedBoundary = (): ItemParam => ({
 
 export const createAgentRuntime = <T>(options: AgentRuntimeOptions<T>): AgentRuntime<T> => {
   const pendingInput = createPendingInput<T>()
-  const pendingTurns = createQueue<QueuedTurn<T>>()
+  const pendingTurns = new Queue<QueuedTurn<T>>()
   const thread = createThreadStore<T>(options.input, options.threadContext)
 
   let acceptingInputTurnId: string | undefined

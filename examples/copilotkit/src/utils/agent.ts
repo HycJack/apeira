@@ -13,7 +13,7 @@ import { Observable } from 'rxjs'
 import { AGENT_ID, AGENT_NAME } from './const'
 
 interface BrowserApeiraAgentOptions {
-  agent: Agent<any>
+  agent: Agent<unknown>
   onThreadUpdated?: (threadId: string) => void
 }
 

@@ -146,35 +146,24 @@ const resolveTools = async <T>(
   return tools.length > 0 ? tools : options.responseOptions.tools
 }
 
-const createOnFinish = <T>(options: RunTurnParams<T>): ResponsesOptions['onFinish'] => {
-  const hooks = [
-    options.responseOptions.onFinish,
-    ...options.plugins.map(plugin => plugin.onFinish),
-  ].filter((hook): hook is NonNullable<ResponsesOptions['onFinish']> => hook != null)
-
-  if (hooks.length === 0)
+const chainStepHooks = <H extends (...args: any[]) => unknown>(
+  ...hooks: (H | undefined)[]
+): H | undefined => {
+  const list = hooks.filter(Boolean) as H[]
+  if (list.length === 0)
     return undefined
 
-  return async (step) => {
-    for (const hook of hooks)
+  return (async (step) => {
+    for (const hook of list)
       await hook(step)
-  }
+  }) as H
 }
 
-const createOnStepFinish = <T>(options: RunTurnParams<T>): ResponsesOptions['onStepFinish'] => {
-  const hooks = [
-    options.responseOptions.onStepFinish,
-    ...options.plugins.map(plugin => plugin.onStepFinish),
-  ].filter((hook): hook is NonNullable<ResponsesOptions['onStepFinish']> => hook != null)
+const createOnFinish = <T>(options: RunTurnParams<T>): ResponsesOptions['onFinish'] =>
+  chainStepHooks(options.responseOptions.onFinish, ...options.plugins.map(plugin => plugin.onFinish))
 
-  if (hooks.length === 0)
-    return undefined
-
-  return async (step) => {
-    for (const hook of hooks)
-      await hook(step)
-  }
-}
+const createOnStepFinish = <T>(options: RunTurnParams<T>): ResponsesOptions['onStepFinish'] =>
+  chainStepHooks(options.responseOptions.onStepFinish, ...options.plugins.map(plugin => plugin.onStepFinish))
 
 const createPrepareStep = <T>(options: RunTurnParams<T>): ResponsesOptions['prepareStep'] => {
   const hooks = [
@@ -225,10 +214,8 @@ const runResponse = async <T>(
     tools,
   })
 
-  void result.input.catch(() => undefined)
-  void result.steps.catch(() => undefined)
-  void result.usage.catch(() => undefined)
-  void result.totalUsage.catch(() => undefined)
+  for (const p of [result.input, result.steps, result.usage, result.totalUsage] as const)
+    void p.catch(() => undefined)
 
   for await (const event of result.eventStream)
     options.emit(options.turn.id, event)

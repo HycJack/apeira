@@ -68,13 +68,10 @@ const normalizePlugins = <T>(plugins: AgentPluginOption<T>[]): AgentPlugin<T>[] 
   })
 
 const sortPlugins = <T>(plugins: AgentPluginOption<T>[]) => {
-  const normalized = normalizePlugins(plugins)
-
-  return [
-    ...normalized.filter(plugin => plugin.enforce === 'pre'),
-    ...normalized.filter(plugin => plugin.enforce == null),
-    ...normalized.filter(plugin => plugin.enforce === 'post'),
-  ]
+  const order = { post: 2, pre: 0 } as const
+  return normalizePlugins(plugins).sort(
+    (a, b) => (order[a.enforce as keyof typeof order] ?? 1) - (order[b.enforce as keyof typeof order] ?? 1),
+  )
 }
 
 export const createAgent = <T = unknown>(options: CreateAgentOptions<T>): Agent<T> => {
@@ -146,7 +143,6 @@ export const createAgent = <T = unknown>(options: CreateAgentOptions<T>): Agent<
     pluginApi.subscribe(channel, listener)
 
   const createAgentThread = (id: string, threadOptions: ThreadOptions<T> = {}): AgentThread<T> => {
-    const storagePlugins = plugins.filter(plugin => plugin.storage != null)
     const initialThreadContext = threadOptions.context ?? {}
 
     let currentThreadContext = initialThreadContext
@@ -174,8 +170,11 @@ export const createAgent = <T = unknown>(options: CreateAgentOptions<T>): Agent<
     const loadThread = async (): Promise<ThreadState<T> | undefined> => {
       await ensureThreadReady()
 
-      for (const plugin of storagePlugins) {
-        const value = await plugin.storage?.getItem(getThreadStorageKey(options.name, id))
+      for (const plugin of plugins) {
+        if (plugin.storage == null)
+          continue
+
+        const value = await plugin.storage.getItem(getThreadStorageKey(options.name, id))
         const state = parseThreadState<T>(value)
 
         if (state != null) {
@@ -193,12 +192,11 @@ export const createAgent = <T = unknown>(options: CreateAgentOptions<T>): Agent<
     const saveThread = async (state: ThreadState<T>) => {
       currentThreadContext = state.context
 
-      for (const plugin of storagePlugins) {
-        const storage = plugin.storage
-        if (storage == null)
+      for (const plugin of plugins) {
+        if (plugin.storage == null)
           continue
 
-        await storage.setItem(getThreadStorageKey(options.name, id), JSON.stringify(state))
+        await plugin.storage.setItem(getThreadStorageKey(options.name, id), JSON.stringify(state))
       }
     }
 
