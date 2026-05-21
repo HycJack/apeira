@@ -6,6 +6,9 @@ export default defineConfig({
   unocss: true,
 })
   .append({
+    ignores: ['examples/copilotkit/src/components/ui/**'],
+  })
+  .append({
     files: [GLOB_MARKDOWN_CODE],
     rules: {
       'sonarjs/unused-import': 'off',

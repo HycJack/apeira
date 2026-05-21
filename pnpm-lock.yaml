@@ -21,6 +21,9 @@ catalogs:
     '@earendil-works/pi-tui':
       specifier: ^0.75.3
       version: 0.75.3
+    '@eslint-react/eslint-plugin':
+      specifier: ^5.8.3
+      version: 5.8.3
     '@moeru/eslint-config':
       specifier: ^0.1.0-beta.18
       version: 0.1.0-beta.18
@@ -33,6 +36,9 @@ catalogs:
     '@pnpm/find-workspace-dir':
       specifier: ^1000.1.5
       version: 1000.1.5
+    '@radix-ui/react-slot':
+      specifier: ^1.2.4
+      version: 1.2.4
     '@types/node':
       specifier: ^25.6.2
       version: 25.6.2
@@ -48,12 +54,24 @@ catalogs:
     bumpp:
       specifier: ^11.1.0
       version: 11.1.0
+    class-variance-authority:
+      specifier: ^0.7.1
+      version: 0.7.1
+    clsx:
+      specifier: ^2.1.1
+      version: 2.1.1
     eslint:
       specifier: ^10.3.0
       version: 10.3.0
+    eslint-plugin-react-refresh:
+      specifier: ^0.5.2
+      version: 0.5.2
     foxact:
       specifier: ^0.3.4
       version: 0.3.4
+    lucide-react:
+      specifier: ^1.16.0
+      version: 1.16.0
     pkgroll:
       specifier: ^2.27.0
       version: 2.27.0
@@ -66,6 +84,9 @@ catalogs:
     rxjs:
       specifier: ^7.8.1
       version: 7.8.1
+    tailwind-merge:
+      specifier: ^3.6.0
+      version: 3.6.0
     tinyrainbow:
       specifier: ^3.1.0
       version: 3.1.0
@@ -75,6 +96,15 @@ catalogs:
     typescript:
       specifier: ~6.0.3
       version: 6.0.3
+    unocss:
+      specifier: ^66.6.8
+      version: 66.6.8
+    unocss-preset-animations:
+      specifier: ^1.3.0
+      version: 1.3.0
+    unocss-preset-shadcn:
+      specifier: ^1.0.1
+      version: 1.0.1
     unstorage:
       specifier: ^1.17.5
       version: 1.17.5
@@ -115,7 +145,7 @@ importers:
         specifier: 'catalog:'
         version: 9.0.0(@eslint-react/eslint-plugin@5.8.3(eslint@10.3.0(jiti@2.7.0))(typescript@6.0.3))(@typescript-eslint/rule-tester@8.59.2(eslint@10.3.0(jiti@2.7.0))(typescript@6.0.3))(@typescript-eslint/typescript-estree@8.59.4(typescript@6.0.3))(@typescript-eslint/utils@8.59.4(eslint@10.3.0(jiti@2.7.0))(typescript@6.0.3))(@vue/compiler-sfc@3.5.34)(eslint-plugin-react-refresh@0.5.2(eslint@10.3.0(jiti@2.7.0)))(eslint@10.3.0(jiti@2.7.0))(ts-declaration-location@1.0.7(typescript@6.0.3))(typescript@6.0.3)(vitest@4.1.6(@types/node@25.6.2)(vite@8.0.13(@types/node@25.6.2)(esbuild@0.27.7)(jiti@2.7.0)(tsx@4.21.0)(yaml@2.8.4)))
       '@eslint-react/eslint-plugin':
-        specifier: ^5.8.3
+        specifier: 'catalog:'
         version: 5.8.3(eslint@10.3.0(jiti@2.7.0))(typescript@6.0.3)
       '@moeru/eslint-config':
         specifier: 'catalog:'
@@ -133,7 +163,7 @@ importers:
         specifier: 'catalog:'
         version: 10.3.0(jiti@2.7.0)
       eslint-plugin-react-refresh:
-        specifier: ^0.5.2
+        specifier: 'catalog:'
         version: 0.5.2(eslint@10.3.0(jiti@2.7.0))
       pkgroll:
         specifier: 'catalog:'
@@ -145,8 +175,14 @@ importers:
         specifier: 'catalog:'
         version: 6.0.3
       unocss:
-        specifier: ^66.6.8
+        specifier: 'catalog:'
         version: 66.6.8(@emnapi/core@1.10.0)(@emnapi/runtime@1.10.0)(vite@8.0.13(@types/node@25.6.2)(esbuild@0.27.7)(jiti@2.7.0)(tsx@4.21.0)(yaml@2.8.4))
+      unocss-preset-animations:
+        specifier: 'catalog:'
+        version: 1.3.0(@unocss/preset-wind3@66.6.8)(unocss@66.6.8(@emnapi/core@1.10.0)(@emnapi/runtime@1.10.0)(vite@8.0.13(@types/node@25.6.2)(esbuild@0.27.7)(jiti@2.7.0)(tsx@4.21.0)(yaml@2.8.4)))
+      unocss-preset-shadcn:
+        specifier: 'catalog:'
+        version: 1.0.1(unocss-preset-animations@1.3.0(@unocss/preset-wind3@66.6.8)(unocss@66.6.8(@emnapi/core@1.10.0)(@emnapi/runtime@1.10.0)(vite@8.0.13(@types/node@25.6.2)(esbuild@0.27.7)(jiti@2.7.0)(tsx@4.21.0)(yaml@2.8.4))))(unocss@66.6.8(@emnapi/core@1.10.0)(@emnapi/runtime@1.10.0)(vite@8.0.13(@types/node@25.6.2)(esbuild@0.27.7)(jiti@2.7.0)(tsx@4.21.0)(yaml@2.8.4)))
       vite:
         specifier: 'catalog:'
         version: 8.0.13(@types/node@25.6.2)(esbuild@0.27.7)(jiti@2.7.0)(tsx@4.21.0)(yaml@2.8.4)
@@ -171,12 +207,24 @@ importers:
       '@copilotkit/react-ui':
         specifier: 'catalog:'
         version: 1.57.1(@ag-ui/core@0.0.53)(@types/mdast@4.0.4)(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(graphql@16.14.0)(micromark-util-types@2.0.2)(micromark@4.0.2)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(zod@4.4.3)
+      '@radix-ui/react-slot':
+        specifier: 'catalog:'
+        version: 1.2.4(@types/react@19.2.14)(react@19.2.6)
       '@xsai/tool':
         specifier: catalog:xsai
         version: 0.5.0-beta.4(zod-to-json-schema@3.25.2(zod@4.4.3))(zod@4.4.3)
+      class-variance-authority:
+        specifier: 'catalog:'
+        version: 0.7.1
+      clsx:
+        specifier: 'catalog:'
+        version: 2.1.1
       foxact:
         specifier: 'catalog:'
         version: 0.3.4(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
+      lucide-react:
+        specifier: 'catalog:'
+        version: 1.16.0(react@19.2.6)
       react:
         specifier: 'catalog:'
         version: 19.2.6
@@ -186,6 +234,9 @@ importers:
       rxjs:
         specifier: 'catalog:'
         version: 7.8.1
+      tailwind-merge:
+        specifier: 'catalog:'
+        version: 3.6.0
       zod:
         specifier: 'catalog:'
         version: 4.4.3
@@ -3795,6 +3846,11 @@ packages:
     peerDependencies:
       react: ^16.5.1 || ^17.0.0 || ^18.0.0 || ^19.0.0
 
+  lucide-react@1.16.0:
+    resolution: {integrity: sha512-dYwyPzb4MEKpGUmNYk3WKWPnMrHs3FKM+q94kAnJrcDIqqn1hq2xY8scaS2ovsOCM5D51ey2gaRG3PBb1vgoYQ==}
+    peerDependencies:
+      react: ^16.5.1 || ^17.0.0 || ^18.0.0 || ^19.0.0
+
   lucide@0.525.0:
     resolution: {integrity: sha512-sfehWlaE/7NVkcEQ4T9JD3eID8RNMIGJBBUq9wF3UFiJIrcMKRbU3g1KGfDk4svcW7yw8BtDLXaXo02scDtUYQ==}
 
@@ -4816,6 +4872,21 @@ packages:
 
   unist-util-visit@5.0.0:
     resolution: {integrity: sha512-MR04uvD+07cwl/yhVuVWAtw+3GOR/knlL55Nd/wAdblk27GCVt3lqpTivy/tkJcZoNPzTwS1Y+KMojlLDhoTzg==}
+
+  unocss-preset-animations@1.3.0:
+    resolution: {integrity: sha512-NLsBzPB98Jc8b6+t8nwLItI12ZE/48IZVccZ2uA2owLoeAvhRaDoRvs6eLcJfIUZfRycL25xxOeQoOBMo1p/aw==}
+    peerDependencies:
+      '@unocss/preset-wind3': '>=0.56.0 < 101'
+      unocss: '>=0.56.0 < 101'
+    peerDependenciesMeta:
+      '@unocss/preset-wind3':
+        optional: true
+
+  unocss-preset-shadcn@1.0.1:
+    resolution: {integrity: sha512-/I39ZO2ntPyRHz+VA8pa+E/empR4sJU//zMjgI0ph5c5LttRs84gcm74pz/wO+sfqMjjN4SbSScD2n+TfE4FHw==}
+    peerDependencies:
+      unocss: '>=0.56.0 < 101'
+      unocss-preset-animations: ^1.1.1
 
   unocss@66.6.8:
     resolution: {integrity: sha512-stq9FbxedTDkoWrxnNQNnPQXOaM6L2Lobq8HzjXdR2tMc55gtfqDArqL7TESfnN7qeZsIocNYCHLNA4DXq50YQ==}
@@ -8847,6 +8918,10 @@ snapshots:
     dependencies:
       react: 19.2.6
 
+  lucide-react@1.16.0(react@19.2.6):
+    dependencies:
+      react: 19.2.6
+
   lucide@0.525.0: {}
 
   magic-regexp@0.10.0:
@@ -10396,6 +10471,17 @@ snapshots:
       '@types/unist': 3.0.3
       unist-util-is: 6.0.0
       unist-util-visit-parents: 6.0.1
+
+  unocss-preset-animations@1.3.0(@unocss/preset-wind3@66.6.8)(unocss@66.6.8(@emnapi/core@1.10.0)(@emnapi/runtime@1.10.0)(vite@8.0.13(@types/node@25.6.2)(esbuild@0.27.7)(jiti@2.7.0)(tsx@4.21.0)(yaml@2.8.4))):
+    dependencies:
+      unocss: 66.6.8(@emnapi/core@1.10.0)(@emnapi/runtime@1.10.0)(vite@8.0.13(@types/node@25.6.2)(esbuild@0.27.7)(jiti@2.7.0)(tsx@4.21.0)(yaml@2.8.4))
+    optionalDependencies:
+      '@unocss/preset-wind3': 66.6.8
+
+  unocss-preset-shadcn@1.0.1(unocss-preset-animations@1.3.0(@unocss/preset-wind3@66.6.8)(unocss@66.6.8(@emnapi/core@1.10.0)(@emnapi/runtime@1.10.0)(vite@8.0.13(@types/node@25.6.2)(esbuild@0.27.7)(jiti@2.7.0)(tsx@4.21.0)(yaml@2.8.4))))(unocss@66.6.8(@emnapi/core@1.10.0)(@emnapi/runtime@1.10.0)(vite@8.0.13(@types/node@25.6.2)(esbuild@0.27.7)(jiti@2.7.0)(tsx@4.21.0)(yaml@2.8.4))):
+    dependencies:
+      unocss: 66.6.8(@emnapi/core@1.10.0)(@emnapi/runtime@1.10.0)(vite@8.0.13(@types/node@25.6.2)(esbuild@0.27.7)(jiti@2.7.0)(tsx@4.21.0)(yaml@2.8.4))
+      unocss-preset-animations: 1.3.0(@unocss/preset-wind3@66.6.8)(unocss@66.6.8(@emnapi/core@1.10.0)(@emnapi/runtime@1.10.0)(vite@8.0.13(@types/node@25.6.2)(esbuild@0.27.7)(jiti@2.7.0)(tsx@4.21.0)(yaml@2.8.4)))
 
   unocss@66.6.8(@emnapi/core@1.10.0)(@emnapi/runtime@1.10.0)(vite@8.0.13(@types/node@25.6.2)(esbuild@0.27.7)(jiti@2.7.0)(tsx@4.21.0)(yaml@2.8.4)):
     dependencies:

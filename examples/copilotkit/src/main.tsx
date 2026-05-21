@@ -3,6 +3,8 @@ import { createRoot } from 'react-dom/client'
 
 import { App } from './app.tsx'
 
+import 'virtual:uno.css'
+
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <App />

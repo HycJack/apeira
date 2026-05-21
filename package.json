@@ -28,6 +28,8 @@
     "tsx": "catalog:",
     "typescript": "catalog:",
     "unocss": "catalog:",
+    "unocss-preset-animations": "catalog:",
+    "unocss-preset-shadcn": "catalog:",
     "vite": "catalog:",
     "vitepress": "catalog:",
     "vitest": "catalog:"
