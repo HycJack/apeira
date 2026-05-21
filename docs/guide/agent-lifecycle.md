@@ -1,29 +1,21 @@
 # Agent Lifecycle
 
-An Apeira agent owns one or more sessions. Each session keeps an in-memory history
-and runs submitted turns one at a time.
+An Apeira agent owns one or more sessions. Each session keeps an in-memory history and runs submitted turns one at a time.
 
 ## History
 
-The default session starts with the optional `input` passed to `createAgent()`.
-Explicit sessions can also receive their own initial `input`.
-
-When a turn starts, Apeira appends the new input item to the current history and
-passes that full input state to `@xsai-ext/responses`.
-
-When the turn completes successfully, Apeira commits the returned input state as
-the next history.
+The default session starts with the optional `input` passed to `createAgent()`. Explicit sessions can also receive their own initial `input`.
 
 ```ts
 const agent = createAgent({
   input: [
     {
-      content: 'You have already introduced yourself.',
+      content: 'The user\'s name is Alice.',
       role: 'user',
       type: 'message',
     },
   ],
-  instructions: 'You are a concise assistant.',
+  instructions: 'You are a helpful assistant.',
   name: 'assistant',
   options: {
     apiKey: process.env.OPENAI_API_KEY,
@@ -33,73 +25,63 @@ const agent = createAgent({
 })
 ```
 
+When a turn starts, Apeira appends the new input to the current history and forwards the full input state to `@xsai-ext/responses`. On success, the returned input state is committed as the next history.
+
 ## Queueing
 
-Top-level turns submitted to the same session with `run()` are serialized. If
-`run()` is called while another turn is running on that session, the new turn
-waits until the running turn finishes. Different sessions can run concurrently.
+Top-level turns on the same session are serialized. If `run()` is called while another turn is running, the new turn waits until the running turn finishes.
 
 ```ts
-const first = agent.run({
-  content: 'First turn.',
-  role: 'user',
-  type: 'message',
-})
-
-const second = agent.run({
-  content: 'Second turn.',
-  role: 'user',
-  type: 'message',
-})
+const first = agent.run(input)
+const second = agent.run(input) // waits for first
 ```
 
-`second` will not start until `first` is done, failed, or aborted.
+Different sessions can run concurrently:
 
-`send()` is a fire-and-forget input entrypoint. If no turn is active or
-scheduled, it creates a new top-level turn. If a turn is already active or
-scheduled, the input is queued for that turn and drained after the current model
-response completes.
+```ts
+const sessionA = agent.session({ id: 'a' })
+const sessionB = agent.session({ id: 'b' })
 
-If the active turn has already been aborted, new input is queued for the next
-scheduled turn. If no turn is scheduled, it creates a new turn.
+sessionA.run(input) // starts immediately
+sessionB.run(input) // starts immediately
+```
 
-## Interrupt
+`send()` queues input into the active turn if one exists, or creates a new turn. If the active turn is already aborted, input targets the next scheduled turn.
 
-`interrupt()` aborts the active turn and records a model-visible turn-aborted
-boundary.
+## Interrupt vs abort vs clear
+
+| Method | Records boundary | Clears queue | Resets history |
+|--------|-----------------|--------------|----------------|
+| `interrupt(reason)` | Yes | No | No |
+| `abort(reason)` | No | No | No |
+| `clear()` | No | Yes | Yes |
+
+**Interrupt** aborts the active turn and inserts a `<turn_aborted>` boundary visible to the model on the next turn. The queue continues.
 
 ```ts
 agent.interrupt('user interrupted')
 ```
 
-The boundary is visible to the model on the next turn. The queue continues
-normally — any queued turns run after the interrupted turn is aborted.
+**Abort** stops the running turn without recording a boundary.
 
-## Clear
+```ts
+agent.abort('user cancelled')
+```
 
-`clear()` aborts the running turn, clears queued turns, and resets in-memory
-history to the original `input`.
+**Clear** aborts the running turn, removes queued turns, and resets in-memory history to the original `input`. The running turn emits `turn.aborted` with reason `cleared`.
 
 ```ts
 agent.clear()
 ```
 
-The running turn emits `turn.aborted` with the reason `cleared`.
-
-Queued turns are removed before they start.
-
 ## Context
 
-Agent context starts as the complete default context. Agent, session, and run
-context updates are partial overlays. Instructions receive the merged context.
+Agent context is a three-layer merge: **agent context** > **session context** > **run context**. Each layer is a partial overlay.
 
 ```ts
 const agent = createAgent({
-  context: {
-    locale: 'en-US',
-    userId: 'user_123',
-  },
-  instructions: context => `You are helping ${context.userId}.`,
+  context: { locale: 'en-US', userId: 'user_123' },
+  instructions: ctx => `You are helping ${ctx.userId}.`,
   name: 'assistant',
   options: {
     apiKey: process.env.OPENAI_API_KEY,
@@ -108,34 +90,25 @@ const agent = createAgent({
   },
 })
 
-const context = agent.getContext()
-```
-
-Use `setContext()` to update agent or session context:
-
-```ts
-agent.setContext({
-  locale: 'en-US',
-  userId: 'user_123',
-})
+agent.setContext({ locale: 'zh-CN' })
 
 const session = agent.session({
-  context: {
-    userId: 'user_456',
-  },
+  context: { userId: 'user_456' },
 })
 
-session.setContext({
-  locale: 'zh-CN',
-})
+session.setContext({ locale: 'en-US' })
+
+// run context is transient
+session.run(input, { context: { requestId: 'req_123' } })
 ```
 
-Run context only applies to the submitted input:
+The effective context for a turn is `merge(agentContext, sessionContext, runContext)`. Instructions receive the merged context and can adapt the system prompt dynamically.
 
-```ts
-session.run(input, {
-  context: {
-    requestId: 'req_123',
-  },
-})
-```
+For more on session-level context, see [Sessions](/guide/sessions).
+
+## Next steps
+
+- [Sessions](/guide/sessions) — isolate conversations with explicit sessions.
+
+- [Events](/guide/events) — explore the event system.
+- [Plugins](/plugins/) — extend the runtime lifecycle.

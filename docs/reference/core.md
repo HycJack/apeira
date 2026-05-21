@@ -31,11 +31,11 @@ interface CreateAgentOptions<T> {
   instructions: ((context: AgentContext<T>) => Promise<string> | string) | string
   name: string
   options: Omit<ResponsesOptions, 'abortSignal' | 'input' | 'instructions'>
+  plugins?: AgentPlugin[]
 }
 ```
 
-`options` are xsAI response options. Apeira owns the input state, instructions,
-and abort signal for each turn.
+`options` are xsAI response options. Apeira owns the input state, instructions, and abort signal for each turn.
 
 ## Agent
 
@@ -55,7 +55,7 @@ interface Agent<T> {
 
 ### run()
 
-Submits a turn and returns a stream of events for that turn.
+Submits a turn and returns a `ReadableStream` of events for that turn.
 
 ```ts
 const stream = agent.run({
@@ -78,7 +78,7 @@ agent.run(input, {
 
 ### send()
 
-Submits input and returns a turn id immediately.
+Submits input and returns a turn ID immediately.
 
 ```ts
 const turnId = agent.send({
@@ -88,35 +88,38 @@ const turnId = agent.send({
 })
 ```
 
-If no turn is active or scheduled, `send()` creates a new top-level turn. If a
-turn is active or scheduled, the input is queued for that turn and the returned
-id is the existing turn id.
-
-If the active turn is already aborted, `send()` targets the next scheduled turn
-instead. If no turn is scheduled, it creates a new turn.
-
-Use `subscribe()` to observe progress.
+If no turn is active or scheduled, a new top-level turn is created. If a turn is active or scheduled, input is queued for that turn and the returned ID is the existing turn ID. If the active turn is already aborted, input targets the next scheduled turn.
 
 ### interrupt()
 
-Interrupts the active turn and records a model-visible turn-aborted boundary.
+Interrupts the active turn and records a model-visible boundary.
 
 ```ts
 agent.interrupt('user interrupted')
 ```
 
-The boundary is visible to the model on the next turn. The queue continues
-normally — any queued turns will run after the interrupted turn is aborted.
+### abort()
 
-### sessions
-
-The root agent methods use a default session. Create or address explicit sessions
-when one agent definition should serve multiple conversations:
+Aborts the currently running turn without recording a boundary.
 
 ```ts
-const session = agent.session({
-  context: { userId: 'user_123' },
-})
+agent.abort('user cancelled')
+```
+
+### clear()
+
+Aborts the running turn, clears queued turns, and resets in-memory history to the original `input`.
+
+```ts
+agent.clear()
+```
+
+### session()
+
+Creates or addresses an explicit session. Each session has its own queue, interrupt state, in-memory history, and context overlay.
+
+```ts
+const session = agent.session({ id: 'conversation-1', context: { userId: 'user_123' } })
 
 session.run({
   content: 'Say hello.',
@@ -125,35 +128,27 @@ session.run({
 })
 ```
 
-Each session has its own queue, interrupt state, in-memory history, and context
-overlay. Different sessions can run concurrently. Calling `session()` with an
-existing `id` returns that session and merges the provided context overlay. The
-`input` option only applies when creating a new session.
+Calling `session()` with an existing `id` returns that session and merges the provided context. The `input` option only applies when creating a new session.
+
+For a full guide, see [Sessions](/guide/sessions).
 
 ### setContext()
 
-Agent context starts as the complete default context. Agent, session, and run
-context updates are partial overlays.
+Updates context at the agent or session level. Context is merged as a partial overlay.
 
 ```ts
-agent.setContext({
-  locale: 'en-US',
-  product: 'docs',
-})
+agent.setContext({ locale: 'en-US', product: 'docs' })
 
-session.setContext({
-  locale: 'zh-CN',
-})
+session.setContext({ locale: 'zh-CN' })
 ```
 
-Instructions receive the merged context:
+### getContext()
+
+Returns the merged agent context.
 
 ```ts
-const effectiveContext = merge(agentContext, sessionContext, runContext)
+const context = agent.getContext()
 ```
-
-`agent.setContext()` persists as the agent default. `session.setContext()`
-persists for later turns on that session. Run context does not persist.
 
 ### subscribe()
 
@@ -165,34 +160,24 @@ const unsubscribe = agent.subscribe(event =>
 )
 ```
 
-The returned function removes the listener and returns whether it was present.
+Returns a function that removes the listener and returns whether it was present.
 
-### abort()
-
-Aborts the currently running turn without recording a boundary.
+## AgentSession
 
 ```ts
-agent.abort('user cancelled')
+interface AgentSession<T> {
+  run: (input: ItemParam, options?: AgentRunOptions<T>) => ReadableStream<AgentEvent>
+  send: (input: ItemParam, options?: AgentRunOptions<T>) => string
+  interrupt: (reason?: unknown) => void
+  abort: (reason?: unknown) => void
+  clear: () => void
+  setContext: (context: Partial<AgentContext<T>>) => void
+  getContext: () => AgentContext<T>
+  subscribe: (eventListener: AgentEventListener) => () => boolean
+}
 ```
 
-Use `interrupt()` to abort and record a model-visible turn-aborted boundary.
-Use `abort()` + `send()` to abort and submit different input.
-
-### clear()
-
-Aborts the running turn, clears queued turns, and resets in-memory history.
-
-```ts
-agent.clear()
-```
-
-### getContext()
-
-Returns the agent context object.
-
-```ts
-const context = agent.getContext()
-```
+Session methods mirror the root agent methods but operate on a single isolated conversation. See [Sessions](/guide/sessions) for usage.
 
 ## Types
 

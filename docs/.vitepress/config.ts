@@ -3,25 +3,42 @@ import { defineConfig } from 'vitepress'
 export default defineConfig({
   base: '/apeira/',
   description: 'A stream-first agent runtime for TypeScript.',
+
   themeConfig: {
     nav: [
-      { link: '/', text: 'Home' },
-      { link: '/guide/getting-started', text: 'Guide' },
+      { link: '/getting-started', text: 'Getting Started' },
+      { link: '/guide/first-turn', text: 'Guide' },
+      { link: '/plugins/', text: 'Plugins' },
       { link: '/reference/core', text: 'Reference' },
     ],
 
     sidebar: [
       {
-        collapsed: false,
         items: [
-          { link: '/guide/getting-started', text: 'Getting Started' },
+          { link: '/getting-started', text: 'Overview' },
+          { link: '/installation', text: 'Installation' },
+        ],
+        text: 'Getting Started',
+      },
+      {
+        items: [
+          { link: '/guide/first-turn', text: 'First Turn' },
+          { link: '/guide/sessions', text: 'Sessions' },
           { link: '/guide/agent-lifecycle', text: 'Agent Lifecycle' },
           { link: '/guide/events', text: 'Events' },
         ],
         text: 'Guide',
       },
       {
-        collapsed: false,
+        items: [
+          { link: '/plugins/', text: 'Overview' },
+          { link: '/plugins/skills', text: 'Skills' },
+          { link: '/plugins/ag-ui', text: 'AG-UI' },
+          { link: '/plugins/unstorage', text: 'Unstorage' },
+        ],
+        text: 'Plugins',
+      },
+      {
         items: [
           { link: '/reference/core', text: 'Core API' },
           { link: '/reference/packages', text: 'Packages' },
@@ -34,5 +51,6 @@ export default defineConfig({
       { icon: 'github', link: 'https://github.com/moeru-ai/apeira' },
     ],
   },
+
   title: 'Apeira',
 })

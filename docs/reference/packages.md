@@ -2,50 +2,65 @@
 
 ## apeira
 
-`apeira` is the top-level package. It currently re-exports everything from
-`@apeira/core`.
+The umbrella package. Re-exports everything from `@apeira/core`.
 
 ```ts
 import { createAgent } from 'apeira'
 ```
 
-Use this package when you want the default public entry point.
+Use this when you want the single default entry point.
 
 ## @apeira/core
 
-`@apeira/core` contains the stream-first agent runtime.
+The stream-first agent runtime.
 
 ```ts
 import { createAgent } from '@apeira/core'
 ```
 
-It provides:
+Provides:
 
-- `createAgent()`
+- `createAgent()` and agent types
 - lifecycle events
 - per-turn `ReadableStream` support through `run()`
 - fire-and-forget submission through `send()`
-- global subscriptions
-- abort and clear behavior
-- in-memory history
+- global event subscriptions
+- abort, interrupt, and clear behavior
+- in-memory history and session management
 
 ## @apeira/plugin-skills
 
-`@apeira/plugin-skills` exposes filesystem-agnostic Skills primitives for Apeira
-plugins and host applications.
+Filesystem-agnostic skills primitives for plugins and host applications. See the [Skills plugin](/plugins/skills) guide.
 
 ```ts
 import { createSkillsRegistry, skills } from '@apeira/plugin-skills'
 ```
 
-It provides:
+Provides:
 
-- a `skills()` plugin that injects model-visible skill metadata
-- an optional `skill_reference` tool for host-provided skill reference files
-- a host-owned `SkillsRegistry`
+- a `skills()` plugin that injects model-visible skill metadata into instructions
+- an optional `skill_reference` tool for reference files
+- a host-owned `SkillsRegistry` for managing skill definitions
 - formatting helpers for available-skill prompts and explicit skill invocation
-- optional `source` metadata so hosts can identify where a skill came from
-- no direct filesystem access; applications own loading skill files
+- optional `source` metadata for identifying where a skill came from
+- no direct filesystem access — the host application owns loading skill files
 
-Hosts can provide reference manifests through `Skill.references` and load the
-actual reference content lazily with `loadSkillReference`.
+## @apeira/plugin-ag-ui
+
+Bridges Apeira events to `@ag-ui/core` event format. See the [AG-UI plugin](/plugins/ag-ui) guide.
+
+```ts
+import { agui } from '@apeira/plugin-ag-ui'
+```
+
+Maps agent events (text messages, reasoning, tool calls, errors, run state) to the AG-UI protocol. Used by the CopilotKit example.
+
+## @apeira/plugin-unstorage
+
+Wraps the `unstorage` universal storage layer as an Apeira storage plugin. See the [Unstorage plugin](/plugins/unstorage) guide.
+
+```ts
+import { unstorage } from '@apeira/plugin-unstorage'
+```
+
+Provides session persistence through any `unstorage` backend (filesystem, Redis, S3, etc.).
