@@ -86,27 +86,26 @@ returns the existing turn id.
 
 ## Interrupt a turn
 
-Use `interrupt()` when new input should stop the currently running turn and
-continue in the next turn.
+`interrupt()` aborts the active turn and records a model-visible turn-aborted
+boundary.
 
 ```ts
-const turnId = agent.interrupt({
-  content: 'Actually, answer this instead.',
-  role: 'user',
-  type: 'message',
-}, 'user interrupted')
+agent.interrupt('user interrupted')
 ```
 
-The active turn emits `turn.aborted`. The new input is sent to the next queued
-turn, or to a new turn if no turn is queued.
+The boundary is visible to the model on the next turn. The queue continues
+normally — any queued turns run after the interrupted turn is aborted.
 
 ## Abort a turn
 
-Abort the currently running turn:
+Abort the currently running turn without recording a boundary:
 
 ```ts
 agent.abort('user cancelled')
 ```
+
+Use `interrupt()` to abort and record a model-visible turn-aborted boundary.
+Use `abort()` + `send()` to abort and submit different input.
 
 Or pass an `AbortSignal` for a specific submitted turn:
 

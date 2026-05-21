@@ -14,7 +14,7 @@ export interface AgentRuntime<T = unknown> {
   abort: (reason?: unknown) => void
   clear: () => void
   enqueueTurn: (turn: QueuedInput<T>) => void
-  interrupt: (input: QueuedInput<T>, reason?: unknown) => string
+  interrupt: (reason?: unknown) => void
   send: (input: QueuedInput<T>) => string
   setContext: (context: Partial<AgentContext<T>>) => void
 }
@@ -272,15 +272,13 @@ export const createAgentRuntime = <T>(options: AgentRuntimeOptions<T>): AgentRun
     return id
   }
 
-  const interrupt = (input: QueuedInput<T>, reason: unknown = 'interrupted') => {
+  const interrupt = (reason: unknown = 'interrupted') => {
     const turn = activeTurn
 
     if (turn != null && turn.controller.signal.aborted !== true) {
       thread.append([createTurnAbortedBoundary()])
       turn.controller.abort(reason)
     }
-
-    return send(input)
   }
 
   return {

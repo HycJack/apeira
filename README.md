@@ -48,18 +48,14 @@ const turnId = agent.send({
 the input is queued for that turn and the returned id is the existing turn id.
 Turn progress is reported through subscribed events.
 
-Interrupt the active turn with replacement input:
+Interrupt the active turn and record a model-visible turn-aborted boundary:
 
 ```ts
-const turnId = agent.interrupt({
-  content: 'Actually, answer this instead.',
-  role: 'user',
-  type: 'message',
-})
+agent.interrupt('user interrupted')
 ```
 
-`interrupt()` aborts the active turn, records a model-visible turn-aborted
-boundary, and sends the replacement input to the next queued turn or a new turn.
+The boundary is visible to the model on the next turn. The queue continues
+normally — any queued turns run after the interrupted turn is aborted.
 
 ### Agent Lifecycle
 
@@ -135,15 +131,14 @@ new thread.
 
 ### Abort And Clear
 
-Abort the currently running turn:
+Abort the currently running turn without recording a boundary:
 
 ```ts
 agent.abort('user cancelled')
 ```
 
-Abort stops the active turn without submitting replacement input. Use
-`interrupt()` when a user wants to stop the active turn and continue with new
-input.
+Use `interrupt()` to abort and record a model-visible turn-aborted boundary.
+Use `abort()` + `send()` to abort and submit different input.
 
 Clear the session:
 

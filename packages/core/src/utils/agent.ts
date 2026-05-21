@@ -271,12 +271,8 @@ export const createAgent = <T = unknown>(options: CreateAgentOptions<T>): Agent<
         signal: runOptions.signal,
       })
 
-    const interrupt: AgentThread<T>['interrupt'] = (input, reason, runOptions = {}) =>
-      runtime.interrupt({
-        context: runOptions.context,
-        input,
-        signal: runOptions.signal,
-      }, reason)
+    const interrupt: AgentThread<T>['interrupt'] = reason =>
+      runtime.interrupt(reason)
 
     const setThreadContext: AgentThread<T>['setContext'] = (nextContext) => {
       currentThreadContext = merge(currentThreadContext, nextContext)
@@ -328,7 +324,7 @@ export const createAgent = <T = unknown>(options: CreateAgentOptions<T>): Agent<
     clear: () => defaultThread.clear(),
     emit: emitChannel,
     getContext,
-    interrupt: (input, reason, runOptions) => defaultThread.interrupt(input, reason, runOptions),
+    interrupt: reason => defaultThread.interrupt(reason),
     on,
     run: (input, runOptions) => defaultThread.run(input, runOptions),
     send: (input, runOptions) => defaultThread.send(input, runOptions),

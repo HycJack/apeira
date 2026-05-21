@@ -44,7 +44,7 @@ interface Agent<T> {
   abort: (reason?: unknown) => void
   clear: () => void
   getContext: () => AgentContext<T>
-  interrupt: (input: ItemParam, reason?: unknown, options?: AgentRunOptions<T>) => string
+  interrupt: (reason?: unknown) => void
   run: (input: ItemParam, options?: AgentRunOptions<T>) => ReadableStream<AgentEvent>
   send: (input: ItemParam, options?: AgentRunOptions<T>) => string
   setContext: (context: Partial<AgentContext<T>>) => void
@@ -99,20 +99,14 @@ Use `subscribe()` to observe progress.
 
 ### interrupt()
 
-Interrupts the active turn with replacement input and returns the target turn id.
+Interrupts the active turn and records a model-visible turn-aborted boundary.
 
 ```ts
-const turnId = agent.interrupt({
-  content: 'Actually, answer this instead.',
-  role: 'user',
-  type: 'message',
-}, 'user interrupted')
+agent.interrupt('user interrupted')
 ```
 
-The active turn is aborted and a model-visible turn-aborted boundary is recorded
-before the replacement input is sent to the next scheduled turn or to a new
-turn. Pass an `AbortSignal` as the third argument to make the replacement input
-cancelable.
+The boundary is visible to the model on the next turn. The queue continues
+normally — any queued turns will run after the interrupted turn is aborted.
 
 ### threads
 
@@ -175,11 +169,14 @@ The returned function removes the listener and returns whether it was present.
 
 ### abort()
 
-Aborts the currently running turn.
+Aborts the currently running turn without recording a boundary.
 
 ```ts
 agent.abort('user cancelled')
 ```
+
+Use `interrupt()` to abort and record a model-visible turn-aborted boundary.
+Use `abort()` + `send()` to abort and submit different input.
 
 ### clear()
 

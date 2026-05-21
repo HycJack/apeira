@@ -509,11 +509,12 @@ export const createPiTuiExampleApp = () => {
 
         pushEntry('user', argument)
         pendingInputs = 0
-        runningTurnId = agent.interrupt({
+        agent.abort('user interrupted')
+        runningTurnId = agent.send({
           content: argument,
           role: 'user',
           type: 'message',
-        }, 'user interrupted')
+        })
         render()
         return
 

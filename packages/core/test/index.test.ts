@@ -1292,10 +1292,9 @@ describe('createAgent', () => {
       && item.content === 'Already aborted queued turn.')).toBe(false)
   })
 
-  it('interrupts the active turn and sends input to the next turn', async () => {
+  it('interrupts the active turn and lets the queue continue', async () => {
     const events: AgentEvent[] = []
-    const { agent, inputs } = createTestAgent(2)
-    let interruptedTurnId: string | undefined
+    const { agent } = createTestAgent(2)
     let interrupted = false
     const unsubscribe = agent.on((event) => {
       events.push(event)
@@ -1305,63 +1304,31 @@ describe('createAgent', () => {
 
       interrupted = true
       queueMicrotask(() =>
-        interruptedTurnId = agent.interrupt(message('Interrupting input.'), 'test interrupt'),
+        agent.interrupt('test interrupt'),
       )
     })
 
     const first = readEventStream(agent.run(message('Interrupted turn.')))
-    const second = readEventStream(agent.run(message('Queued turn.')))
+    const second = readEventStream(agent.run(message('Next queued turn.')))
     const [firstEvents, secondEvents] = await Promise.all([first, second])
     unsubscribe()
 
     const firstTurnId = firstEvents[0]?.turnId
     const secondTurnId = secondEvents[0]?.turnId
 
-    expect(interruptedTurnId).toBe(secondTurnId)
     expect(firstEvents.map(event => event.type)).toContain('turn.aborted')
+    expect(secondEvents.map(event => event.type)).toContain('turn.done')
+
     const abortedEvent = events.find(event =>
       event.turnId === firstTurnId && event.type === 'turn.aborted')
     expect(abortedEvent?.type === 'turn.aborted' && abortedEvent.reason).toBe('test interrupt')
-    expect(events.some(event =>
-      event.turnId === secondTurnId && event.type === 'turn.input_drained')).toBe(true)
-    expect(inputs.at(-1)?.at(0)).toMatchObject({
-      content: '<turn_aborted>\nThe previous turn was interrupted on purpose. Any tool calls that were running may have partially executed.\n</turn_aborted>',
-    })
-    expect(inputs.at(-1)?.at(-1)).toMatchObject({ content: 'Interrupting input.' })
-  })
 
-  it('drops interrupted input when its signal is already aborted', async () => {
-    const events: AgentEvent[] = []
-    const { agent, inputs } = createTestAgent(2)
-    const controller = new AbortController()
-    let interrupted = false
-    const unsubscribe = agent.on((event) => {
-      events.push(event)
-
-      if (event.type !== 'turn.start' || interrupted)
-        return
-
-      interrupted = true
-      queueMicrotask(() => {
-        controller.abort('stale interrupt')
-        agent.interrupt(message('Stale interrupting input.'), 'test interrupt', {
-          signal: controller.signal,
-        })
-      })
-    })
-
-    const first = readEventStream(agent.run(message('Interrupted turn.')))
-    const second = readEventStream(agent.run(message('Queued turn.')))
-    await Promise.all([first, second])
-    unsubscribe()
-
-    expect(events.map(event => event.type)).toContain('turn.aborted')
-    expect(inputs.at(-1)?.at(-1)).toMatchObject({ content: 'Queued turn.' })
-    expect(inputs.flat().some(item =>
-      typeof item === 'object'
-      && item != null
-      && 'content' in item
-      && item.content === 'Stale interrupting input.')).toBe(false)
+    const secondQueuedEvent = events.find(event =>
+      event.turnId === secondTurnId && event.type === 'turn.queued')
+    const secondStartEvent = events.find(event =>
+      event.turnId === secondTurnId && event.type === 'turn.start')
+    expect(secondQueuedEvent).toBeDefined()
+    expect(secondStartEvent).toBeDefined()
   })
 
   it('clears the running turn, queued turns, and pending input', async () => {

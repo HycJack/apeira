@@ -15,7 +15,7 @@ export interface AgentThread<T> {
   emit: (channel: string, event: unknown) => void
   getContext: () => AgentContext<T>
   readonly id: string
-  interrupt: (input: ItemParam, reason?: unknown, options?: AgentRunOptions<T>) => string
+  interrupt: (reason?: unknown) => void
   on: (eventListener: AgentEventListener) => () => boolean
   run: (input: ItemParam, options?: AgentRunOptions<T>) => ReadableStream<AgentEvent>
   send: (input: ItemParam, options?: AgentRunOptions<T>) => string

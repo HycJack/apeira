@@ -65,17 +65,15 @@ scheduled turn. If no turn is scheduled, it creates a new turn.
 
 ## Interrupt
 
-`interrupt()` is a user-level replacement input. It aborts the active turn,
-records a model-visible turn-aborted boundary, and sends the replacement input
-to the next queued turn or a new turn.
+`interrupt()` aborts the active turn and records a model-visible turn-aborted
+boundary.
 
 ```ts
-agent.interrupt({
-  content: 'Actually, answer this instead.',
-  role: 'user',
-  type: 'message',
-}, 'user interrupted')
+agent.interrupt('user interrupted')
 ```
+
+The boundary is visible to the model on the next turn. The queue continues
+normally — any queued turns run after the interrupted turn is aborted.
 
 ## Clear
 
