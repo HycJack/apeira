@@ -3,9 +3,9 @@ import type { Tool } from '@xsai/shared-chat'
 
 import type { AgentContext, Instructions } from '../types/context'
 import type { ApeiraEvent } from '../types/event'
-import type { AgentPlugin, ExtendInstructionsOptions, ResolveToolsOptions, ResponseOptions, ThreadState, TurnStartOptions } from '../types/plugin'
+import type { AgentPlugin, ExtendInstructionsOptions, ResolveToolsOptions, ResponseOptions, SessionState, TurnStartOptions } from '../types/plugin'
 import type { ItemParam } from '../types/responses'
-import type { ThreadStore } from './thread-store'
+import type { SessionStore } from './session-store'
 
 import { merge } from '@moeru/std/merge'
 import { responses, stepCountAtLeast } from '@xsai-ext/responses'
@@ -18,8 +18,8 @@ export interface AgentCoreOptions<T> {
   plugins: AgentPlugin<T>[]
   ready: () => Promise<void>
   responseOptions: Omit<ResponsesOptions, 'abortSignal' | 'input' | 'instructions'>
-  saveThread: (state: ThreadState<T>) => Promise<void> | void
-  threadId: string
+  saveSession: (state: SessionState<T>) => Promise<void> | void
+  sessionId: string
 }
 
 export type EmitTurnEvent = (id: string, event: ApeiraEvent | XSAIEvent) => void
@@ -45,8 +45,8 @@ export type TurnCompletion<T = unknown>
     | { reason?: unknown, type: 'aborted' }
 
 export interface TurnOptions<T> extends AgentCoreOptions<T> {
-  mutateThread: (fn: () => Promise<void>) => Promise<void>
-  thread: ThreadStore<T>
+  mutateSession: (fn: () => Promise<void>) => Promise<void>
+  session: SessionStore<T>
 }
 
 type PreparedStep = Awaited<ReturnType<PrepareStepHook>>
@@ -69,8 +69,8 @@ const createTurnStartOptions = <T>(
   agentName: options.agentName,
   context,
   input: options.turn.input,
+  sessionId: options.sessionId,
   signal: options.controller.signal,
-  threadId: options.threadId,
   turnId: options.turn.id,
 })
 
@@ -82,8 +82,8 @@ const createResponseOptions = <T>(
   agentName: options.agentName,
   context,
   input,
+  sessionId: options.sessionId,
   signal: options.controller.signal,
-  threadId: options.threadId,
   turnId: options.turn.id,
   turnInput: options.turn.input,
 })
@@ -112,8 +112,8 @@ const resolveInstructions = async <T>(
       agentName: options.agentName,
       context,
       input: options.turn.input,
+      sessionId: options.sessionId,
       signal: options.controller.signal,
-      threadId: options.threadId,
       turnId: options.turn.id,
     } satisfies ExtendInstructionsOptions<T>)
 
@@ -196,7 +196,7 @@ const runResponse = async <T>(
   input: QueuedInput<T>[],
   instructions: string,
 ): Promise<ResponseOptions<T>> => {
-  const snapshot = options.thread.snapshot()
+  const snapshot = options.session.snapshot()
   const responseInput = [...snapshot.items, ...input.map(item => item.input)]
   const context = mergeRunContext(options.getContext(), input)
   const responseOptions = createResponseOptions(options, context, responseInput)
@@ -222,11 +222,11 @@ const runResponse = async <T>(
 
   const resolvedInput = await result.input
 
-  await options.mutateThread(async () => {
-    if (!options.thread.commit(snapshot.version, resolvedInput))
+  await options.mutateSession(async () => {
+    if (!options.session.commit(snapshot.version, resolvedInput))
       return
 
-    await options.saveThread(options.thread.snapshot())
+    await options.saveSession(options.session.snapshot())
   })
 
   return responseOptions

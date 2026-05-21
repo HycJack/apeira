@@ -1,5 +1,5 @@
 import type { AgentContext } from '../types/context'
-import type { ThreadState, TurnDoneOptions } from '../types/plugin'
+import type { SessionState, TurnDoneOptions } from '../types/plugin'
 import type { ItemParam } from '../types/responses'
 import type { AgentCoreOptions, QueuedInput, TurnCompletion, TurnOptions } from './turn-runner'
 
@@ -7,7 +7,7 @@ import Queue from 'yocto-queue'
 
 import { linkedAbort } from './linked-abort'
 import { createPendingInput } from './pending-input'
-import { createThreadStore } from './thread-store'
+import { createSessionStore } from './session-store'
 import { runTurn } from './turn-runner'
 
 export interface AgentRuntime<T = unknown> {
@@ -21,9 +21,9 @@ export interface AgentRuntime<T = unknown> {
 
 export interface AgentRuntimeOptions<T> extends AgentCoreOptions<T> {
   input?: ItemParam[]
-  loadThread: () => Promise<ThreadState<T> | void> | ThreadState<T> | void
+  loadSession: () => Promise<SessionState<T> | void> | SessionState<T> | void
   onTurnDone: (options: TurnDoneOptions<T>) => Promise<void> | void
-  threadContext?: Partial<AgentContext<T>>
+  sessionContext?: Partial<AgentContext<T>>
 }
 
 interface ActiveTurn {
@@ -41,7 +41,7 @@ const createTurnAbortedBoundary = (): ItemParam => ({
 export const createAgentRuntime = <T>(options: AgentRuntimeOptions<T>): AgentRuntime<T> => {
   const pendingInput = createPendingInput<T>()
   const pendingTurns = new Queue<QueuedInput<T>>()
-  const thread = createThreadStore<T>(options.input, options.threadContext)
+  const session = createSessionStore<T>(options.input, options.sessionContext)
 
   let acceptingInputTurnId: string | undefined
   let activeTurn: ActiveTurn | undefined
@@ -61,10 +61,10 @@ export const createAgentRuntime = <T>(options: AgentRuntimeOptions<T>): AgentRun
 
     loadReady ??= (async () => {
       try {
-        const snapshot = await options.loadThread()
+        const snapshot = await options.loadSession()
 
         if (snapshot != null)
-          thread.hydrate(snapshot)
+          session.hydrate(snapshot)
 
         loaded = true
       }
@@ -77,7 +77,7 @@ export const createAgentRuntime = <T>(options: AgentRuntimeOptions<T>): AgentRun
     await loadReady
   }
 
-  const mutateThread = async (fn: () => Promise<void>) => {
+  const mutateSession = async (fn: () => Promise<void>) => {
     const next = pendingMutation.then(fn, fn)
     pendingMutation = next.catch(() => undefined)
 
@@ -89,13 +89,13 @@ export const createAgentRuntime = <T>(options: AgentRuntimeOptions<T>): AgentRun
     emit: options.emit,
     getContext: options.getContext,
     instructions: options.instructions,
-    mutateThread,
+    mutateSession,
     plugins: options.plugins,
     ready: options.ready,
     responseOptions: options.responseOptions,
-    saveThread: options.saveThread,
-    thread,
-    threadId: options.threadId,
+    saveSession: options.saveSession,
+    session,
+    sessionId: options.sessionId,
   }
 
   const clear: AgentRuntime<T>['clear'] = () => {
@@ -107,19 +107,19 @@ export const createAgentRuntime = <T>(options: AgentRuntimeOptions<T>): AgentRun
     for (const turn of pendingTurns.drain())
       options.emit(turn.id!, { reason: 'cleared', type: 'turn.aborted' })
 
-    void mutateThread(async () => {
+    void mutateSession(async () => {
       await ensureLoaded()
 
-      thread.reset()
-      await options.saveThread(thread.snapshot())
+      session.reset()
+      await options.saveSession(session.snapshot())
     }).catch(() => undefined)
   }
 
   const setContext: AgentRuntime<T>['setContext'] = (context) => {
-    void mutateThread(async () => {
+    void mutateSession(async () => {
       await ensureLoaded()
-      thread.setContext(context)
-      await options.saveThread(thread.snapshot())
+      session.setContext(context)
+      await options.saveSession(session.snapshot())
     }).catch(() => undefined)
   }
 
@@ -211,7 +211,7 @@ export const createAgentRuntime = <T>(options: AgentRuntimeOptions<T>): AgentRun
       try {
         await options.onTurnDone({
           ...completion.context,
-          snapshot: thread.snapshot(),
+          snapshot: session.snapshot(),
         })
       }
       catch (error) {
@@ -276,7 +276,7 @@ export const createAgentRuntime = <T>(options: AgentRuntimeOptions<T>): AgentRun
     const turn = activeTurn
 
     if (turn != null && turn.controller.signal.aborted !== true) {
-      thread.append([createTurnAbortedBoundary()])
+      session.append([createTurnAbortedBoundary()])
       turn.controller.abort(reason)
     }
   }

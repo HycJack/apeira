@@ -319,17 +319,17 @@ export class BrowserApeiraAgent extends AbstractAgent {
         return
       }
 
-      const thread = this.options.agent.thread({ id: this.threadId })
+      const thread = this.options.agent.session({ id: this.threadId })
       let activeRunId: string | undefined
 
       const unsubscribe = thread.subscribe(AG_UI_CHANNEL, (event: unknown) => {
         const aguiEvent = event as AGUIEvent & {
-          rawEvent?: { threadId?: string, turnId?: string }
+          rawEvent?: { sessionId?: string, turnId?: string }
           runId?: string
           threadId?: string
         }
 
-        const eventThreadId = aguiEvent.threadId ?? (aguiEvent.rawEvent as undefined | { threadId?: string })?.threadId
+        const eventThreadId = aguiEvent.threadId ?? (aguiEvent.rawEvent as undefined | { sessionId?: string })?.sessionId
         if (eventThreadId != null && eventThreadId !== this.threadId)
           return
 

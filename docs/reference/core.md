@@ -49,7 +49,7 @@ interface Agent<T> {
   send: (input: ItemParam, options?: AgentRunOptions<T>) => string
   setContext: (context: Partial<AgentContext<T>>) => void
   subscribe: (eventListener: AgentEventListener) => () => boolean
-  thread: (options?: ThreadOptions<T>) => AgentThread<T>
+  session: (options?: SessionOptions<T>) => AgentSession<T>
 }
 ```
 
@@ -108,31 +108,31 @@ agent.interrupt('user interrupted')
 The boundary is visible to the model on the next turn. The queue continues
 normally — any queued turns will run after the interrupted turn is aborted.
 
-### threads
+### sessions
 
-The root agent methods use a default thread. Create or address explicit threads
+The root agent methods use a default session. Create or address explicit sessions
 when one agent definition should serve multiple conversations:
 
 ```ts
-const thread = agent.thread({
+const session = agent.session({
   context: { userId: 'user_123' },
 })
 
-thread.run({
+session.run({
   content: 'Say hello.',
   role: 'user',
   type: 'message',
 })
 ```
 
-Each thread has its own queue, interrupt state, in-memory history, and context
-overlay. Different threads can run concurrently. Calling `thread()` with an
-existing `id` returns that thread and merges the provided context overlay. The
-`input` option only applies when creating a new thread.
+Each session has its own queue, interrupt state, in-memory history, and context
+overlay. Different sessions can run concurrently. Calling `session()` with an
+existing `id` returns that session and merges the provided context overlay. The
+`input` option only applies when creating a new session.
 
 ### setContext()
 
-Agent context starts as the complete default context. Agent, thread, and run
+Agent context starts as the complete default context. Agent, session, and run
 context updates are partial overlays.
 
 ```ts
@@ -141,7 +141,7 @@ agent.setContext({
   product: 'docs',
 })
 
-thread.setContext({
+session.setContext({
   locale: 'zh-CN',
 })
 ```
@@ -149,11 +149,11 @@ thread.setContext({
 Instructions receive the merged context:
 
 ```ts
-const effectiveContext = merge(agentContext, threadContext, runContext)
+const effectiveContext = merge(agentContext, sessionContext, runContext)
 ```
 
-`agent.setContext()` persists as the agent default. `thread.setContext()`
-persists for later turns on that thread. Run context does not persist.
+`agent.setContext()` persists as the agent default. `session.setContext()`
+persists for later turns on that session. Run context does not persist.
 
 ### subscribe()
 
@@ -204,7 +204,7 @@ type AgentEventListener = (event: AgentEvent) => unknown
 type ItemParam = Exclude<ResponsesOptions['input'], string>[number]
 
 type WithTurnId<T> = T & {
-  threadId: string
+  sessionId: string
   turnId: string
 }
 ```

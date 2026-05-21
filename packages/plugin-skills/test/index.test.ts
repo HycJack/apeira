@@ -96,7 +96,7 @@ describe('skills', () => {
       context: {},
       input: { content: 'hello', role: 'user', type: 'message' },
       signal: new AbortController().signal,
-      threadId: 'thread',
+      sessionId: 'session',
       turnId: 'turn',
     })
 
@@ -114,7 +114,7 @@ describe('skills', () => {
       context: {},
       input: { content: 'hello', role: 'user', type: 'message' },
       signal: new AbortController().signal,
-      threadId: 'thread',
+      sessionId: 'session',
       turnId: 'turn',
     })
 
@@ -128,7 +128,7 @@ describe('skills', () => {
       context: {},
       input: [{ content: 'hello', role: 'user', type: 'message' }],
       signal: new AbortController().signal,
-      threadId: 'thread',
+      sessionId: 'session',
       tools: [],
       turnId: 'turn',
       turnInput: { content: 'hello', role: 'user', type: 'message' },
@@ -158,7 +158,7 @@ describe('skills', () => {
       context: {},
       input: [{ content: 'hello', role: 'user', type: 'message' }],
       signal: new AbortController().signal,
-      threadId: 'thread',
+      sessionId: 'session',
       tools: [],
       turnId: 'turn',
       turnInput: { content: 'hello', role: 'user', type: 'message' },

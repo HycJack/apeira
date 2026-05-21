@@ -51,6 +51,6 @@ export interface TurnStartEvent {
 }
 
 export type WithId<T> = T & {
-  threadId: string
+  sessionId: string
   turnId: string
 }

@@ -9,7 +9,7 @@ export interface AgentRunOptions<T> {
   signal?: AbortSignal
 }
 
-export interface AgentThread<T> {
+export interface AgentSession<T> {
   abort: (reason?: unknown) => void
   clear: () => void
   emit: (channel: string, event: unknown) => void

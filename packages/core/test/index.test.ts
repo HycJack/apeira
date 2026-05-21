@@ -9,7 +9,7 @@ import { describe, expect, it } from 'vitest'
 
 import { createAgent } from '../src/index'
 import { createPendingInput } from '../src/utils/pending-input'
-import { createThreadStore } from '../src/utils/thread-store'
+import { createSessionStore } from '../src/utils/session-store'
 
 const createMemoryStorage = (initial: Record<string, string> = {}) => {
   const values = new Map(Object.entries(initial))
@@ -222,9 +222,9 @@ describe('createPendingInput', () => {
   })
 })
 
-describe('createThreadStore', () => {
+describe('createSessionStore', () => {
   it('commits by version and isolates stored items from caller mutations', () => {
-    const store = createThreadStore([message('initial')])
+    const store = createSessionStore([message('initial')])
     const snapshot = store.snapshot()
     const nextItems = [message('next')]
 
@@ -241,7 +241,7 @@ describe('createThreadStore', () => {
   })
 
   it('appends items and invalidates stale snapshots', () => {
-    const store = createThreadStore([message('initial')])
+    const store = createSessionStore([message('initial')])
     const snapshot = store.snapshot()
 
     store.append([message('appended')])
@@ -255,8 +255,8 @@ describe('createThreadStore', () => {
     expect(store.snapshot().items).toEqual([message('initial'), message('appended')])
   })
 
-  it('stores thread context alongside items', () => {
-    const store = createThreadStore<{ locale?: string }>([message('initial')], { locale: 'en-US' })
+  it('stores session context alongside items', () => {
+    const store = createSessionStore<{ locale?: string }>([message('initial')], { locale: 'en-US' })
 
     store.setContext({ locale: 'ja-JP' })
 
@@ -270,7 +270,7 @@ describe('createThreadStore', () => {
 })
 
 describe('createAgent', () => {
-  it('loads persisted thread state before clear saves reset state', async () => {
+  it('loads persisted session state before clear saves reset state', async () => {
     const storage = createMemoryStorage({
       '["clear-storage-test","default"]': JSON.stringify({
         context: { locale: 'en-US' },
@@ -303,7 +303,7 @@ describe('createAgent', () => {
     })
   })
 
-  it('retries loading thread state after storage getItem fails', async () => {
+  it('retries loading session state after storage getItem fails', async () => {
     const responsesFetch = createResponsesFetch()
     const events: AgentEvent[] = []
     let loadAttempts = 0
@@ -394,7 +394,7 @@ describe('createAgent', () => {
     ])
   })
 
-  it('aborts a dequeued turn while loading thread state', async () => {
+  it('aborts a dequeued turn while loading session state', async () => {
     const events: AgentEvent[] = []
     let resolveLoad: (() => void) | undefined
     let loadStarted = false
@@ -518,7 +518,7 @@ describe('createAgent', () => {
     ])
   })
 
-  it('runs plugins through thread, turn, response, and storage hooks', async () => {
+  it('runs plugins through session, turn, response, and storage hooks', async () => {
     const calls: string[] = []
     const storage = createMemoryStorage({
       '["plugin-test","default"]': JSON.stringify({
@@ -559,8 +559,8 @@ describe('createAgent', () => {
         onStepFinish: () => {
           calls.push('onStepFinish')
         },
-        onThreadInit: () => {
-          calls.push('onThreadInit')
+        onSessionInit: () => {
+          calls.push('onSessionInit')
         },
         onTurnDone: () => {
           calls.push('onTurnDone')
@@ -577,12 +577,12 @@ describe('createAgent', () => {
         },
         storage: {
           getItem: (key) => {
-            calls.push('loadThread')
+            calls.push('loadSession')
             return storage.getItem(key)
           },
           setItem: (key, value) => {
             const state = JSON.parse(value) as { items: unknown[] }
-            calls.push(`saveThread:${state.items.length}`)
+            calls.push(`saveSession:${state.items.length}`)
             storage.setItem(key, value)
           },
         },
@@ -606,13 +606,13 @@ describe('createAgent', () => {
     }])
     expect(calls).toEqual(expect.arrayContaining([
       'setup',
-      'onThreadInit',
-      'loadThread',
+      'onSessionInit',
+      'loadSession',
       'onTurnStart',
       'resolveTools:0',
       'onStepFinish',
       'onFinish',
-      'saveThread:3',
+      'saveSession:3',
       'onTurnDone',
       'event:turn.queued',
       'event:turn.start',
@@ -644,7 +644,7 @@ describe('createAgent', () => {
           setItem: (key, value) => {
             const state = JSON.parse(value) as { context: { requestId?: string }, items: ItemParam[] }
             records.push({
-              hook: 'saveThread',
+              hook: 'saveSession',
               lastInput: state.items.at(-1),
               requestId: state.context.requestId,
             })
@@ -689,13 +689,13 @@ describe('createAgent', () => {
       requestId: 'follow',
     })
     expect(records).toContainEqual({
-      hook: 'saveThread',
+      hook: 'saveSession',
       lastInput: assistantMessage('response 2'),
       requestId: undefined,
     })
   })
 
-  it('merges agent, thread, and run context for instructions', async () => {
+  it('merges agent, session, and run context for instructions', async () => {
     interface Context {
       locale: string
       product: string
@@ -718,14 +718,14 @@ describe('createAgent', () => {
         model: 'test-model',
       },
     })
-    const thread = agent.thread({
+    const session = agent.session({
       context: {
         locale: 'zh-CN',
         userId: 'u_123',
       },
     })
 
-    await readEventStream(thread.run(message('Use merged context.'), {
+    await readEventStream(session.run(message('Use merged context.'), {
       context: {
         requestId: 'req_123',
       },
@@ -739,7 +739,7 @@ describe('createAgent', () => {
     })
   })
 
-  it('keeps agent and thread setContext persistent and run context transient', async () => {
+  it('keeps agent and session setContext persistent and run context transient', async () => {
     interface Context {
       locale: string
       product: string
@@ -761,15 +761,15 @@ describe('createAgent', () => {
         model: 'test-model',
       },
     })
-    const thread = agent.thread()
+    const session = agent.session()
 
     agent.setContext({ product: 'help' })
-    thread.setContext({ locale: 'ja-JP' })
+    session.setContext({ locale: 'ja-JP' })
 
-    await readEventStream(thread.run(message('Run with request context.'), {
+    await readEventStream(session.run(message('Run with request context.'), {
       context: { requestId: 'req_123' },
     }))
-    await readEventStream(thread.run(message('Run without request context.')))
+    await readEventStream(session.run(message('Run without request context.')))
 
     expect(JSON.parse(String(responsesFetch.instructions[0]))).toMatchObject({
       locale: 'ja-JP',
@@ -786,7 +786,7 @@ describe('createAgent', () => {
     })
   })
 
-  it('persists thread context and treats thread({ context }) as a default', async () => {
+  it('persists session context and treats session({ context }) as a default', async () => {
     interface Context {
       locale?: string
       product?: string
@@ -797,7 +797,7 @@ describe('createAgent', () => {
     const agent = createAgent<Context>({
       context: {},
       instructions: context => JSON.stringify(context),
-      name: 'thread-storage-context-test',
+      name: 'session-storage-context-test',
       options: {
         apiKey: 'test',
         baseURL: 'https://example.test/v1/',
@@ -810,22 +810,22 @@ describe('createAgent', () => {
       }],
     })
 
-    const thread = agent.thread({
+    const session = agent.session({
       context: { locale: 'en-US' },
-      id: 'persisted-thread',
+      id: 'persisted-session',
     })
 
-    thread.setContext({ locale: 'ja-JP' })
+    session.setContext({ locale: 'ja-JP' })
     await wait()
 
-    expect(JSON.parse(String(storage.values.get('["thread-storage-context-test","persisted-thread"]')))).toMatchObject({
+    expect(JSON.parse(String(storage.values.get('["session-storage-context-test","persisted-session"]')))).toMatchObject({
       context: { locale: 'ja-JP' },
     })
 
     const restoredAgent = createAgent<Context>({
       context: {},
       instructions: context => JSON.stringify(context),
-      name: 'thread-storage-context-test',
+      name: 'session-storage-context-test',
       options: {
         apiKey: 'test',
         baseURL: 'https://example.test/v1/',
@@ -837,9 +837,9 @@ describe('createAgent', () => {
         storage,
       }],
     })
-    const restored = restoredAgent.thread({
+    const restored = restoredAgent.session({
       context: { locale: 'fr-FR', product: 'docs' },
-      id: 'persisted-thread',
+      id: 'persisted-session',
     })
 
     await readEventStream(restored.run(message('Use persisted context.')))
@@ -850,7 +850,7 @@ describe('createAgent', () => {
     })
   })
 
-  it('does not let thread context updates invalidate an in-flight response commit', async () => {
+  it('does not let session context updates invalidate an in-flight response commit', async () => {
     const storage = createMemoryStorage()
     const responsesFetch = createResponsesFetch(2)
     const agent = createAgent<{ locale?: string }>({
@@ -869,21 +869,21 @@ describe('createAgent', () => {
       }],
     })
 
-    const thread = agent.thread({ id: 'race-thread' })
+    const session = agent.session({ id: 'race-session' })
     const events: AgentEvent[] = []
     let updated = false
 
-    const unsubscribe = thread.on((event) => {
+    const unsubscribe = session.on((event) => {
       events.push(event)
 
       if (event.type === 'step.start' && !updated) {
         updated = true
-        thread.setContext({ locale: 'ja-JP' })
+        session.setContext({ locale: 'ja-JP' })
       }
     })
 
     try {
-      await readEventStream(thread.run(message('Keep both context and response.')))
+      await readEventStream(session.run(message('Keep both context and response.')))
       await wait()
     }
     finally {
@@ -891,7 +891,7 @@ describe('createAgent', () => {
     }
 
     expect(events.at(-1)?.type).toBe('turn.done')
-    expect(JSON.parse(String(storage.values.get('["context-race-test","race-thread"]')))).toEqual({
+    expect(JSON.parse(String(storage.values.get('["context-race-test","race-session"]')))).toEqual({
       context: { locale: 'ja-JP' },
       items: [
         message('Keep both context and response.'),
@@ -901,7 +901,7 @@ describe('createAgent', () => {
     })
   })
 
-  it('merges context into an existing thread by id without replacing history', async () => {
+  it('merges context into an existing session by id without replacing history', async () => {
     interface Context {
       locale: string
       product: string
@@ -924,18 +924,18 @@ describe('createAgent', () => {
       },
     })
 
-    const thread = agent.thread({
+    const session = agent.session({
       context: { userId: 'u_123' },
-      id: 'existing-thread',
+      id: 'existing-session',
     })
-    const sameThread = agent.thread({
+    const sameSession = agent.session({
       context: { locale: 'zh-CN' },
-      id: 'existing-thread',
+      id: 'existing-session',
     })
 
-    expect(sameThread).toBe(thread)
+    expect(sameSession).toBe(session)
 
-    await readEventStream(thread.run(message('Use updated thread context.')))
+    await readEventStream(session.run(message('Use updated session context.')))
 
     expect(JSON.parse(String(responsesFetch.instructions[0]))).toMatchObject({
       locale: 'zh-CN',
@@ -944,18 +944,18 @@ describe('createAgent', () => {
     })
   })
 
-  it('throws when initial input is provided for an existing thread', () => {
+  it('throws when initial input is provided for an existing session', () => {
     const { agent } = createTestAgent()
 
-    agent.thread({ id: 'existing-thread' })
+    agent.session({ id: 'existing-session' })
 
-    expect(() => agent.thread({
-      id: 'existing-thread',
+    expect(() => agent.session({
+      id: 'existing-session',
       input: [message('initial input')],
-    })).toThrow('Thread already exists: existing-thread')
+    })).toThrow('Session already exists: existing-session')
   })
 
-  it('runs different threads with isolated queues and contexts', async () => {
+  it('runs different sessions with isolated queues and contexts', async () => {
     interface Context {
       locale: string
       product: string
@@ -970,7 +970,7 @@ describe('createAgent', () => {
         product: 'docs',
       },
       instructions: context => JSON.stringify(context),
-      name: 'multi-thread-test',
+      name: 'multi-session-test',
       options: {
         apiKey: 'test',
         baseURL: 'https://example.test/v1/',
@@ -979,28 +979,28 @@ describe('createAgent', () => {
       },
     })
     const unsubscribe = agent.on(event => events.push(event))
-    const first = agent.thread({
+    const first = agent.session({
       context: { userId: 'first' },
-      id: 'first-thread',
+      id: 'first-session',
     })
-    const second = agent.thread({
+    const second = agent.session({
       context: { userId: 'second' },
-      id: 'second-thread',
+      id: 'second-session',
     })
 
     try {
       await Promise.all([
-        readEventStream(first.run(message('First thread.'))),
-        readEventStream(second.run(message('Second thread.'))),
+        readEventStream(first.run(message('First session.'))),
+        readEventStream(second.run(message('Second session.'))),
       ])
     }
     finally {
       unsubscribe()
     }
 
-    expect(new Set(events.map(event => event.threadId))).toEqual(new Set([
-      'first-thread',
-      'second-thread',
+    expect(new Set(events.map(event => event.sessionId))).toEqual(new Set([
+      'first-session',
+      'second-session',
     ]))
     const userIds = responsesFetch.instructions.map((value) => {
       const context = JSON.parse(String(value)) as Context

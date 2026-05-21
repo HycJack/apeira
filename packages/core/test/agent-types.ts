@@ -45,10 +45,10 @@ export const agentContextTypeChecks = () => {
   typedAgent.setContext({ requestId: 'req_123' })
   typedAgent.run(input, { context: { requestId: 'req_123' } })
 
-  const typedThread = typedAgent.thread({
+  const typedSession = typedAgent.session({
     context: { requestId: 'req_456' },
   })
 
-  typedThread.setContext({ requestId: 'req_789' })
-  typedThread.run(input, { context: { requestId: 'req_000' } })
+  typedSession.setContext({ requestId: 'req_789' })
+  typedSession.run(input, { context: { requestId: 'req_000' } })
 }

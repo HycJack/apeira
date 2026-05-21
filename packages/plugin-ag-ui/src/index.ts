@@ -278,7 +278,7 @@ export const agui = (options: AGUIPluginOptions = {}): AgentPlugin => {
             rawEvent: event,
             result: { reason: event.reason, status: 'aborted' },
             runId: event.turnId,
-            threadId: event.threadId,
+            threadId: event.sessionId,
             timestamp: Date.now(),
             type: EventType.RUN_FINISHED,
           })
@@ -290,7 +290,7 @@ export const agui = (options: AGUIPluginOptions = {}): AgentPlugin => {
           emit({
             rawEvent: event,
             runId: event.turnId,
-            threadId: event.threadId,
+            threadId: event.sessionId,
             timestamp: Date.now(),
             type: EventType.RUN_FINISHED,
           })
@@ -315,7 +315,7 @@ export const agui = (options: AGUIPluginOptions = {}): AgentPlugin => {
           emit({
             rawEvent: event,
             runId: event.turnId,
-            threadId: event.threadId,
+            threadId: event.sessionId,
             timestamp: Date.now(),
             type: EventType.RUN_STARTED,
           })

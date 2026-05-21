@@ -1,23 +1,23 @@
 import type { AgentContext } from '../types/context'
-import type { ThreadState } from '../types/plugin'
+import type { SessionState } from '../types/plugin'
 import type { ItemParam } from '../types/responses'
 
-export interface ThreadStore<T = unknown> {
+export interface SessionStore<T = unknown> {
   append: (items: ItemParam[]) => void
   commit: (version: number, items: ItemParam[]) => boolean
   getContext: () => Partial<AgentContext<T>>
-  hydrate: (state: ThreadState<T>) => void
+  hydrate: (state: SessionState<T>) => void
   reset: () => void
   setContext: (context: Partial<AgentContext<T>>) => void
-  snapshot: () => ThreadState<T>
+  snapshot: () => SessionState<T>
 }
 
-export const createThreadStore = <T = unknown>(
+export const createSessionStore = <T = unknown>(
   initialItems: ItemParam[] = [],
   initialContext: Partial<AgentContext<T>> = {},
-): ThreadStore<T> => {
+): SessionStore<T> => {
   const initial = [...initialItems]
-  const initialThreadContext = { ...initialContext }
+  const initialSessionContext = { ...initialContext }
   let items = [...initialItems]
   let context = { ...initialContext }
   let version = 0
@@ -46,7 +46,7 @@ export const createThreadStore = <T = unknown>(
     },
     reset: () => {
       items = [...initial]
-      context = { ...initialThreadContext }
+      context = { ...initialSessionContext }
       version += 1
     },
     setContext: (nextContext) => {

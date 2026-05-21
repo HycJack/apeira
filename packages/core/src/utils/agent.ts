@@ -3,21 +3,21 @@ import type { ResponsesOptions } from '@xsai-ext/responses'
 import type { AgentContext, Instructions } from '../types/context'
 import type { AgentEvent } from '../types/event'
 import type { AgentEventListener } from '../types/event-listener'
-import type { AgentPlugin, AgentPluginApi, AgentPluginOption, PluginChannelListener, ThreadInitOptions, ThreadState } from '../types/plugin'
+import type { AgentPlugin, AgentPluginApi, AgentPluginOption, PluginChannelListener, SessionInitOptions, SessionState } from '../types/plugin'
 import type { ItemParam } from '../types/responses'
-import type { AgentThread } from './agent-thread'
+import type { AgentSession } from './agent-session'
 
 import { merge } from '@moeru/std/merge'
 
 import { createAgentRuntime } from './agent-runtime'
 
-export interface Agent<T> extends Omit<AgentThread<T>, 'id'> {
-  thread: (options?: ThreadOptions<T>) => AgentThread<T>
+export interface Agent<T> extends Omit<AgentSession<T>, 'id'> {
+  session: (options?: SessionOptions<T>) => AgentSession<T>
 }
 
 export type CreateAgentOptions<T = unknown> = CreateAgentBaseOptions<T> & CreateAgentContextOptions<T>
 
-export interface ThreadOptions<T> {
+export interface SessionOptions<T> {
   context?: Partial<AgentContext<T>>
   id?: string
   input?: ItemParam[]
@@ -39,17 +39,17 @@ type RequiredKeys<T> = {
   [K in keyof T]-?: Record<never, never> extends Pick<T, K> ? never : K
 }[keyof T]
 
-const DEFAULT_THREAD_ID = 'default'
+const DEFAULT_SESSION_ID = 'default'
 
-const getThreadStorageKey = (agentName: string, threadId: string) =>
-  JSON.stringify([agentName, threadId])
+const getSessionStorageKey = (agentName: string, sessionId: string) =>
+  JSON.stringify([agentName, sessionId])
 
-const parseThreadState = <T>(value: null | string | undefined): ThreadState<T> | undefined => {
+const parseSessionState = <T>(value: null | string | undefined): SessionState<T> | undefined => {
   if (value == null)
     return undefined
 
   try {
-    return JSON.parse(value) as ThreadState<T>
+    return JSON.parse(value) as SessionState<T>
   }
   catch {
     return undefined
@@ -78,7 +78,7 @@ export const createAgent = <T = unknown>(options: CreateAgentOptions<T>): Agent<
   const plugins = sortPlugins(options.plugins ?? [])
   const channelListeners = new Map<string, Set<PluginChannelListener<T>>>()
   const eventListeners = new Set<AgentEventListener>()
-  const threads = new Map<string, AgentThread<T>>()
+  const sessions = new Map<string, AgentSession<T>>()
 
   let context: AgentContext<T> = options.context ?? {} as AgentContext<T>
 
@@ -107,11 +107,11 @@ export const createAgent = <T = unknown>(options: CreateAgentOptions<T>): Agent<
   void ready.catch(() => undefined)
 
   const emit = (
-    threadId: string,
+    sessionId: string,
     turnId: string,
-    event: Omit<AgentEvent, 'threadId' | 'turnId'>,
+    event: Omit<AgentEvent, 'sessionId' | 'turnId'>,
   ) => {
-    const fullEvent = { ...event, threadId, turnId } as AgentEvent
+    const fullEvent = { ...event, sessionId, turnId } as AgentEvent
 
     for (const fn of [...eventListeners]) {
       try {
@@ -142,61 +142,61 @@ export const createAgent = <T = unknown>(options: CreateAgentOptions<T>): Agent<
   const subscribe: Agent<T>['subscribe'] = (channel, listener) =>
     pluginApi.subscribe(channel, listener)
 
-  const createAgentThread = (id: string, threadOptions: ThreadOptions<T> = {}): AgentThread<T> => {
-    const initialThreadContext = threadOptions.context ?? {}
+  const createAgentSession = (id: string, sessionOptions: SessionOptions<T> = {}): AgentSession<T> => {
+    const initialSessionContext = sessionOptions.context ?? {}
 
-    let currentThreadContext = initialThreadContext
+    let currentSessionContext = initialSessionContext
 
     const resolveContext = (runContext?: Partial<AgentContext<T>>): AgentContext<T> =>
-      merge(merge(context, currentThreadContext), runContext)
+      merge(merge(context, currentSessionContext), runContext)
 
-    const createThreadOptions = (): ThreadInitOptions<T> => ({
+    const createSessionOptions = (): SessionInitOptions<T> => ({
       agentName: options.name,
       context: resolveContext(),
-      threadId: id,
+      sessionId: id,
     })
 
-    let threadReady: Promise<void> | undefined
+    let sessionReady: Promise<void> | undefined
 
-    const ensureThreadReady = async () => {
-      threadReady ??= ready.then(async () => {
+    const ensureSessionReady = async () => {
+      sessionReady ??= ready.then(async () => {
         for (const plugin of plugins)
-          await plugin.onThreadInit?.(createThreadOptions())
+          await plugin.onSessionInit?.(createSessionOptions())
       })
 
-      return threadReady
+      return sessionReady
     }
 
-    const loadThread = async (): Promise<ThreadState<T> | undefined> => {
-      await ensureThreadReady()
+    const loadSession = async (): Promise<SessionState<T> | undefined> => {
+      await ensureSessionReady()
 
       for (const plugin of plugins) {
         if (plugin.storage == null)
           continue
 
-        const value = await plugin.storage.getItem(getThreadStorageKey(options.name, id))
-        const state = parseThreadState<T>(value)
+        const value = await plugin.storage.getItem(getSessionStorageKey(options.name, id))
+        const state = parseSessionState<T>(value)
 
         if (state != null) {
           const mergedState = {
             ...state,
-            context: merge(initialThreadContext, state.context),
-          } satisfies ThreadState<T>
+            context: merge(initialSessionContext, state.context),
+          } satisfies SessionState<T>
 
-          currentThreadContext = mergedState.context
+          currentSessionContext = mergedState.context
           return mergedState
         }
       }
     }
 
-    const saveThread = async (state: ThreadState<T>) => {
-      currentThreadContext = state.context
+    const saveSession = async (state: SessionState<T>) => {
+      currentSessionContext = state.context
 
       for (const plugin of plugins) {
         if (plugin.storage == null)
           continue
 
-        await plugin.storage.setItem(getThreadStorageKey(options.name, id), JSON.stringify(state))
+        await plugin.storage.setItem(getSessionStorageKey(options.name, id), JSON.stringify(state))
       }
     }
 
@@ -204,32 +204,32 @@ export const createAgent = <T = unknown>(options: CreateAgentOptions<T>): Agent<
       agentName: options.name,
       emit: (turnId, event) => emit(id, turnId, event),
       getContext: resolveContext,
-      input: threadOptions.input,
+      input: sessionOptions.input,
       instructions: options.instructions,
-      loadThread,
+      loadSession,
       onTurnDone: async (turnContext) => {
         for (const plugin of plugins)
           await plugin.onTurnDone?.(turnContext)
       },
       plugins,
       ready: async () => {
-        await ensureThreadReady()
+        await ensureSessionReady()
       },
       responseOptions: options.options,
-      saveThread,
-      threadContext: initialThreadContext,
-      threadId: id,
+      saveSession,
+      sessionContext: initialSessionContext,
+      sessionId: id,
     })
 
-    const onThread: AgentThread<T>['on'] = eventListener =>
+    const onSession: AgentSession<T>['on'] = eventListener =>
       on((event) => {
-        if (event.threadId !== id)
+        if (event.sessionId !== id)
           return
 
         eventListener(event)
       })
 
-    const run: AgentThread<T>['run'] = (input, runOptions = {}) => {
+    const run: AgentSession<T>['run'] = (input, runOptions = {}) => {
       const turnId = crypto.randomUUID()
       let unsubscribe: (() => boolean) | undefined
 
@@ -238,7 +238,7 @@ export const createAgent = <T = unknown>(options: CreateAgentOptions<T>): Agent<
           unsubscribe?.()
         },
         start: (controller) => {
-          unsubscribe = onThread((event) => {
+          unsubscribe = onSession((event) => {
             if (event.turnId !== turnId)
               return
 
@@ -264,18 +264,18 @@ export const createAgent = <T = unknown>(options: CreateAgentOptions<T>): Agent<
       })
     }
 
-    const send: AgentThread<T>['send'] = (input, runOptions = {}) =>
+    const send: AgentSession<T>['send'] = (input, runOptions = {}) =>
       runtime.send({
         context: runOptions.context,
         input,
         signal: runOptions.signal,
       })
 
-    const interrupt: AgentThread<T>['interrupt'] = reason =>
+    const interrupt: AgentSession<T>['interrupt'] = reason =>
       runtime.interrupt(reason)
 
-    const setThreadContext: AgentThread<T>['setContext'] = (nextContext) => {
-      currentThreadContext = merge(currentThreadContext, nextContext)
+    const setSessionContext: AgentSession<T>['setContext'] = (nextContext) => {
+      currentSessionContext = merge(currentSessionContext, nextContext)
       runtime.setContext(nextContext)
     }
 
@@ -286,50 +286,50 @@ export const createAgent = <T = unknown>(options: CreateAgentOptions<T>): Agent<
       getContext: () => resolveContext(),
       id,
       interrupt,
-      on: onThread,
+      on: onSession,
       run,
       send,
-      setContext: setThreadContext,
+      setContext: setSessionContext,
       subscribe,
     }
   }
 
-  const thread: Agent<T>['thread'] = (threadOptions = {}) => {
-    const id = threadOptions.id ?? crypto.randomUUID()
-    const existing = threads.get(id)
+  const session: Agent<T>['session'] = (sessionOptions = {}) => {
+    const id = sessionOptions.id ?? crypto.randomUUID()
+    const existing = sessions.get(id)
     if (existing != null) {
-      if (threadOptions.input != null)
-        throw new Error(`Thread already exists: ${id}`)
+      if (sessionOptions.input != null)
+        throw new Error(`Session already exists: ${id}`)
 
-      if (threadOptions.context != null)
-        existing.setContext(threadOptions.context)
+      if (sessionOptions.context != null)
+        existing.setContext(sessionOptions.context)
 
       return existing
     }
 
-    const agentThread = createAgentThread(id, threadOptions)
+    const agentSession = createAgentSession(id, sessionOptions)
 
-    threads.set(id, agentThread)
+    sessions.set(id, agentSession)
 
-    return agentThread
+    return agentSession
   }
 
-  const defaultThread = thread({
-    id: DEFAULT_THREAD_ID,
+  const defaultSession = session({
+    id: DEFAULT_SESSION_ID,
     input: options.input,
   })
 
   return {
-    abort: reason => defaultThread.abort(reason),
-    clear: () => defaultThread.clear(),
+    abort: reason => defaultSession.abort(reason),
+    clear: () => defaultSession.clear(),
     emit: emitChannel,
     getContext,
-    interrupt: reason => defaultThread.interrupt(reason),
+    interrupt: reason => defaultSession.interrupt(reason),
     on,
-    run: (input, runOptions) => defaultThread.run(input, runOptions),
-    send: (input, runOptions) => defaultThread.send(input, runOptions),
+    run: (input, runOptions) => defaultSession.run(input, runOptions),
+    send: (input, runOptions) => defaultSession.send(input, runOptions),
     setContext,
     subscribe,
-    thread,
+    session,
   }
 }

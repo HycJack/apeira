@@ -59,13 +59,13 @@ normally — any queued turns run after the interrupted turn is aborted.
 
 ### Agent Lifecycle
 
-Each thread keeps an in-memory `history` of completed turns. When a turn starts,
-the new input is appended to the thread history and passed to
+Each session keeps an in-memory `history` of completed turns. When a turn starts,
+the new input is appended to the session history and passed to
 `@xsai-ext/responses`. When the turn completes successfully, the returned input
-state becomes the next thread history.
+state becomes the next session history.
 
-Top-level turns submitted to the same thread with `run()` run one at a time. If
-`send()` is called while a turn is active or scheduled on that thread, the new
+Top-level turns submitted to the same session with `run()` run one at a time. If
+`send()` is called while a turn is active or scheduled on that session, the new
 input is drained into that turn after the current model response completes.
 
 The agent emits Apeira lifecycle events:
@@ -79,28 +79,28 @@ The agent emits Apeira lifecycle events:
 - `turn.aborted`
 
 It also forwards streaming events from `@xsai-ext/responses`, with `turnId`
-and `threadId` attached to every event.
+and `sessionId` attached to every event.
 
-### Threads And Context
+### Sessions And Context
 
-The root agent methods use a default thread. Create explicit threads when one
+The root agent methods use a default session. Create explicit sessions when one
 agent definition should serve multiple conversations:
 
 ```ts
-const thread = agent.thread({
+const session = agent.session({
   context: {
     userId: 'user_123',
   },
 })
 
-thread.run({
+session.run({
   content: 'Say hello.',
   role: 'user',
   type: 'message',
 })
 ```
 
-Agent context starts as the complete default context. Agent, thread, and run
+Agent context starts as the complete default context. Agent, session, and run
 context updates are partial overlays. Instructions receive the merged context:
 
 ```ts
@@ -114,20 +114,20 @@ const agent = createAgent({
   options,
 })
 
-thread.setContext({ locale: 'zh-CN' })
+session.setContext({ locale: 'zh-CN' })
 
-thread.run(input, {
+session.run(input, {
   context: { requestId: 'req_123' },
 })
 ```
 
-`agent.setContext()` persists as the agent default. `thread.setContext()`
-persists for later turns on that thread. Run context only applies to that
+`agent.setContext()` persists as the agent default. `session.setContext()`
+persists for later turns on that session. Run context only applies to that
 submitted input.
 
-Calling `agent.thread()` with an existing `id` returns that thread and merges
+Calling `agent.session()` with an existing `id` returns that session and merges
 the provided context overlay. The `input` option only applies when creating a
-new thread.
+new session.
 
 ### Abort And Clear
 

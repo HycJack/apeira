@@ -6,7 +6,7 @@ import type { AgentEvent } from './event'
 import type { MaybePromise } from './maybe-promise'
 import type { ItemParam } from './responses'
 
-export interface ThreadState<T = unknown> {
+export interface SessionState<T = unknown> {
   context: Partial<AgentContext<T>>
   items: ItemParam[]
   version: number
@@ -19,7 +19,7 @@ export interface AgentPlugin<T = unknown> {
   onEvent?: (event: AgentEvent) => MaybePromise<void>
   onFinish?: ResponsesOptions['onFinish']
   onStepFinish?: ResponsesOptions['onStepFinish']
-  onThreadInit?: (options: ThreadInitOptions<T>) => MaybePromise<void>
+  onSessionInit?: (options: SessionInitOptions<T>) => MaybePromise<void>
   onTurnDone?: (options: TurnDoneOptions<T>) => MaybePromise<void>
   onTurnStart?: (options: TurnStartOptions<T>) => MaybePromise<void>
   prepareStep?: ResponsesOptions['prepareStep']
@@ -45,7 +45,7 @@ export interface PluginHookBase<T = unknown> {
   agentName: string
   context: AgentContext<T>
   signal: AbortSignal
-  threadId: string
+  sessionId: string
   turnId: string
 }
 
@@ -78,14 +78,14 @@ export interface StorageLike {
   setItem: (key: string, value: string) => MaybePromise<void>
 }
 
-export interface ThreadInitOptions<T = unknown> {
+export interface SessionInitOptions<T = unknown> {
   agentName: string
   context: AgentContext<T>
-  threadId: string
+  sessionId: string
 }
 
 export interface TurnDoneOptions<T = unknown> extends ResponseOptions<T> {
-  snapshot: ThreadState<T>
+  snapshot: SessionState<T>
 }
 
 export interface TurnStartOptions<T = unknown> extends PluginHookBase<T> {

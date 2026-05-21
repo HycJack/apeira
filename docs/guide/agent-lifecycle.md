@@ -1,12 +1,12 @@
 # Agent Lifecycle
 
-An Apeira agent owns one or more threads. Each thread keeps an in-memory history
+An Apeira agent owns one or more sessions. Each session keeps an in-memory history
 and runs submitted turns one at a time.
 
 ## History
 
-The default thread starts with the optional `input` passed to `createAgent()`.
-Explicit threads can also receive their own initial `input`.
+The default session starts with the optional `input` passed to `createAgent()`.
+Explicit sessions can also receive their own initial `input`.
 
 When a turn starts, Apeira appends the new input item to the current history and
 passes that full input state to `@xsai-ext/responses`.
@@ -35,9 +35,9 @@ const agent = createAgent({
 
 ## Queueing
 
-Top-level turns submitted to the same thread with `run()` are serialized. If
-`run()` is called while another turn is running on that thread, the new turn
-waits until the running turn finishes. Different threads can run concurrently.
+Top-level turns submitted to the same session with `run()` are serialized. If
+`run()` is called while another turn is running on that session, the new turn
+waits until the running turn finishes. Different sessions can run concurrently.
 
 ```ts
 const first = agent.run({
@@ -90,7 +90,7 @@ Queued turns are removed before they start.
 
 ## Context
 
-Agent context starts as the complete default context. Agent, thread, and run
+Agent context starts as the complete default context. Agent, session, and run
 context updates are partial overlays. Instructions receive the merged context.
 
 ```ts
@@ -111,7 +111,7 @@ const agent = createAgent({
 const context = agent.getContext()
 ```
 
-Use `setContext()` to update agent or thread context:
+Use `setContext()` to update agent or session context:
 
 ```ts
 agent.setContext({
@@ -119,13 +119,13 @@ agent.setContext({
   userId: 'user_123',
 })
 
-const thread = agent.thread({
+const session = agent.session({
   context: {
     userId: 'user_456',
   },
 })
 
-thread.setContext({
+session.setContext({
   locale: 'zh-CN',
 })
 ```
@@ -133,7 +133,7 @@ thread.setContext({
 Run context only applies to the submitted input:
 
 ```ts
-thread.run(input, {
+session.run(input, {
   context: {
     requestId: 'req_123',
   },

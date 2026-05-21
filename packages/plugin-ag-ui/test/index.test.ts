@@ -28,13 +28,13 @@ describe('agui', () => {
 
     await plugin.setup?.(api)
 
-    await plugin.onEvent?.({ threadId: 'thread-1', turnId: 'turn-1', type: 'turn.start' })
-    await plugin.onEvent?.({ threadId: 'thread-1', turnId: 'turn-1', type: 'step.start' })
-    await plugin.onEvent?.({ outputIndex: 0, threadId: 'thread-1', turnId: 'turn-1', type: 'text.start' })
-    await plugin.onEvent?.({ delta: 'Hello', threadId: 'thread-1', turnId: 'turn-1', type: 'text.delta' })
-    await plugin.onEvent?.({ text: 'Hello', threadId: 'thread-1', turnId: 'turn-1', type: 'text.done' })
-    await plugin.onEvent?.({ output: [], threadId: 'thread-1', turnId: 'turn-1', type: 'step.done' })
-    await plugin.onEvent?.({ threadId: 'thread-1', turnId: 'turn-1', type: 'turn.done' })
+    await plugin.onEvent?.({ sessionId: 'session-1', turnId: 'turn-1', type: 'turn.start' })
+    await plugin.onEvent?.({ sessionId: 'session-1', turnId: 'turn-1', type: 'step.start' })
+    await plugin.onEvent?.({ outputIndex: 0, sessionId: 'session-1', turnId: 'turn-1', type: 'text.start' })
+    await plugin.onEvent?.({ delta: 'Hello', sessionId: 'session-1', turnId: 'turn-1', type: 'text.delta' })
+    await plugin.onEvent?.({ text: 'Hello', sessionId: 'session-1', turnId: 'turn-1', type: 'text.done' })
+    await plugin.onEvent?.({ output: [], sessionId: 'session-1', turnId: 'turn-1', type: 'step.done' })
+    await plugin.onEvent?.({ sessionId: 'session-1', turnId: 'turn-1', type: 'turn.done' })
 
     expect(emitted.map(entry => entry.channel)).toEqual([
       AG_UI_CHANNEL,
@@ -63,32 +63,32 @@ describe('agui', () => {
 
     await plugin.setup?.(api)
 
-    await plugin.onEvent?.({ threadId: 'thread-1', turnId: 'turn-2', type: 'turn.start' })
-    await plugin.onEvent?.({ outputIndex: 0, threadId: 'thread-1', turnId: 'turn-2', type: 'text.start' })
+    await plugin.onEvent?.({ sessionId: 'session-1', turnId: 'turn-2', type: 'turn.start' })
+    await plugin.onEvent?.({ outputIndex: 0, sessionId: 'session-1', turnId: 'turn-2', type: 'text.start' })
     await plugin.onEvent?.({
       outputIndex: 1,
-      threadId: 'thread-1',
+      sessionId: 'session-1',
       toolCall: { id: 'call_1', name: 'weather' },
       turnId: 'turn-2',
       type: 'tool-call.start',
     })
-    await plugin.onEvent?.({ delta: '{"city":"Taipei"}', threadId: 'thread-1', turnId: 'turn-2', type: 'tool-call.delta' })
+    await plugin.onEvent?.({ delta: '{"city":"Taipei"}', sessionId: 'session-1', turnId: 'turn-2', type: 'tool-call.delta' })
     await plugin.onEvent?.({
-      threadId: 'thread-1',
+      sessionId: 'session-1',
       toolCall: { arguments: '{"city":"Taipei"}', id: 'call_1', name: 'weather' },
       turnId: 'turn-2',
       type: 'tool-call.done',
     })
     await plugin.onEvent?.({
-      threadId: 'thread-1',
+      sessionId: 'session-1',
       toolResult: { id: 'call_1', name: 'weather', output: { forecast: 'sunny' } },
       turnId: 'turn-2',
       type: 'tool-result.done',
     })
-    await plugin.onEvent?.({ outputIndex: 0, threadId: 'thread-1', turnId: 'turn-2', type: 'reasoning.start' })
-    await plugin.onEvent?.({ delta: 'Thinking', threadId: 'thread-1', turnId: 'turn-2', type: 'reasoning.delta' })
-    await plugin.onEvent?.({ text: 'Thinking', threadId: 'thread-1', turnId: 'turn-2', type: 'reasoning.done' })
-    await plugin.onEvent?.({ error: new Error('boom'), threadId: 'thread-1', turnId: 'turn-2', type: 'turn.failed' })
+    await plugin.onEvent?.({ outputIndex: 0, sessionId: 'session-1', turnId: 'turn-2', type: 'reasoning.start' })
+    await plugin.onEvent?.({ delta: 'Thinking', sessionId: 'session-1', turnId: 'turn-2', type: 'reasoning.delta' })
+    await plugin.onEvent?.({ text: 'Thinking', sessionId: 'session-1', turnId: 'turn-2', type: 'reasoning.done' })
+    await plugin.onEvent?.({ error: new Error('boom'), sessionId: 'session-1', turnId: 'turn-2', type: 'turn.failed' })
 
     const events = emitted.map(entry => entry.event as { [key: string]: unknown, type: string })
 
