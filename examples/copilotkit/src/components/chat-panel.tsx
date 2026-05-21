@@ -7,11 +7,11 @@ import {
   CopilotChatConfigurationProvider,
   CopilotKitProvider,
 } from '@copilotkit/react-core/v2'
-import { useLocalStorage } from 'foxact/use-local-storage'
 import { useMemo } from 'react'
 
+import { useLLMSettings } from '../hooks/use-llm-settings'
 import { BrowserApeiraAgent } from '../utils/agent'
-import { AGENT_ID, AGENT_NAME, DEFAULT_BASE_URL, DEFAULT_INSTRUCTIONS, DEFAULT_MODEL } from '../utils/const'
+import { AGENT_ID, AGENT_NAME, DEFAULT_INSTRUCTIONS } from '../utils/const'
 import { weatherTool } from '../utils/tools/weather'
 
 import '@copilotkit/react-ui/v2/styles.css'
@@ -23,9 +23,7 @@ interface ChatPanelProps {
 }
 
 export const ChatPanel = ({ className, onThreadUpdated, threadId }: ChatPanelProps) => {
-  const [baseURL] = useLocalStorage('apeira:copilotkit:base-url', DEFAULT_BASE_URL)
-  const [apiKey] = useLocalStorage('apeira:copilotkit:api-key', '')
-  const [model] = useLocalStorage('apeira:copilotkit:model', DEFAULT_MODEL)
+  const { apiKey, baseURL, model } = useLLMSettings()
 
   const apeiraAgent = useMemo(() => createAgent({
     instructions: DEFAULT_INSTRUCTIONS,
