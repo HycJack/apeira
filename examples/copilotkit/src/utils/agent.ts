@@ -1,8 +1,9 @@
 /* eslint-disable @masknet/browser-no-persistent-storage */
-import type { Agent, ItemParam } from '@apeira/core'
+import type { Agent, CreateAgentOptions, ItemParam } from '@apeira/core'
 import type { AGUIEvent, BaseEvent, Message, RunAgentInput } from '@copilotkit/react-core/v2'
 import type { Subscriber } from 'rxjs'
 
+import { createAgent } from '@apeira/core'
 import { AG_UI_CHANNEL } from '@apeira/plugin-ag-ui'
 import {
   AbstractAgent,
@@ -11,11 +12,6 @@ import {
 import { Observable } from 'rxjs'
 
 import { AGENT_ID, AGENT_NAME } from './const'
-
-interface BrowserApeiraAgentOptions {
-  agent: Agent<unknown>
-  onThreadUpdated?: (threadId: string) => void
-}
 
 type PersistedMessageItem = Extract<ItemParam, { type: 'message' }>
 interface PersistedThreadState {
@@ -283,21 +279,28 @@ const readPersistedMessages = (threadId: string): Message[] => {
   }
 }
 
-export class BrowserApeiraAgent extends AbstractAgent {
-  private readonly options: BrowserApeiraAgentOptions
+export class AbstractApeiraAgent extends AbstractAgent {
+  private readonly agent: Agent<unknown>
+  private readonly agentOptions: CreateAgentOptions<unknown>
+  private readonly onThreadUpdated?: (threadId: string) => void
 
-  constructor(options: BrowserApeiraAgentOptions) {
+  constructor(
+    agentOptions: CreateAgentOptions<unknown>,
+    onThreadUpdated?: (threadId: string) => void,
+  ) {
     super({
       agentId: AGENT_ID,
       description: 'Apeira browser agent',
       initialMessages: readPersistedMessages('default'),
       threadId: 'default',
     })
-    this.options = options
+    this.agentOptions = agentOptions
+    this.agent = createAgent(agentOptions)
+    this.onThreadUpdated = onThreadUpdated
   }
 
   override clone(): this {
-    const cloned = new BrowserApeiraAgent(this.options) as this
+    const cloned = new AbstractApeiraAgent(this.agentOptions, this.onThreadUpdated) as this
     cloned.agentId = this.agentId
     cloned.threadId = this.threadId
     cloned.setMessages(readPersistedMessages(this.threadId))
@@ -319,7 +322,7 @@ export class BrowserApeiraAgent extends AbstractAgent {
         return
       }
 
-      const thread = this.options.agent.session({ id: this.threadId })
+      const thread = this.agent.session({ id: this.threadId })
       let activeRunId: string | undefined
 
       const unsubscribe = thread.subscribe(AG_UI_CHANNEL, (event: unknown) => {
@@ -350,7 +353,7 @@ export class BrowserApeiraAgent extends AbstractAgent {
         subscriber.next(event as BaseEvent)
 
         if (aguiEvent.type === EventType.RUN_FINISHED || aguiEvent.type === EventType.RUN_ERROR) {
-          this.options.onThreadUpdated?.(this.threadId)
+          this.onThreadUpdated?.(this.threadId)
           subscriber.complete()
         }
       })

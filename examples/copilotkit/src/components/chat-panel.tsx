@@ -1,6 +1,5 @@
 /* eslint-disable @masknet/browser-no-persistent-storage */
 
-import { createAgent } from '@apeira/core'
 import { agui } from '@apeira/plugin-ag-ui'
 import {
   CopilotChat,
@@ -10,7 +9,7 @@ import {
 import { useMemo } from 'react'
 
 import { useLLMSettings } from '../hooks/use-llm-settings'
-import { BrowserApeiraAgent } from '../utils/agent'
+import { AbstractApeiraAgent } from '../utils/agent'
 import { AGENT_ID, AGENT_NAME, DEFAULT_INSTRUCTIONS } from '../utils/const'
 import { weatherTool } from '../utils/tools/weather'
 
@@ -25,7 +24,7 @@ interface ChatPanelProps {
 export const ChatPanel = ({ className, onThreadUpdated, threadId }: ChatPanelProps) => {
   const { apiKey, baseURL, model } = useLLMSettings()
 
-  const apeiraAgent = useMemo(() => createAgent({
+  const agent = useMemo(() => new AbstractApeiraAgent({
     instructions: DEFAULT_INSTRUCTIONS,
     name: AGENT_NAME,
     options: {
@@ -43,16 +42,11 @@ export const ChatPanel = ({ className, onThreadUpdated, threadId }: ChatPanelPro
       },
       agui(),
     ],
-  }), [baseURL, apiKey, model])
-
-  const copilotAgent = useMemo(
-    () => new BrowserApeiraAgent({ agent: apeiraAgent, onThreadUpdated }),
-    [apeiraAgent, onThreadUpdated],
-  )
+  }, onThreadUpdated), [apiKey, baseURL, model, onThreadUpdated])
 
   return (
     <div className={className}>
-      <CopilotKitProvider agents__unsafe_dev_only={{ [AGENT_ID]: copilotAgent }}>
+      <CopilotKitProvider agents__unsafe_dev_only={{ [AGENT_ID]: agent }}>
         <CopilotChatConfigurationProvider agentId={AGENT_ID} threadId={threadId}>
           <CopilotChat
             attachments={{ enabled: true }}
