@@ -1,7 +1,7 @@
 import type { ResponsesOptions, Event as XSAIEvent } from '@xsai-ext/responses'
 import type { Tool } from '@xsai/shared-chat'
 
-import type { AgentContext } from '../types/context'
+import type { AgentContext, Instructions } from '../types/context'
 import type { ApeiraEvent } from '../types/event'
 import type { AgentPlugin, ExtendInstructionsOptions, ResolveToolsOptions, ResponseOptions, ThreadState, TurnStartOptions } from '../types/plugin'
 import type { ItemParam } from '../types/responses'
@@ -10,17 +10,23 @@ import type { ThreadStore } from './thread-store'
 import { merge } from '@moeru/std/merge'
 import { responses, stepCountAtLeast } from '@xsai-ext/responses'
 
+export interface AgentCoreOptions<T> {
+  agentName: string
+  emit: EmitTurnEvent
+  getContext: (context?: Partial<AgentContext<T>>) => AgentContext<T>
+  instructions: Instructions<T>
+  plugins: AgentPlugin<T>[]
+  ready: () => Promise<void>
+  responseOptions: Omit<ResponsesOptions, 'abortSignal' | 'input' | 'instructions'>
+  saveThread: (state: ThreadState<T>) => Promise<void> | void
+  threadId: string
+}
+
 export type EmitTurnEvent = (id: string, event: ApeiraEvent | XSAIEvent) => void
 
 export interface QueuedInput<T> {
   context?: Partial<AgentContext<T>>
-  input: ItemParam
-  signal?: AbortSignal
-}
-
-export interface QueuedTurn<T = unknown> {
-  context?: Partial<AgentContext<T>>
-  id: string
+  id?: string
   input: ItemParam
   signal?: AbortSignal
 }
@@ -28,7 +34,7 @@ export interface QueuedTurn<T = unknown> {
 export interface RunTurnOptions<T> {
   controller: AbortController
   drainInput: () => QueuedInput<T>[]
-  turn: QueuedTurn<T>
+  turn: QueuedInput<T> & { id: string }
 }
 
 export type RunTurnParams<T> = RunTurnOptions<T> & TurnOptions<T>
@@ -38,18 +44,9 @@ export type TurnCompletion<T = unknown>
     | { error: unknown, type: 'failed' }
     | { reason?: unknown, type: 'aborted' }
 
-export interface TurnOptions<T> {
-  agentName: string
-  emit: EmitTurnEvent
-  getContext: (context?: Partial<AgentContext<T>>) => AgentContext<T>
-  instructions: ((context: AgentContext<T>) => Promise<string> | string) | string
+export interface TurnOptions<T> extends AgentCoreOptions<T> {
   mutateThread: (fn: () => Promise<void>) => Promise<void>
-  plugins: AgentPlugin<T>[]
-  ready: () => Promise<void>
-  responseOptions: Omit<ResponsesOptions, 'abortSignal' | 'input' | 'instructions'>
-  saveThread: (state: ThreadState<T>) => Promise<void> | void
   thread: ThreadStore<T>
-  threadId: string
 }
 
 type PreparedStep = Awaited<ReturnType<PrepareStepHook>>
@@ -58,7 +55,7 @@ type PrepareStepHook = NonNullable<ResponsesOptions['prepareStep']>
 
 const mergeRunContext = <T>(
   context: AgentContext<T>,
-  input: Array<QueuedInput<T> | QueuedTurn<T>>,
+  input: QueuedInput<T>[],
 ): AgentContext<T> =>
   input.reduce<AgentContext<T>>(
     (current, item) => merge(current, item.context),
@@ -159,28 +156,19 @@ const chainStepHooks = <H extends (...args: any[]) => unknown>(
   }) as H
 }
 
-const createOnFinish = <T>(options: RunTurnParams<T>): ResponsesOptions['onFinish'] =>
-  chainStepHooks(options.responseOptions.onFinish, ...options.plugins.map(plugin => plugin.onFinish))
-
-const createOnStepFinish = <T>(options: RunTurnParams<T>): ResponsesOptions['onStepFinish'] =>
-  chainStepHooks(options.responseOptions.onStepFinish, ...options.plugins.map(plugin => plugin.onStepFinish))
-
-const createPrepareStep = <T>(options: RunTurnParams<T>): ResponsesOptions['prepareStep'] => {
-  const hooks = [
-    options.responseOptions.prepareStep,
-    ...options.plugins.map(plugin => plugin.prepareStep),
-  ].filter((hook): hook is PrepareStepHook => hook != null)
-
-  if (hooks.length === 0)
+const chainPrepareStepHooks = (
+  ...hooks: (PrepareStepHook | undefined)[]
+): ResponsesOptions['prepareStep'] => {
+  const list = hooks.filter(Boolean) as PrepareStepHook[]
+  if (list.length === 0)
     return undefined
 
   return async (stepOptions) => {
     let current = { ...stepOptions }
     let prepared: PreparedStep | undefined
 
-    for (const hook of hooks) {
+    for (const hook of list) {
       const result = await hook(current)
-
       if (result != null) {
         prepared = { ...prepared, ...result }
         current = { ...current, ...result }
@@ -191,9 +179,21 @@ const createPrepareStep = <T>(options: RunTurnParams<T>): ResponsesOptions['prep
   }
 }
 
+const createOnFinish = <T>(options: RunTurnParams<T>): ResponsesOptions['onFinish'] =>
+  chainStepHooks(options.responseOptions.onFinish, ...options.plugins.map(plugin => plugin.onFinish))
+
+const createOnStepFinish = <T>(options: RunTurnParams<T>): ResponsesOptions['onStepFinish'] =>
+  chainStepHooks(options.responseOptions.onStepFinish, ...options.plugins.map(plugin => plugin.onStepFinish))
+
+const createPrepareStep = <T>(options: RunTurnParams<T>): ResponsesOptions['prepareStep'] =>
+  chainPrepareStepHooks(
+    options.responseOptions.prepareStep,
+    ...options.plugins.map(plugin => plugin.prepareStep),
+  )
+
 const runResponse = async <T>(
   options: RunTurnParams<T>,
-  input: Array<QueuedInput<T> | QueuedTurn<T>>,
+  input: QueuedInput<T>[],
   instructions: string,
 ): Promise<ResponseOptions<T>> => {
   const snapshot = options.thread.snapshot()
@@ -249,7 +249,7 @@ export const runTurn = async <T>(options: RunTurnParams<T>): Promise<TurnComplet
 
     const mergedInstructions = await resolveInstructions(options, context, baseInstructions)
 
-    let nextInput: Array<QueuedInput<T> | QueuedTurn<T>> = [options.turn]
+    let nextInput: QueuedInput<T>[] = [options.turn]
 
     while (true) {
       const responseContext = await runResponse(options, nextInput, mergedInstructions)

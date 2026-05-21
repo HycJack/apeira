@@ -1,11 +1,16 @@
 import type { ResponsesOptions } from '@xsai-ext/responses'
 import type { Tool } from '@xsai/shared-chat'
 
-import type { ThreadState } from '../utils/thread-store'
 import type { AgentContext } from './context'
 import type { AgentEvent } from './event'
 import type { MaybePromise } from './maybe-promise'
 import type { ItemParam } from './responses'
+
+export interface ThreadState<T = unknown> {
+  context: Partial<AgentContext<T>>
+  items: ItemParam[]
+  version: number
+}
 
 export interface AgentPlugin<T = unknown> {
   enforce?: 'post' | 'pre'
@@ -36,13 +41,16 @@ export type AgentPluginOption<T = unknown>
     | null
     | undefined
 
-export interface ExtendInstructionsOptions<T = unknown> {
+export interface PluginHookBase<T = unknown> {
   agentName: string
   context: AgentContext<T>
-  input: ItemParam
   signal: AbortSignal
   threadId: string
   turnId: string
+}
+
+export interface ExtendInstructionsOptions<T = unknown> extends PluginHookBase<T> {
+  input: ItemParam
 }
 
 export type PluginChannelListener<T = unknown> = (
@@ -59,13 +67,8 @@ export interface ResolveToolsOptions<T = unknown> extends ResponseOptions<T> {
   tools: readonly Tool[]
 }
 
-export interface ResponseOptions<T = unknown> {
-  agentName: string
-  context: AgentContext<T>
+export interface ResponseOptions<T = unknown> extends PluginHookBase<T> {
   input: readonly ItemParam[]
-  signal: AbortSignal
-  threadId: string
-  turnId: string
   turnInput: ItemParam
 }
 
@@ -85,13 +88,6 @@ export interface TurnDoneOptions<T = unknown> extends ResponseOptions<T> {
   snapshot: ThreadState<T>
 }
 
-export interface TurnStartOptions<T = unknown> {
-  agentName: string
-  context: AgentContext<T>
+export interface TurnStartOptions<T = unknown> extends PluginHookBase<T> {
   input: ItemParam
-  signal: AbortSignal
-  threadId: string
-  turnId: string
 }
-
-export type { ThreadState }

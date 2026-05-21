@@ -1,10 +1,7 @@
-import type { ResponsesOptions } from '@xsai-ext/responses'
-
 import type { AgentContext } from '../types/context'
-import type { TurnDoneOptions } from '../types/plugin'
+import type { ThreadState, TurnDoneOptions } from '../types/plugin'
 import type { ItemParam } from '../types/responses'
-import type { ThreadState } from './thread-store'
-import type { EmitTurnEvent, QueuedInput, QueuedTurn, TurnCompletion, TurnOptions } from './turn-runner'
+import type { AgentCoreOptions, QueuedInput, TurnCompletion, TurnOptions } from './turn-runner'
 
 import Queue from 'yocto-queue'
 
@@ -16,26 +13,17 @@ import { runTurn } from './turn-runner'
 export interface AgentRuntime<T = unknown> {
   abort: (reason?: unknown) => void
   clear: () => void
-  enqueueTurn: (turn: QueuedTurn<T>) => void
+  enqueueTurn: (turn: QueuedInput<T>) => void
   interrupt: (input: QueuedInput<T>, reason?: unknown) => string
   send: (input: QueuedInput<T>) => string
   setContext: (context: Partial<AgentContext<T>>) => void
 }
 
-export interface AgentRuntimeOptions<T> {
-  agentName: string
-  emit: EmitTurnEvent
-  getContext: (context?: Partial<AgentContext<T>>) => AgentContext<T>
+export interface AgentRuntimeOptions<T> extends AgentCoreOptions<T> {
   input?: ItemParam[]
-  instructions: ((context: AgentContext<T>) => Promise<string> | string) | string
   loadThread: () => Promise<ThreadState<T> | void> | ThreadState<T> | void
   onTurnDone: (options: TurnDoneOptions<T>) => Promise<void> | void
-  plugins: TurnOptions<T>['plugins']
-  ready: () => Promise<void>
-  responseOptions: Omit<ResponsesOptions, 'abortSignal' | 'input' | 'instructions'>
-  saveThread: TurnOptions<T>['saveThread']
   threadContext?: Partial<AgentContext<T>>
-  threadId: string
 }
 
 interface ActiveTurn {
@@ -52,7 +40,7 @@ const createTurnAbortedBoundary = (): ItemParam => ({
 
 export const createAgentRuntime = <T>(options: AgentRuntimeOptions<T>): AgentRuntime<T> => {
   const pendingInput = createPendingInput<T>()
-  const pendingTurns = new Queue<QueuedTurn<T>>()
+  const pendingTurns = new Queue<QueuedInput<T>>()
   const thread = createThreadStore<T>(options.input, options.threadContext)
 
   let acceptingInputTurnId: string | undefined
@@ -117,7 +105,7 @@ export const createAgentRuntime = <T>(options: AgentRuntimeOptions<T>): AgentRun
     pendingInput.clear()
 
     for (const turn of pendingTurns.drain())
-      options.emit(turn.id, { reason: 'cleared', type: 'turn.aborted' })
+      options.emit(turn.id!, { reason: 'cleared', type: 'turn.aborted' })
 
     void mutateThread(async () => {
       await ensureLoaded()
@@ -151,8 +139,8 @@ export const createAgentRuntime = <T>(options: AgentRuntimeOptions<T>): AgentRun
     options.emit(id, { error: completion.error, type: 'turn.failed' })
   }
 
-  const abortQueuedTurn = (turn: QueuedTurn<T>) =>
-    completeTurn(turn.id, {
+  const abortQueuedTurn = (turn: QueuedInput<T>) =>
+    completeTurn(turn.id!, {
       reason: turn.signal?.reason,
       type: 'aborted',
     })
@@ -171,7 +159,7 @@ export const createAgentRuntime = <T>(options: AgentRuntimeOptions<T>): AgentRun
     return undefined
   }
 
-  const runQueuedTurn = async (turn: QueuedTurn<T>) => {
+  const runQueuedTurn = async (turn: QueuedInput<T>) => {
     if (turn.signal?.aborted === true) {
       abortQueuedTurn(turn)
       return
@@ -185,7 +173,7 @@ export const createAgentRuntime = <T>(options: AgentRuntimeOptions<T>): AgentRun
 
     activeTurn = {
       controller,
-      id: turn.id,
+      id: turn.id!,
       input: turn.input,
     }
     acceptingInputTurnId = turn.id
@@ -201,8 +189,8 @@ export const createAgentRuntime = <T>(options: AgentRuntimeOptions<T>): AgentRun
         completion = await runTurn<T>({
           ...turnOptions,
           controller,
-          drainInput: () => pendingInput.drain(turn.id),
-          turn,
+          drainInput: () => pendingInput.drain(turn.id!),
+          turn: turn as QueuedInput<T> & { id: string },
         })
       }
     }
@@ -231,7 +219,7 @@ export const createAgentRuntime = <T>(options: AgentRuntimeOptions<T>): AgentRun
       }
     }
 
-    completeTurn(turn.id, completion)
+    completeTurn(turn.id!, completion)
   }
 
   const pumpTurns = async () => {
@@ -257,8 +245,8 @@ export const createAgentRuntime = <T>(options: AgentRuntimeOptions<T>): AgentRun
     }
   }
 
-  const enqueueTurn = (turn: QueuedTurn<T>) => {
-    options.emit(turn.id, { type: 'turn.queued' })
+  const enqueueTurn = (turn: QueuedInput<T>) => {
+    options.emit(turn.id!, { type: 'turn.queued' })
     pendingTurns.enqueue(turn)
 
     void pumpTurns()

@@ -1,11 +1,6 @@
 import type { AgentContext } from '../types/context'
+import type { ThreadState } from '../types/plugin'
 import type { ItemParam } from '../types/responses'
-
-export interface ThreadState<T = unknown> {
-  context: Partial<AgentContext<T>>
-  items: ItemParam[]
-  version: number
-}
 
 export interface ThreadStore<T = unknown> {
   append: (items: ItemParam[]) => void
@@ -23,8 +18,8 @@ export const createThreadStore = <T = unknown>(
 ): ThreadStore<T> => {
   const initial = [...initialItems]
   const initialThreadContext = { ...initialContext }
-  let items = [...initial]
-  let context = { ...initialThreadContext }
+  let items = [...initialItems]
+  let context = { ...initialContext }
   let version = 0
 
   return {

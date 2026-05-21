@@ -1,6 +1,6 @@
 import type { ResponsesOptions } from '@xsai-ext/responses'
 
-import type { AgentContext } from '../types/context'
+import type { AgentContext, Instructions } from '../types/context'
 import type { AgentEvent } from '../types/event'
 import type { AgentEventListener } from '../types/event-listener'
 import type { AgentPlugin, AgentPluginApi, AgentPluginOption, PluginChannelListener, ThreadInitOptions, ThreadState } from '../types/plugin'
@@ -25,7 +25,7 @@ export interface ThreadOptions<T> {
 
 interface CreateAgentBaseOptions<T> {
   input?: ItemParam[]
-  instructions: ((context: AgentContext<T>) => Promise<string> | string) | string
+  instructions: Instructions<T>
   name: string
   options: Omit<ResponsesOptions, 'abortSignal' | 'input' | 'instructions'>
   plugins?: AgentPluginOption<T>[]
