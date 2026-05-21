@@ -9,10 +9,11 @@ packages:
 
 catalog:
   '@ag-ui/core': ^0.0.53
-  '@antfu/eslint-config': ^8.2.0
+  '@antfu/eslint-config': ^9.0.0
   '@copilotkit/react-core': ^1.57.1
   '@copilotkit/react-ui': ^1.57.1
   '@earendil-works/pi-tui': ^0.75.3
+  '@eslint-react/eslint-plugin': ^5.8.3
   '@moeru/eslint-config': &std ^0.1.0-beta.18
   '@moeru/std': *std
   '@moeru/tsconfig': *std
@@ -23,6 +24,7 @@ catalog:
   '@vitejs/plugin-react': ^6.0.1
   bumpp: ^11.1.0
   eslint: ^10.3.0
+  eslint-plugin-react-refresh: ^0.5.2
   foxact: ^0.3.4
   pkgroll: ^2.27.0
   react: ^19.2.6
@@ -31,6 +33,7 @@ catalog:
   tinyrainbow: ^3.1.0
   tsx: ^4.21.0
   typescript: ~6.0.3
+  unocss: ^66.6.8
   unstorage: ^1.17.5
   vite: ^8.0.13
   vitepress: ^2.0.0-alpha.17

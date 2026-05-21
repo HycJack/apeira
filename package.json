@@ -17,14 +17,17 @@
   },
   "devDependencies": {
     "@antfu/eslint-config": "catalog:",
+    "@eslint-react/eslint-plugin": "catalog:",
     "@moeru/eslint-config": "catalog:",
     "@moeru/tsconfig": "catalog:",
     "@types/node": "catalog:",
     "bumpp": "catalog:",
     "eslint": "catalog:",
+    "eslint-plugin-react-refresh": "catalog:",
     "pkgroll": "catalog:",
     "tsx": "catalog:",
     "typescript": "catalog:",
+    "unocss": "catalog:",
     "vite": "catalog:",
     "vitepress": "catalog:",
     "vitest": "catalog:"
