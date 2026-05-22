@@ -639,8 +639,6 @@ export const createPiTuiExampleApp = () => {
   render()
 
   return {
-    start: () => {
-      tui.start()
-    },
+    start: () => tui.start(),
   }
 }

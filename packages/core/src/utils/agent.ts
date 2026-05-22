@@ -212,9 +212,7 @@ export const createAgent = <T = unknown>(options: CreateAgentOptions<T>): Agent<
           await plugin.onTurnDone?.(turnContext)
       },
       plugins,
-      ready: async () => {
-        await ensureSessionReady()
-      },
+      ready: async () => ensureSessionReady(),
       responseOptions: options.options,
       saveSession,
       sessionContext: initialSessionContext,
