@@ -58,33 +58,6 @@ const compactSingleLine = (text: string, maxChars = 120) => {
   return singleLine.length > maxChars ? `${singleLine.slice(0, maxChars - 1)}…` : singleLine
 }
 
-const formatEditDiff = (args: unknown) => {
-  if (!isRecord(args))
-    return ''
-
-  const oldString = stringArg(args.oldString)
-  const newString = stringArg(args.newString)
-  const targetPath = stringArg(args.targetPath, 'file')
-  if (oldString.length === 0 && newString.length === 0)
-    return ''
-
-  const oldLines = oldString.split('\n')
-  const newLines = newString.split('\n')
-  const maxChangedLines = 80
-  const changedLines = oldLines.length + newLines.length
-  const trimmed = changedLines > maxChangedLines
-  const shownOldLines = trimmed ? oldLines.slice(0, Math.floor(maxChangedLines / 2)) : oldLines
-  const shownNewLines = trimmed ? newLines.slice(0, Math.floor(maxChangedLines / 2)) : newLines
-
-  return [
-    c.gray(`--- ${targetPath}`),
-    c.gray(`+++ ${targetPath}`),
-    ...shownOldLines.map(line => c.red(`- ${line}`)),
-    ...shownNewLines.map(line => c.green(`+ ${line}`)),
-    trimmed ? c.gray(`... diff truncated (${changedLines.toLocaleString()} changed lines)`) : '',
-  ].filter(Boolean).join('\n')
-}
-
 const formatToolCallSummary = (name: string, args: unknown) => {
   if (!isRecord(args))
     return compactSingleLine(String(args))
@@ -92,60 +65,47 @@ const formatToolCallSummary = (name: string, args: unknown) => {
   switch (name) {
     case 'bash':
       return `$ ${compactSingleLine(stringArg(args.command), 180)}`
-    case 'edit_file':
+    case 'edit':
       return [
-        stringArg(args.targetPath, 'file'),
+        stringArg(args.filePath, 'file'),
         booleanArg(args.replaceAll) ? 'replace all' : 'replace one',
       ].join('  ')
-    case 'list_files':
-      return [
-        stringArg(args.targetPath, '.'),
-        booleanArg(args.recursive) ? 'recursive' : '',
-      ].filter(Boolean).join('  ')
-    case 'read_file': {
-      const startLine = numberArg(args.startLine)
-      const endLine = numberArg(args.endLine)
-      const range = startLine != null || endLine != null ? `:${startLine ?? 1}-${endLine ?? '?'}` : ''
-      return `${stringArg(args.targetPath, 'file')}${range}`
+    case 'fetch':
+      return stringArg(args.url)
+    case 'read': {
+      const offset = numberArg(args.offset)
+      const limit = numberArg(args.limit)
+      const range = offset != null || limit != null ? `:${offset ?? 1}-${limit ?? '?'}` : ''
+      return `${stringArg(args.filePath, 'file')}${range}`
     }
-    case 'write_file':
-      return stringArg(args.targetPath, 'file')
+    case 'search':
+      return stringArg(args.query)
+    case 'write':
+      return stringArg(args.filePath, 'file')
     default:
       return compactSingleLine(JSON.stringify(args))
   }
 }
 
-// eslint-disable-next-line sonarjs/cognitive-complexity
 const formatToolResultSummary = (name: string, args: unknown, output: unknown) => {
-  const result = isRecord(output) ? output : {}
-  const status = stringArg(result.status, 'done')
+  const summary = formatToolCallSummary(name, args)
 
   switch (name) {
     case 'bash': {
+      const result = isRecord(output) ? output : {}
       const exitCode = numberArg(result.exitCode)
       const timedOut = booleanArg(result.timedOut)
       return [
-        formatToolCallSummary(name, args),
-        c.gray(timedOut ? 'timed out' : `exit ${exitCode ?? '?'}`),
+        summary,
+        c.gray(timedOut ? 'timed out' : exitCode != null ? `exit ${exitCode}` : ''),
       ].join('\n')
     }
-    case 'edit_file': {
-      const replacements = numberArg(result.replacements)
-      return [
-        `${stringArg(result.path, stringArg(isRecord(args) ? args.targetPath : undefined, 'file'))}  ${status}${replacements != null ? ` (${replacements} replacement${replacements === 1 ? '' : 's'})` : ''}`,
-        formatEditDiff(args),
-      ].filter(Boolean).join('\n\n')
-    }
-    case 'list_files': {
-      const entries = Array.isArray(result.entries) ? result.entries.length : undefined
-      return `${stringArg(result.root, stringArg(isRecord(args) ? args.targetPath : undefined, '.'))}  ${entries ?? '?'} entries${booleanArg(result.truncated) ? '  truncated' : ''}`
-    }
-    case 'read_file':
-      return `${stringArg(result.path, stringArg(isRecord(args) ? args.targetPath : undefined, 'file'))}  lines ${numberArg(result.startLine) ?? '?'}-${numberArg(result.endLine) ?? '?'}`
-    case 'write_file':
-      return `${stringArg(result.path, stringArg(isRecord(args) ? args.targetPath : undefined, 'file'))}  ${numberArg(result.bytes) ?? '?'} bytes written`
+    case 'edit':
+      return typeof output === 'string' ? `${summary}  ${output}` : summary
+    case 'write':
+      return typeof output === 'string' ? output : summary
     default:
-      return formatToolCallSummary(name, args)
+      return summary
   }
 }
 
@@ -168,10 +128,11 @@ const formatToolDisplay = (entry: TranscriptEntry) => {
 
   const verb = {
     bash: 'Ran',
-    edit_file: 'Edited',
-    list_files: 'Listed',
-    read_file: 'Read',
-    write_file: 'Wrote',
+    edit: 'Edited',
+    fetch: 'Fetched',
+    read: 'Read',
+    search: 'Searched',
+    write: 'Wrote',
   }[title] ?? `Used ${title}`
 
   const displayTarget = title === 'bash' && firstLine.startsWith('$ ')

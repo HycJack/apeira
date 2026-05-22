@@ -1,13 +1,11 @@
-import path from 'node:path'
-
 import { createAgent } from '@apeira/core'
+import { commonTools } from '@apeira/plugin-common-tools'
 import { skills } from '@apeira/plugin-skills'
 import { fsSkillSet } from '@apeira/plugin-skills/fs'
 
-import { agentName, apiKey, baseURL, instructions, model, workspaceRoot } from './config'
-import { bashTool, editFileTool, listFilesTool, readFileTool, writeFileTool } from './tools'
+import { agentName, apiKey, baseURL, instructions, model } from './config'
 
-export const skillsDir = path.join(workspaceRoot, '.agents', 'skills')
+export const skillsDir = '.agents/skills'
 
 export const skillSet = fsSkillSet({
   directory: skillsDir,
@@ -20,9 +18,9 @@ export const agent = createAgent({
     apiKey,
     baseURL,
     model,
-    tools: [listFilesTool, readFileTool, writeFileTool, editFileTool, bashTool],
   },
   plugins: [
+    commonTools(),
     skills({
       refresh: 'turn',
       sets: [skillSet],

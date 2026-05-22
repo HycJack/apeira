@@ -307,6 +307,9 @@ importers:
       '@apeira/core':
         specifier: 'workspace:'
         version: link:../../packages/core
+      '@apeira/plugin-common-tools':
+        specifier: 'workspace:'
+        version: link:../../packages/plugin-common-tools
       '@apeira/plugin-skills':
         specifier: 'workspace:'
         version: link:../../packages/plugin-skills

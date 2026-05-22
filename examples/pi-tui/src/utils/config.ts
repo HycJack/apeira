@@ -111,7 +111,7 @@ export const instructions = [
   '',
   'Rules:',
   '- Be brief, direct, and implementation-focused.',
-  '- Use workspace tools for file reads, edits, and commands; prefer rg/rg --files for search.',
+  '- Use read, write, edit, and bash for file operations.',
   '- Show file paths clearly when discussing code.',
   '- Do not overwrite or revert user changes unless explicitly asked.',
   '- Keep edits scoped; default to ASCII and add comments only when they clarify non-obvious code.',
