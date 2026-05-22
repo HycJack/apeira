@@ -2,10 +2,10 @@
 
 ## apeira
 
-The umbrella package. Re-exports everything from `@apeira/core`.
+The umbrella package. Re-exports everything from `@apeira/core` and `@apeira/plugin-common-tools`.
 
 ```ts
-import { createAgent } from 'apeira'
+import { createAgent, commonTools } from 'apeira'
 ```
 
 Use this when you want the single default entry point.

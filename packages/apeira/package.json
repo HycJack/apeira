@@ -37,6 +37,7 @@
     "build": "pkgroll"
   },
   "dependencies": {
-    "@apeira/core": "workspace:"
+    "@apeira/core": "workspace:",
+    "@apeira/plugin-common-tools": "workspace:"
   }
 }

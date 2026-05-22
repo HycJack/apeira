@@ -334,6 +334,9 @@ importers:
       '@apeira/core':
         specifier: 'workspace:'
         version: link:../core
+      '@apeira/plugin-common-tools':
+        specifier: 'workspace:'
+        version: link:../plugin-common-tools
 
   packages/core:
     dependencies:
