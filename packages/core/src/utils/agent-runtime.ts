@@ -276,8 +276,12 @@ export const createAgentRuntime = <T>(options: AgentRuntimeOptions<T>): AgentRun
     const turn = activeTurn
 
     if (turn != null && turn.controller.signal.aborted !== true) {
-      session.append([createTurnAbortedBoundary()])
       turn.controller.abort(reason)
+
+      void mutateSession(async () => {
+        await ensureLoaded()
+        session.append([createTurnAbortedBoundary()])
+      }).catch(() => undefined)
     }
   }
 
