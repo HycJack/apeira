@@ -82,10 +82,10 @@ interface AgentSession<T> {
   clear: () => void
   getContext: () => AgentContext<T>
   interrupt: (reason?: unknown) => void
+  on: (eventListener: AgentEventListener) => () => boolean
   run: (input: ItemParam, options?: AgentRunOptions<T>) => ReadableStream<AgentEvent>
   send: (input: ItemParam, options?: AgentRunOptions<T>) => string
   setContext: (context: Partial<AgentContext<T>>) => void
-  on: (eventListener: AgentEventListener) => () => boolean
   subscribe: (channel: string, listener: PluginChannelListener) => () => boolean
 }
 ```
