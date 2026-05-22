@@ -74,6 +74,7 @@ const agent = createAgent({
 
 | Package | Description |
 |---------|-------------|
+| `@apeira/plugin-mcp` | Model Context Protocol integration. See [MCP](/plugins/mcp). |
 | `@apeira/plugin-skills` | Filesystem-agnostic skills system. See [Skills](/plugins/skills). |
 | `@apeira/plugin-ag-ui` | Bridges Apeira events to `@ag-ui/core` format. See [AG-UI](/plugins/ag-ui). |
 | `@apeira/plugin-unstorage` | Wraps `unstorage` for session persistence. See [Unstorage](/plugins/unstorage). |

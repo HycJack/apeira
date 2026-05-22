@@ -45,11 +45,12 @@ interface Agent<T> {
   clear: () => void
   getContext: () => AgentContext<T>
   interrupt: (reason?: unknown) => void
+  on: (eventListener: AgentEventListener) => () => boolean
   run: (input: ItemParam, options?: AgentRunOptions<T>) => ReadableStream<AgentEvent>
   send: (input: ItemParam, options?: AgentRunOptions<T>) => string
   session: (options?: SessionOptions<T>) => AgentSession<T>
   setContext: (context: Partial<AgentContext<T>>) => void
-  subscribe: (eventListener: AgentEventListener) => () => boolean
+  subscribe: (channel: string, listener: PluginChannelListener) => () => boolean
 }
 ```
 
@@ -150,12 +151,12 @@ Returns the merged agent context.
 const context = agent.getContext()
 ```
 
-### subscribe()
+### on()
 
 Subscribes to all events from the agent.
 
 ```ts
-const unsubscribe = agent.subscribe(event =>
+const unsubscribe = agent.on(event =>
   console.log(event.turnId, event.type)
 )
 ```
@@ -170,10 +171,11 @@ interface AgentSession<T> {
   clear: () => void
   getContext: () => AgentContext<T>
   interrupt: (reason?: unknown) => void
+  on: (eventListener: AgentEventListener) => () => boolean
   run: (input: ItemParam, options?: AgentRunOptions<T>) => ReadableStream<AgentEvent>
   send: (input: ItemParam, options?: AgentRunOptions<T>) => string
   setContext: (context: Partial<AgentContext<T>>) => void
-  subscribe: (eventListener: AgentEventListener) => () => boolean
+  subscribe: (channel: string, listener: PluginChannelListener) => () => boolean
 }
 ```
 

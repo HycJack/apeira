@@ -43,7 +43,7 @@ The stream emits model events (`text.delta`, `tool-call.start`, etc.) and lifecy
 Use `send()` when you only want the turn ID and plan to observe events through a global subscription.
 
 ```ts
-const unsubscribe = agent.subscribe((event) => {
+const unsubscribe = agent.on((event) => {
   console.log(event.turnId, event.type)
 })
 

@@ -85,7 +85,8 @@ interface AgentSession<T> {
   run: (input: ItemParam, options?: AgentRunOptions<T>) => ReadableStream<AgentEvent>
   send: (input: ItemParam, options?: AgentRunOptions<T>) => string
   setContext: (context: Partial<AgentContext<T>>) => void
-  subscribe: (eventListener: AgentEventListener) => () => boolean
+  on: (eventListener: AgentEventListener) => () => boolean
+  subscribe: (channel: string, listener: PluginChannelListener) => () => boolean
 }
 ```
 
@@ -149,12 +150,12 @@ session.setContext({ locale: 'zh-CN' })
 const ctx = session.getContext()
 ```
 
-### subscribe()
+### on()
 
 Listen to all events from this session.
 
 ```ts
-const unsubscribe = session.subscribe(event =>
+const unsubscribe = session.on(event =>
   console.log(event.turnId, event.type)
 )
 ```

@@ -30,10 +30,10 @@ for await (const event of eventStream)
 `run()` returns a `ReadableStream` of events for the submitted turn. The stream
 closes when the turn emits `turn.done`, `turn.failed`, or `turn.aborted`.
 
-For fire-and-forget submission, subscribe to all agent events and use `send()`:
+For fire-and-forget submission, subscribe to all agent events via `on()` and use `send()`:
 
 ```ts
-const unsubscribe = agent.subscribe(event =>
+const unsubscribe = agent.on(event =>
   console.log(event.turnId, event.type)
 )
 
