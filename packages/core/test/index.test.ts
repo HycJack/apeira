@@ -556,11 +556,11 @@ describe('createAgent', () => {
         onFinish: () => {
           calls.push('onFinish')
         },
-        onStepFinish: () => {
-          calls.push('onStepFinish')
-        },
         onSessionInit: () => {
           calls.push('onSessionInit')
+        },
+        onStepFinish: () => {
+          calls.push('onStepFinish')
         },
         onTurnDone: () => {
           calls.push('onTurnDone')

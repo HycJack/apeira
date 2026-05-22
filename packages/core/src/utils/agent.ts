@@ -328,8 +328,8 @@ export const createAgent = <T = unknown>(options: CreateAgentOptions<T>): Agent<
     on,
     run: (input, runOptions) => defaultSession.run(input, runOptions),
     send: (input, runOptions) => defaultSession.send(input, runOptions),
+    session,
     setContext,
     subscribe,
-    session,
   }
 }

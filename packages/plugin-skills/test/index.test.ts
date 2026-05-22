@@ -1,19 +1,19 @@
 import type { Skill } from '../src/index'
 
-import { describe, expect, it } from 'vitest'
+import fs from 'node:fs/promises'
+import path from 'node:path'
 
+import { fileURLToPath } from 'node:url'
+
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+
+import { fsSkillSet } from '../src/fs'
 import {
   createSkillSet,
   formatSkillInvocation,
   formatSkillsForSystemPrompt,
   skills,
 } from '../src/index'
-import { fsSkillSet } from '../src/fs'
-
-import fs from 'node:fs/promises'
-import path from 'node:path'
-import { fileURLToPath } from 'node:url'
-import { afterEach, beforeEach } from 'vitest'
 
 const inspectSkill: Skill = {
   content: 'Inspect the code carefully.',
@@ -93,8 +93,8 @@ describe('skills', () => {
       agentName: 'agent',
       context: {},
       input: { content: 'hello', role: 'user', type: 'message' },
-      signal: new AbortController().signal,
       sessionId: 'session',
+      signal: new AbortController().signal,
       turnId: 'turn',
     })
 
@@ -109,8 +109,8 @@ describe('skills', () => {
       agentName: 'agent',
       context: {},
       input: { content: 'hello', role: 'user', type: 'message' },
-      signal: new AbortController().signal,
       sessionId: 'session',
+      signal: new AbortController().signal,
       turnId: 'turn',
     })
 
@@ -123,8 +123,8 @@ describe('skills', () => {
       agentName: 'agent',
       context: {},
       input: [{ content: 'hello', role: 'user', type: 'message' }],
-      signal: new AbortController().signal,
       sessionId: 'session',
+      signal: new AbortController().signal,
       tools: [],
       turnId: 'turn',
       turnInput: { content: 'hello', role: 'user', type: 'message' },
@@ -155,8 +155,8 @@ describe('skills', () => {
       agentName: 'agent',
       context: {},
       input: [{ content: 'hello', role: 'user', type: 'message' }],
-      signal: new AbortController().signal,
       sessionId: 'session',
+      signal: new AbortController().signal,
       tools: [],
       turnId: 'turn',
       turnInput: { content: 'hello', role: 'user', type: 'message' },
@@ -173,7 +173,7 @@ describe('skills', () => {
   it('accepts multiple sets via options.sets, deduplicating by name', async () => {
     const setA = createSkillSet({ skills: [inspectSkill] })
     const setB = createSkillSet({
-      skills: [{ ...inspectSkill, name: 'extra', content: 'Extra.', description: 'Extra skill.', filePath: '/x/SKILL.md' }],
+      skills: [{ ...inspectSkill, content: 'Extra.', description: 'Extra skill.', filePath: '/x/SKILL.md', name: 'extra' }],
     })
     const plugin = skills({ sets: [setA, setB] })
 
@@ -181,8 +181,8 @@ describe('skills', () => {
       agentName: 'agent',
       context: {},
       input: { content: 'hello', role: 'user', type: 'message' },
-      signal: new AbortController().signal,
       sessionId: 'session',
+      signal: new AbortController().signal,
       turnId: 'turn',
     })
 
@@ -190,24 +190,24 @@ describe('skills', () => {
     expect(result).toContain('<name>extra</name>')
   })
 
-  it('respects priority when merging sets', () => {
-    const low = createSkillSet({ skills: [{ ...inspectSkill, description: 'low' }], priority: 0 })
-    const high = createSkillSet({ skills: [{ ...inspectSkill, description: 'high' }], priority: 10 })
+  it('respects priority when merging sets', async () => {
+    const low = createSkillSet({ priority: 0, skills: [{ ...inspectSkill, description: 'low' }] })
+    const high = createSkillSet({ priority: 10, skills: [{ ...inspectSkill, description: 'high' }] })
     const plugin = skills({ sets: [low, high] })
 
-    const tools = plugin.resolveTools?.({
+    await plugin.resolveTools?.({
       agentName: 'agent',
       context: {},
       input: [{ content: 'hello', role: 'user', type: 'message' }],
-      signal: new AbortController().signal,
       sessionId: 'session',
+      signal: new AbortController().signal,
       tools: [],
       turnId: 'turn',
       turnInput: { content: 'hello', role: 'user', type: 'message' },
     })
 
-    // high priority wins dedup
-    expect(plugin.extendInstructions?.({ agentName: 'agent', context: {}, input: { content: 'hello', role: 'user', type: 'message' }, signal: new AbortController().signal, sessionId: 'session', turnId: 'turn' })).toContain('high')
+    // high priority wins dedupe
+    expect(plugin.extendInstructions?.({ agentName: 'agent', context: {}, input: { content: 'hello', role: 'user', type: 'message' }, sessionId: 'session', signal: new AbortController().signal, turnId: 'turn' })).toContain('high')
   })
 })
 

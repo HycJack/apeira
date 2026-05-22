@@ -48,8 +48,8 @@ Creates an Apeira plugin that maps agent events to `@ag-ui/core` AGUIEvent types
 
 ```ts
 interface AGUIPluginOptions {
-  channel?: string    // Custom event channel name (default: 'ag-ui')
-  onEvent?: (event: AGUIEvent) => void  // Direct callback for AG-UI events
+  channel?: string // Custom event channel name (default: 'ag-ui')
+  onEvent?: (event: AGUIEvent) => void // Direct callback for AG-UI events
 }
 ```
 

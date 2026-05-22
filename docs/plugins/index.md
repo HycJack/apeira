@@ -8,29 +8,21 @@ A plugin is an object that conforms to `AgentPlugin`:
 
 ```ts
 interface AgentPlugin {
-  enforce?: 'pre' | 'post'
-
-  setup?(api: AgentPluginApi): MaybePromise<void>
-
-  onSessionInit?(session: { id: string }): MaybePromise<void>
-
-  onTurnStart?(event: { sessionId: string; turnId: string }): MaybePromise<void>
-  onTurnDone?(event: { sessionId: string; turnId: string }): MaybePromise<void>
-
-  onEvent?(event: AgentEvent): void
-
-  extendInstructions?(context: AgentContext<unknown>): MaybePromise<string | undefined>
-
-  resolveTools?(context: { sessionId: string }): MaybePromise<Tool[] | undefined>
-
-  onFinish?(...args: unknown[]): MaybePromise<unknown>
-  onStepFinish?(...args: unknown[]): MaybePromise<unknown>
-  prepareStep?(...args: unknown[]): MaybePromise<unknown>
-
+  enforce?: 'post' | 'pre'
+  extendInstructions?: (context: AgentContext<unknown>) => MaybePromise<string | undefined>
+  onEvent?: (event: AgentEvent) => void
+  onFinish?: (...args: unknown[]) => MaybePromise<unknown>
+  onSessionInit?: (session: { id: string }) => MaybePromise<void>
+  onStepFinish?: (...args: unknown[]) => MaybePromise<unknown>
+  onTurnDone?: (event: { sessionId: string, turnId: string }) => MaybePromise<void>
+  onTurnStart?: (event: { sessionId: string, turnId: string }) => MaybePromise<void>
+  prepareStep?: (...args: unknown[]) => MaybePromise<unknown>
+  resolveTools?: (context: { sessionId: string }) => MaybePromise<Tool[] | undefined>
+  setup?: (api: AgentPluginApi) => MaybePromise<void>
   storage?: {
-    getItem(key: string): MaybePromise<string | undefined>
-    setItem(key: string, value: string): MaybePromise<void>
-    removeItem(key: string): MaybePromise<void>
+    getItem: (key: string) => MaybePromise<string | undefined>
+    removeItem: (key: string) => MaybePromise<void>
+    setItem: (key: string, value: string) => MaybePromise<void>
   }
 }
 ```
@@ -59,8 +51,8 @@ Set `enforce: 'pre'` to run a hook before other plugins, or `enforce: 'post'` to
 ## Using plugins
 
 ```ts
-import { createAgent } from 'apeira'
 import { skills } from '@apeira/plugin-skills'
+import { createAgent } from 'apeira'
 
 const agent = createAgent({
   instructions: 'You are a helpful assistant.',
@@ -89,17 +81,13 @@ const agent = createAgent({
 ## Building a custom plugin
 
 ```ts
-const loggingPlugin = {
-  onTurnStart({ turnId }) {
-    console.log('turn started:', turnId)
-  },
-  onTurnDone({ turnId }) {
-    console.log('turn finished:', turnId)
-  },
-  onEvent(event) {
-    if (event.type === 'turn.failed')
-      console.error(event.error)
-  },
+import type { AgentPlugin } from '@apeira/core'
+
+const loggingPlugin: AgentPlugin = {
+  name: 'logging',
+  onEvent: event => event.type === 'turn.failed' && console.error(event.error),
+  onTurnDone: ({ turnId }) => console.log('turn finished:', turnId),
+  onTurnStart: ({ turnId }) => console.log('turn started:', turnId),
 }
 ```
 

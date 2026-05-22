@@ -47,9 +47,9 @@ interface Agent<T> {
   interrupt: (reason?: unknown) => void
   run: (input: ItemParam, options?: AgentRunOptions<T>) => ReadableStream<AgentEvent>
   send: (input: ItemParam, options?: AgentRunOptions<T>) => string
+  session: (options?: SessionOptions<T>) => AgentSession<T>
   setContext: (context: Partial<AgentContext<T>>) => void
   subscribe: (eventListener: AgentEventListener) => () => boolean
-  session: (options?: SessionOptions<T>) => AgentSession<T>
 }
 ```
 
@@ -119,7 +119,7 @@ agent.clear()
 Creates or addresses an explicit session. Each session has its own queue, interrupt state, in-memory history, and context overlay.
 
 ```ts
-const session = agent.session({ id: 'conversation-1', context: { userId: 'user_123' } })
+const session = agent.session({ context: { userId: 'user_123' }, id: 'conversation-1' })
 
 session.run({
   content: 'Say hello.',
@@ -166,13 +166,13 @@ Returns a function that removes the listener and returns whether it was present.
 
 ```ts
 interface AgentSession<T> {
-  run: (input: ItemParam, options?: AgentRunOptions<T>) => ReadableStream<AgentEvent>
-  send: (input: ItemParam, options?: AgentRunOptions<T>) => string
-  interrupt: (reason?: unknown) => void
   abort: (reason?: unknown) => void
   clear: () => void
-  setContext: (context: Partial<AgentContext<T>>) => void
   getContext: () => AgentContext<T>
+  interrupt: (reason?: unknown) => void
+  run: (input: ItemParam, options?: AgentRunOptions<T>) => ReadableStream<AgentEvent>
+  send: (input: ItemParam, options?: AgentRunOptions<T>) => string
+  setContext: (context: Partial<AgentContext<T>>) => void
   subscribe: (eventListener: AgentEventListener) => () => boolean
 }
 ```

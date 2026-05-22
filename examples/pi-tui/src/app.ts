@@ -10,7 +10,7 @@ import c from 'tinyrainbow'
 import { formatSkillInvocation } from '@apeira/plugin-skills'
 import { Box, CombinedAutocompleteProvider, Container, Editor, Markdown, matchesKey, ProcessTerminal, Spacer, Text, TUI } from '@earendil-works/pi-tui'
 
-import { agent, skillSet, skillsDir } from './utils/agent'
+import { agent, skillsDir, skillSet } from './utils/agent'
 import { model, workspaceRoot } from './utils/config'
 
 type ReasoningMode = 'compact' | 'full'

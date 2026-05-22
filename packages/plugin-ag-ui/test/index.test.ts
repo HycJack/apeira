@@ -32,7 +32,7 @@ describe('agui', () => {
     await plugin.onEvent?.({ sessionId: 'session-1', turnId: 'turn-1', type: 'step.start' })
     await plugin.onEvent?.({ outputIndex: 0, sessionId: 'session-1', turnId: 'turn-1', type: 'text.start' })
     await plugin.onEvent?.({ delta: 'Hello', sessionId: 'session-1', turnId: 'turn-1', type: 'text.delta' })
-    await plugin.onEvent?.({ text: 'Hello', sessionId: 'session-1', turnId: 'turn-1', type: 'text.done' })
+    await plugin.onEvent?.({ sessionId: 'session-1', text: 'Hello', turnId: 'turn-1', type: 'text.done' })
     await plugin.onEvent?.({ output: [], sessionId: 'session-1', turnId: 'turn-1', type: 'step.done' })
     await plugin.onEvent?.({ sessionId: 'session-1', turnId: 'turn-1', type: 'turn.done' })
 
@@ -87,7 +87,7 @@ describe('agui', () => {
     })
     await plugin.onEvent?.({ outputIndex: 0, sessionId: 'session-1', turnId: 'turn-2', type: 'reasoning.start' })
     await plugin.onEvent?.({ delta: 'Thinking', sessionId: 'session-1', turnId: 'turn-2', type: 'reasoning.delta' })
-    await plugin.onEvent?.({ text: 'Thinking', sessionId: 'session-1', turnId: 'turn-2', type: 'reasoning.done' })
+    await plugin.onEvent?.({ sessionId: 'session-1', text: 'Thinking', turnId: 'turn-2', type: 'reasoning.done' })
     await plugin.onEvent?.({ error: new Error('boom'), sessionId: 'session-1', turnId: 'turn-2', type: 'turn.failed' })
 
     const events = emitted.map(entry => entry.event as { [key: string]: unknown, type: string })

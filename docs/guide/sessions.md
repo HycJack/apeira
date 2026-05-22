@@ -78,13 +78,13 @@ Sessions expose the same methods as the root agent:
 
 ```ts
 interface AgentSession<T> {
-  run: (input: ItemParam, options?: AgentRunOptions<T>) => ReadableStream<AgentEvent>
-  send: (input: ItemParam, options?: AgentRunOptions<T>) => string
-  interrupt: (reason?: unknown) => void
   abort: (reason?: unknown) => void
   clear: () => void
-  setContext: (context: Partial<AgentContext<T>>) => void
   getContext: () => AgentContext<T>
+  interrupt: (reason?: unknown) => void
+  run: (input: ItemParam, options?: AgentRunOptions<T>) => ReadableStream<AgentEvent>
+  send: (input: ItemParam, options?: AgentRunOptions<T>) => string
+  setContext: (context: Partial<AgentContext<T>>) => void
   subscribe: (eventListener: AgentEventListener) => () => boolean
 }
 ```
@@ -164,9 +164,10 @@ const unsubscribe = session.subscribe(event =>
 When a storage plugin (e.g. `@apeira/plugin-unstorage`) is configured, session state — context, history, and version — is serialized to JSON and persisted. Optimistic concurrency via a version counter prevents conflicting writes.
 
 ```ts
+import fsDriver from 'unstorage/drivers/fs'
+
 import { unstorage } from '@apeira/plugin-unstorage'
 import { createStorage } from 'unstorage'
-import fsDriver from 'unstorage/drivers/fs'
 
 const agent = createAgent({
   instructions: 'You are a helpful assistant.',
