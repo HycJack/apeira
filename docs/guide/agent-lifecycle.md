@@ -48,13 +48,14 @@ sessionB.run(input) // starts immediately
 
 `send()` queues input into the active turn if one exists, or creates a new turn. If the active turn is already aborted, input targets the next scheduled turn.
 
-## Interrupt vs abort vs clear
+## Interrupt vs abort vs clear vs remove
 
-| Method | Records boundary | Clears queue | Resets history |
-|--------|-----------------|--------------|----------------|
-| `interrupt(reason)` | Yes | No | No |
-| `abort(reason)` | No | No | No |
-| `clear()` | No | Yes | Yes |
+| Method | Records boundary | Clears queue | Resets history | Deletes session |
+|--------|-----------------|--------------|----------------|-----------------|
+| `interrupt(reason)` | Yes | No | No | No |
+| `abort(reason)` | No | No | No | No |
+| `clear()` | No | Yes | Yes | No |
+| `remove()` | No | Yes | Yes | Yes |
 
 **Interrupt** aborts the active turn and inserts a `<turn_aborted>` boundary visible to the model on the next turn. The queue continues.
 
@@ -72,6 +73,12 @@ agent.abort('user cancelled')
 
 ```ts
 agent.clear()
+```
+
+**Remove** is available on explicit sessions. It aborts active work, removes queued turns, deletes persisted session state, and closes the old session handle.
+
+```ts
+await session.remove()
 ```
 
 ## Context

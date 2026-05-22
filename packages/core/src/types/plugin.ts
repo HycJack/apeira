@@ -80,7 +80,7 @@ export interface SessionState<T = unknown> {
 
 export interface StorageLike {
   getItem: (key: string) => MaybePromise<null | string | undefined>
-  removeItem?: (key: string) => MaybePromise<void>
+  removeItem: (key: string) => MaybePromise<void>
   setItem: (key: string, value: string) => MaybePromise<void>
 }
 

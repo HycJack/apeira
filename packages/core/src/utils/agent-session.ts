@@ -18,6 +18,7 @@ export interface AgentSession<T> {
   readonly id: string
   interrupt: (reason?: unknown) => void
   on: (eventListener: AgentEventListener) => () => boolean
+  remove: () => Promise<void>
   run: (input: ItemParam, options?: AgentRunOptions<T>) => ReadableStream<AgentEvent>
   send: (input: ItemParam, options?: AgentRunOptions<T>) => string
   setContext: (context: Partial<AgentContext<T>>) => void

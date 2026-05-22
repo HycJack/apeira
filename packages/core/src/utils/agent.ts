@@ -11,7 +11,7 @@ import { merge } from '@moeru/std/merge'
 
 import { createAgentRuntime } from './agent-runtime'
 
-export interface Agent<T> extends Omit<AgentSession<T>, 'fork' | 'id'> {
+export interface Agent<T> extends Omit<AgentSession<T>, 'fork' | 'id' | 'remove'> {
   session: (options?: SessionOptions<T>) => AgentSession<T>
 }
 
@@ -151,10 +151,29 @@ export const createAgent = <T = unknown>(options: CreateAgentOptions<T>): Agent<
     }
   }
 
+  const removeSessionState = async (sessionId: string) => {
+    for (const plugin of plugins) {
+      if (plugin.storage == null)
+        continue
+
+      await plugin.storage.removeItem(getSessionStorageKey(options.name, sessionId))
+    }
+  }
+
   const createAgentSession = (id: string, sessionOptions: SessionOptions<T> = {}): AgentSession<T> => {
     const initialSessionContext = sessionOptions.context ?? {}
 
     let currentSessionContext = initialSessionContext
+    let removed = false
+    let removing = false
+
+    const createRemovedSessionError = () =>
+      new Error(`Session removed: ${id}`)
+
+    const assertSessionOpen = () => {
+      if (removed || removing)
+        throw createRemovedSessionError()
+    }
 
     const resolveContext = (runContext?: Partial<AgentContext<T>>): AgentContext<T> =>
       merge(merge(context, currentSessionContext), runContext)
@@ -231,6 +250,8 @@ export const createAgent = <T = unknown>(options: CreateAgentOptions<T>): Agent<
       })
 
     const run: AgentSession<T>['run'] = (input, runOptions = {}) => {
+      assertSessionOpen()
+
       const turnId = crypto.randomUUID()
       let unsubscribe: (() => boolean) | undefined
 
@@ -265,22 +286,30 @@ export const createAgent = <T = unknown>(options: CreateAgentOptions<T>): Agent<
       })
     }
 
-    const send: AgentSession<T>['send'] = (input, runOptions = {}) =>
-      runtime.send({
+    const send: AgentSession<T>['send'] = (input, runOptions = {}) => {
+      assertSessionOpen()
+
+      return runtime.send({
         context: runOptions.context,
         input,
         signal: runOptions.signal,
       })
+    }
 
-    const interrupt: AgentSession<T>['interrupt'] = reason =>
+    const interrupt: AgentSession<T>['interrupt'] = (reason) => {
+      assertSessionOpen()
       runtime.interrupt(reason)
+    }
 
     const setSessionContext: AgentSession<T>['setContext'] = (nextContext) => {
+      assertSessionOpen()
       currentSessionContext = merge(currentSessionContext, nextContext)
       runtime.setContext(nextContext)
     }
 
     const fork: AgentSession<T>['fork'] = async (forkOptions: SessionForkOptions<T> = {}) => {
+      assertSessionOpen()
+
       const forkId = forkOptions.id ?? crypto.randomUUID()
 
       if (sessions.has(forkId))
@@ -309,19 +338,59 @@ export const createAgent = <T = unknown>(options: CreateAgentOptions<T>): Agent<
       return forked
     }
 
+    const remove: AgentSession<T>['remove'] = async () => {
+      assertSessionOpen()
+
+      if (id === DEFAULT_SESSION_ID)
+        throw new Error(`Cannot remove default session: ${id}`)
+
+      removing = true
+
+      try {
+        await runtime.remove()
+        await removeSessionState(id)
+
+        sessions.delete(id)
+        removed = true
+      }
+      catch (error) {
+        removing = false
+        throw error
+      }
+    }
+
     return {
-      abort: runtime.abort,
-      clear: runtime.clear,
-      emit: emitChannel,
+      abort: (reason) => {
+        assertSessionOpen()
+        runtime.abort(reason)
+      },
+      clear: () => {
+        assertSessionOpen()
+        runtime.clear()
+      },
+      emit: (channel, event) => {
+        assertSessionOpen()
+        emitChannel(channel, event)
+      },
       fork,
-      getContext: () => resolveContext(),
+      getContext: () => {
+        assertSessionOpen()
+        return resolveContext()
+      },
       id,
       interrupt,
-      on: onSession,
+      on: (eventListener) => {
+        assertSessionOpen()
+        return onSession(eventListener)
+      },
+      remove,
       run,
       send,
       setContext: setSessionContext,
-      subscribe,
+      subscribe: (channel, listener) => {
+        assertSessionOpen()
+        return subscribe(channel, listener)
+      },
     }
   }
 

@@ -325,6 +325,7 @@ describe('createAgent', () => {
             if (loadAttempts === 1)
               throw new Error('temporary storage failure')
           },
+          removeItem: () => {},
           setItem: () => {},
         },
       }],
@@ -366,6 +367,7 @@ describe('createAgent', () => {
         name: 'storage',
         storage: {
           getItem: () => undefined,
+          removeItem: () => {},
           setItem: async (_key, value) => {
             const state = JSON.parse(value) as { items: unknown[] }
             const phase = state.items.length > 0 ? 'response' : 'clear'
@@ -417,6 +419,7 @@ describe('createAgent', () => {
             })
             return undefined
           },
+          removeItem: () => {},
           setItem: () => {},
         },
       }],
@@ -580,6 +583,7 @@ describe('createAgent', () => {
             calls.push('loadSession')
             return storage.getItem(key)
           },
+          removeItem: key => storage.removeItem(key),
           setItem: (key, value) => {
             const state = JSON.parse(value) as { items: unknown[] }
             calls.push(`saveSession:${state.items.length}`)
@@ -641,6 +645,7 @@ describe('createAgent', () => {
         },
         storage: {
           getItem: key => storage.getItem(key),
+          removeItem: key => storage.removeItem(key),
           setItem: (key, value) => {
             const state = JSON.parse(value) as { context: { requestId?: string }, items: ItemParam[] }
             records.push({
@@ -1078,6 +1083,129 @@ describe('createAgent', () => {
       items: [message('Persisted source turn.'), assistantMessage('persisted response')],
       version: 0,
     })
+  })
+
+  it('removes an explicit session from memory and storage', async () => {
+    const storage = createMemoryStorage()
+    const responsesFetch = createResponsesFetch()
+    const agent = createAgent({
+      instructions: 'You are a remove test assistant.',
+      name: 'remove-session-test',
+      options: {
+        apiKey: 'test',
+        baseURL: 'https://example.test/v1/',
+        fetch: responsesFetch.fetch,
+        model: 'test-model',
+      },
+      plugins: [{
+        name: 'storage',
+        storage,
+      }],
+    })
+    const session = agent.session({ id: 'remove-session' })
+
+    await readEventStream(session.run(message('Persist before remove.')))
+    expect(storage.values.has('["remove-session-test","remove-session"]')).toBe(true)
+
+    await session.remove()
+
+    expect(storage.values.has('["remove-session-test","remove-session"]')).toBe(false)
+    expect(() => session.run(message('old handle'))).toThrow('Session removed: remove-session')
+
+    const fresh = agent.session({ id: 'remove-session' })
+
+    expect(fresh).not.toBe(session)
+
+    await readEventStream(fresh.run(message('Fresh turn.')))
+
+    expect(responsesFetch.inputs.at(-1)).toEqual([message('Fresh turn.')])
+  })
+
+  it('removes active and queued turns from an explicit session', async () => {
+    const { agent } = createTestAgent(20)
+    const session = agent.session({ id: 'remove-active-session' })
+    let removing = false
+    const unsubscribe = session.on((event) => {
+      if (event.type !== 'turn.start' || removing)
+        return
+
+      removing = true
+      queueMicrotask(() => {
+        void session.remove()
+      })
+    })
+
+    const first = readEventStream(session.run(message('Active turn.')))
+    const second = readEventStream(session.run(message('Queued turn.')))
+    const [firstEvents, secondEvents] = await Promise.all([first, second])
+
+    unsubscribe()
+
+    expect(firstEvents.map(event => event.type)).toContain('turn.aborted')
+    expect(firstEvents.find(event => event.type === 'turn.aborted' && event.reason === 'removed')).toBeDefined()
+    expect(secondEvents).toEqual(expect.arrayContaining([
+      expect.objectContaining({ reason: 'removed', type: 'turn.aborted' }),
+    ]))
+  })
+
+  it('rejects removing the default session', async () => {
+    const { agent } = createTestAgent()
+
+    await expect(agent.session({ id: 'default' }).remove()).rejects.toThrow('Cannot remove default session: default')
+  })
+
+  it('rejects removed session handles', async () => {
+    const { agent } = createTestAgent()
+    const session = agent.session({ id: 'removed-handle-session' })
+
+    await session.remove()
+
+    expect(() => session.abort()).toThrow('Session removed: removed-handle-session')
+    expect(() => session.clear()).toThrow('Session removed: removed-handle-session')
+    expect(() => session.emit('test', {})).toThrow('Session removed: removed-handle-session')
+    expect(() => session.getContext()).toThrow('Session removed: removed-handle-session')
+    expect(() => session.interrupt()).toThrow('Session removed: removed-handle-session')
+    expect(() => session.on(() => {})).toThrow('Session removed: removed-handle-session')
+    expect(() => session.run(message('old handle'))).toThrow('Session removed: removed-handle-session')
+    expect(() => session.send(message('old handle'))).toThrow('Session removed: removed-handle-session')
+    expect(() => session.setContext({})).toThrow('Session removed: removed-handle-session')
+    expect(() => session.subscribe('test', () => {})).toThrow('Session removed: removed-handle-session')
+    await expect(session.fork()).rejects.toThrow('Session removed: removed-handle-session')
+    await expect(session.remove()).rejects.toThrow('Session removed: removed-handle-session')
+  })
+
+  it('keeps a session addressable when storage remove fails', async () => {
+    const responsesFetch = createResponsesFetch()
+    const storage = createMemoryStorage()
+    const agent = createAgent({
+      instructions: 'You are a remove failure test assistant.',
+      name: 'remove-failure-test',
+      options: {
+        apiKey: 'test',
+        baseURL: 'https://example.test/v1/',
+        fetch: responsesFetch.fetch,
+        model: 'test-model',
+      },
+      plugins: [{
+        name: 'storage',
+        storage: {
+          getItem: key => storage.getItem(key),
+          removeItem: () => {
+            throw new Error('remove failed')
+          },
+          setItem: (key, value) => storage.setItem(key, value),
+        },
+      }],
+    })
+    const session = agent.session({ id: 'remove-failure-session' })
+
+    await expect(session.remove()).rejects.toThrow('remove failed')
+
+    expect(agent.session({ id: 'remove-failure-session' })).toBe(session)
+
+    await readEventStream(session.run(message('Still usable.')))
+
+    expect(responsesFetch.inputs.at(-1)).toEqual([message('Still usable.')])
   })
 
   it('runs different sessions with isolated queues and contexts', async () => {

@@ -15,6 +15,7 @@ export interface AgentRuntime<T = unknown> {
   clear: () => void
   enqueueTurn: (turn: QueuedInput<T>) => void
   interrupt: (reason?: unknown) => void
+  remove: (reason?: unknown) => Promise<void>
   send: (input: QueuedInput<T>) => string
   setContext: (context: Partial<AgentContext<T>>) => void
   snapshot: () => Promise<SessionState<T>>
@@ -49,6 +50,7 @@ export const createAgentRuntime = <T>(options: AgentRuntimeOptions<T>): AgentRun
   let loaded = false
   let loadReady: Promise<void> | undefined
   let pendingMutation = Promise.resolve()
+  let pumpReady = Promise.resolve()
   let pumping = false
 
   const abort: AgentRuntime<T>['abort'] = reason =>
@@ -231,25 +233,29 @@ export const createAgentRuntime = <T>(options: AgentRuntimeOptions<T>): AgentRun
 
   const pumpTurns = async () => {
     if (pumping)
-      return
+      return pumpReady
 
     pumping = true
 
-    try {
-      while (true) {
-        const turn = pendingTurns.dequeue()
-        if (turn == null)
-          break
+    pumpReady = (async () => {
+      try {
+        while (true) {
+          const turn = pendingTurns.dequeue()
+          if (turn == null)
+            break
 
-        await runQueuedTurn(turn)
+          await runQueuedTurn(turn)
+        }
       }
-    }
-    finally {
-      pumping = false
+      finally {
+        pumping = false
 
-      if (pendingTurns.size > 0)
-        void pumpTurns()
-    }
+        if (pendingTurns.size > 0)
+          await pumpTurns()
+      }
+    })()
+
+    return pumpReady
   }
 
   const enqueueTurn = (turn: QueuedInput<T>) => {
@@ -292,11 +298,24 @@ export const createAgentRuntime = <T>(options: AgentRuntimeOptions<T>): AgentRun
     }
   }
 
+  const remove: AgentRuntime<T>['remove'] = async (reason: unknown = 'removed') => {
+    acceptingInputTurnId = undefined
+    abort(reason)
+    pendingInput.clear()
+
+    for (const turn of pendingTurns.drain())
+      options.emit(turn.id!, { reason, type: 'turn.aborted' })
+
+    await pumpReady
+    await pendingMutation
+  }
+
   return {
     abort,
     clear,
     enqueueTurn,
     interrupt,
+    remove,
     send,
     setContext,
     snapshot,

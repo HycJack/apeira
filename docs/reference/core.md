@@ -173,6 +173,7 @@ interface AgentSession<T> {
   getContext: () => AgentContext<T>
   interrupt: (reason?: unknown) => void
   on: (eventListener: AgentEventListener) => () => boolean
+  remove: () => Promise<void>
   run: (input: ItemParam, options?: AgentRunOptions<T>) => ReadableStream<AgentEvent>
   send: (input: ItemParam, options?: AgentRunOptions<T>) => string
   setContext: (context: Partial<AgentContext<T>>) => void
@@ -194,6 +195,16 @@ const forked = await session.fork({
 ```
 
 If the source session has an active turn, only already committed history is copied. Passing an existing target `id` throws.
+
+### remove()
+
+Deletes an explicit session from memory and storage.
+
+```ts
+await session.remove()
+```
+
+The default session cannot be removed. Removed handles reject later method calls; calling `agent.session({ id })` after removal creates a fresh session.
 
 ## Types
 

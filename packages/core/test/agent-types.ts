@@ -44,11 +44,14 @@ export const agentContextTypeChecks = () => {
   typedAgent.setContext({ locale: 'zh-CN' })
   typedAgent.setContext({ requestId: 'req_123' })
   typedAgent.run(input, { context: { requestId: 'req_123' } })
+  // @ts-expect-error remove is only available on explicit sessions.
+  void typedAgent.remove
 
   const typedSession = typedAgent.session({
     context: { requestId: 'req_456' },
   })
 
+  void typedSession.remove()
   typedSession.setContext({ requestId: 'req_789' })
   typedSession.run(input, { context: { requestId: 'req_000' } })
 }
