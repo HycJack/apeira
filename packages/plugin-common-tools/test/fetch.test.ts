@@ -129,7 +129,6 @@ describe('createFetchTool', () => {
   it('strips dangerous HTML tags when format is html', async () => {
     const spy = mockFetchResponse(createMockResponse(mockHTMLWithDangerousContent))
 
-
     const tool = createFetchTool()
     const result = await tool.execute({ format: 'html', url: 'https://example.com/dangerous' }, EXECUTE_OPTIONS)
 
@@ -143,7 +142,6 @@ describe('createFetchTool', () => {
 
   it('falls back to text extraction when Readability returns nothing', async () => {
     const spy = mockFetchResponse(createMockResponse(mockHTMLWithoutArticle))
-
 
     const tool = createFetchTool()
     const result = await tool.execute({ url: 'https://example.com/simple' }, EXECUTE_OPTIONS)
@@ -160,7 +158,6 @@ describe('createFetchTool', () => {
     const longContent = `<html><head><title>Long Page</title></head><body><article><p>${'a'.repeat(500)}</p></article></body></html>`
     const spy = mockFetchResponse(createMockResponse(longContent))
 
-
     const tool = createFetchTool()
     const result = await tool.execute({ maxLength: 100, url: 'https://example.com/long' }, EXECUTE_OPTIONS)
 
@@ -173,7 +170,6 @@ describe('createFetchTool', () => {
     const spy = mockFetchResponse(
       new Response(null, { status: 404, statusText: 'Not Found' }),
     )
-
 
     const tool = createFetchTool()
     const result = await tool.execute({ url: 'https://example.com/404' }, EXECUTE_OPTIONS)
@@ -194,7 +190,6 @@ describe('createFetchTool', () => {
       }),
     )
 
-
     const tool = createFetchTool()
     const result = await tool.execute({ url: 'https://example.com/doc.pdf' }, EXECUTE_OPTIONS)
 
@@ -206,7 +201,6 @@ describe('createFetchTool', () => {
 
   it('handles network errors gracefully', async () => {
     const spy = vi.spyOn(globalThis, 'fetch').mockRejectedValue(new TypeError('fetch failed'))
-
 
     const tool = createFetchTool()
     const result = await tool.execute({ url: 'https://example.com/unreachable' }, EXECUTE_OPTIONS)

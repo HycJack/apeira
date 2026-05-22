@@ -79,7 +79,6 @@ describe('mcp', () => {
       })),
     })
 
-
     const plugin = mcp({
       servers: {
         docs: {
@@ -116,7 +115,6 @@ describe('mcp', () => {
       })),
     })
 
-
     const plugin = mcp({
       servers: {
         docs: {
@@ -147,7 +145,6 @@ describe('mcp', () => {
         }],
       })),
     })
-
 
     const plugin = mcp({
       servers: {
@@ -188,7 +185,6 @@ describe('mcp', () => {
       })),
     })
 
-
     const plugin = mcp({
       servers: {
         local: {
@@ -218,7 +214,6 @@ describe('mcp', () => {
         tools: [{ inputSchema: { type: 'object' }, name: 'search' }],
       })),
     })
-
 
     const plugin = mcp({
       onError,
@@ -254,7 +249,6 @@ describe('mcp', () => {
       }),
     })
 
-
     const plugin = mcp({
       onError: () => ({ invalid: true }),
       servers: {
@@ -275,7 +269,6 @@ describe('mcp', () => {
       .mockResolvedValueOnce({ tools: [{ inputSchema: { type: 'object' }, name: 'first' }] })
       .mockResolvedValueOnce({ tools: [{ inputSchema: { type: 'object' }, name: 'second' }] })
     fixtures.clients.push({ listTools })
-
 
     const plugin = mcp({
       servers: {
@@ -300,7 +293,6 @@ describe('mcp', () => {
       .mockResolvedValueOnce({ tools: [{ inputSchema: { type: 'object' }, name: 'first' }] })
       .mockResolvedValueOnce({ tools: [{ inputSchema: { type: 'object' }, name: 'second' }] })
     fixtures.clients.push({ listTools })
-
 
     const plugin = mcp({
       refreshTools: 'turn',
@@ -334,7 +326,6 @@ describe('mcp', () => {
       .mockResolvedValueOnce({ tools: [{ inputSchema: { type: 'object' }, name: 'first' }] })
       .mockRejectedValueOnce(new Error('refresh failed'))
     fixtures.clients.push({ listTools })
-
 
     const plugin = mcp({
       refreshTools: 'turn',
