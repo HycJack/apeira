@@ -20,7 +20,9 @@ export interface AgentSession<T> {
   run: (input: ItemParam, options?: AgentRunOptions<T>) => ReadableStream<AgentEvent>
   send: (input: ItemParam, options?: AgentRunOptions<T>) => string
   setContext: (context: Partial<AgentContext<T>>) => void
-  subscribe: ((channel: string, listener: PluginChannelListener) => () => boolean) & (<K extends keyof AgentChannelMap>(channel: K, listener: PluginChannelListener<AgentChannelMap[K]>) => () => boolean)
+  subscribe: {
+    <K extends string>(channel: K, listener: K extends keyof AgentChannelMap ? PluginChannelListener<AgentChannelMap[K]> : PluginChannelListener): () => boolean
+  }
 }
 
 export interface SessionForkOptions<T> {

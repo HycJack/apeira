@@ -1,6 +1,6 @@
 /* eslint-disable @masknet/browser-no-persistent-storage */
 import type { Agent, CreateAgentOptions, ItemParam } from '@apeira/core'
-import type { AGUIEvent, BaseEvent, Message, RunAgentInput } from '@copilotkit/react-core/v2'
+import type { BaseEvent, Message, RunAgentInput } from '@copilotkit/react-core/v2'
 import type { Subscriber } from 'rxjs'
 
 import { createAgent } from '@apeira/core'
@@ -325,13 +325,7 @@ export class AbstractApeiraAgent extends AbstractAgent {
       const thread = this.agent.session({ id: this.threadId })
       let activeRunId: string | undefined
 
-      const unsubscribe = thread.subscribe(AG_UI_CHANNEL, (event: unknown) => {
-        const aguiEvent = event as AGUIEvent & {
-          rawEvent?: { sessionId?: string, turnId?: string }
-          runId?: string
-          threadId?: string
-        }
-
+      const unsubscribe = thread.subscribe(AG_UI_CHANNEL, (aguiEvent) => {
         const eventThreadId = aguiEvent.threadId ?? (aguiEvent.rawEvent as undefined | { sessionId?: string })?.sessionId
         if (eventThreadId != null && eventThreadId !== this.threadId)
           return
@@ -339,7 +333,7 @@ export class AbstractApeiraAgent extends AbstractAgent {
         const eventRunId = aguiEvent.runId ?? (aguiEvent.rawEvent as undefined | { turnId?: string })?.turnId
 
         if (activeRunId == null && eventRunId != null)
-          activeRunId = eventRunId
+          activeRunId = eventRunId as string
 
         if (activeRunId != null && eventRunId != null && eventRunId !== activeRunId)
           return
@@ -350,7 +344,7 @@ export class AbstractApeiraAgent extends AbstractAgent {
         if (aguiEvent.type === EventType.RUN_FINISHED || aguiEvent.type === EventType.RUN_ERROR)
           this.isRunning = false
 
-        subscriber.next(event as BaseEvent)
+        subscriber.next(aguiEvent)
 
         if (aguiEvent.type === EventType.RUN_FINISHED || aguiEvent.type === EventType.RUN_ERROR) {
           this.onThreadUpdated?.(this.threadId)
