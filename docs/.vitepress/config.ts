@@ -12,6 +12,8 @@ export default defineConfig({
       { link: '/reference/core', text: 'Reference' },
     ],
 
+    search: { provider: 'local' },
+
     sidebar: [
       {
         items: [
