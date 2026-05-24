@@ -10,6 +10,8 @@ pnpm add @apeira/plugin-mcp
 
 ## Usage
 
+### JS config
+
 ```ts
 import { createAgent } from '@apeira/core'
 import { mcp } from '@apeira/plugin-mcp'
@@ -24,20 +26,18 @@ const agent = createAgent({
   },
   plugins: [
     mcp({
-      servers: {
+      mcpServers: {
         docs: {
-          transportOptions: {
-            requestInit: {
-              headers: { Authorization: `Bearer ${process.env.DOCS_MCP_TOKEN}` },
-            },
+          headers: {
+            Authorization: `Bearer ${process.env.DOCS_MCP_TOKEN}`,
           },
-          type: 'streamable-http',
+          timeout: 600_000,
+          type: 'http',
           url: 'https://example.com/mcp',
         },
         filesystem: {
           args: ['-y', '@modelcontextprotocol/server-filesystem', '.'],
           command: 'npx',
-          type: 'stdio',
         },
       },
     }),
@@ -45,63 +45,115 @@ const agent = createAgent({
 })
 ```
 
+### JSON config
+
+```ts
+import { createAgent } from '@apeira/core'
+import { mcp } from '@apeira/plugin-mcp'
+
+import config from '../.mcp.json'
+
+const agent = createAgent({
+  instructions: 'You are a helpful assistant.',
+  name: 'assistant',
+  options: {
+    apiKey: process.env.OPENAI_API_KEY,
+    baseURL: 'https://api.openai.com/v1/',
+    model: 'gpt-5.5',
+  },
+  plugins: [
+    mcp(config),
+  ],
+})
+```
+
+To override imported JSON config in JavaScript, spread it into the same object:
+
+```ts
+mcp({
+  ...config,
+  progressiveToolDiscovery: true,
+})
+```
+
+Example `.mcp.json`:
+
+```json
+{
+  "mcpServers": {
+    "docs": {
+      "type": "http",
+      "url": "https://example.com/mcp",
+      "headers": {
+        "Authorization": "Bearer ${DOCS_MCP_TOKEN}"
+      },
+      "timeout": 600000
+    },
+    "filesystem": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-filesystem", "."],
+      "env": {
+        "NODE_ENV": "production"
+      }
+    }
+  }
+}
+```
+
+The plugin does not read `.mcp.json` from disk; pass an imported JSON object or an inline JavaScript object.
+
 ## API
 
-### `mcp(options)`
+### `mcp(config)`
 
 Creates an Apeira plugin that converts MCP tools into `@xsai/tool` compatible function tools.
 
 ```ts
-interface MCPPluginOptions {
-  clientInfo?: { name?: string, version?: string }
-  onError?: (error: unknown, context: MCPErrorContext) => unknown
-  prefixToolNames?: boolean
-  refreshTools?: 'manual' | 'turn'
-  servers: Record<string, MCPServerConfig>
+interface MCPConfig {
+  mcpServers: Record<string, MCPServerConfig>
+  progressiveToolDiscovery?: boolean
 }
 ```
+
+The config shape matches project-scoped `.mcp.json` files.
 
 Supported server transports:
 
 | Type | Use when |
 |------|----------|
 | `stdio` | Running a local MCP server process |
-| `streamable-http` | Connecting to a Streamable HTTP MCP server |
+| `http` / `streamable-http` | Connecting to a Streamable HTTP MCP server |
 | `sse` | Connecting to a legacy SSE MCP server |
-| `custom` | Supplying your own MCP SDK transport |
 
-Tool names are prefixed by default as `mcp_<serverId>__<toolName>` to avoid collisions with existing Apeira tools. Disable this with `prefixToolNames: false`, or provide `nameMapper` per server.
+Stdio servers may omit `type`; any server with `command` is treated as `stdio`.
 
-Server and tool name parts are sanitized for function-tool compatibility. If two names only differ by characters that sanitize to the same value, provide `nameMapper` to avoid collisions.
+Tool names are prefixed as `mcp_<serverId>__<toolName>` to avoid collisions with existing Apeira tools. Server and tool name parts are sanitized for function-tool compatibility.
 
-### Tool Filtering
+### Progressive Tool Discovery
 
-```ts
-mcp({
-  servers: {
-    github: {
-      excludeTools: ['delete_repository'],
-      includeTools: ['search_issues', 'get_issue'],
-      type: 'streamable-http',
-      url: 'https://example.com/mcp',
-    },
-  },
-})
-```
+Set `progressiveToolDiscovery: true` to expose only three stable meta tools instead of every MCP tool schema upfront:
 
-Each server also accepts `toolFilter`, `callTimeoutMs`, `clientOptions`, and `nameMapper`.
+| Tool | Purpose |
+|------|---------|
+| `search_mcp_tools` | Search available MCP tools by query and return concise matches. |
+| `get_mcp_tool_details` | Fetch the full schema for one matched MCP tool. |
+| `call_mcp_tool` | Call one MCP tool by name with arguments matching its schema. |
+
+This follows the catalog, inspect, execute pattern recommended by the MCP client best practices guide. The plugin still caches `tools/list` results host-side, but the model only sees full schemas for tools it asks to inspect. If some servers fail during catalog discovery, `search_mcp_tools` includes them in `serverFailures` while still returning tools from healthy servers.
+
+### Environment Variables
+
+The plugin expands environment variables in `command`, `args`, `env`, `url`, and `headers`.
+
+- `${VAR}` expands to `process.env.VAR` and throws if it is missing.
+- `${VAR:-default}` uses `default` when `process.env.VAR` is missing.
+
+The `.mcp.json` `timeout` field is passed as the MCP request timeout for listing tools and calling tools.
 
 ### Lifecycle
 
 Connections are lazy and persistent. The plugin connects to each server the first time tools are resolved, caches the listed tools by default, and reuses the MCP client for later tool calls.
 
-Use `refreshTools: 'turn'` to re-list tools before each turn. Turn refreshes are isolated per server: if a refresh fails, the plugin keeps the previous tool cache for that server, or an empty cache when no previous tools exist. Set `callTimeoutMs` on slow servers and use `onError` to observe or convert failures.
-
 ### Errors
 
-MCP tool results with `isError: true` are returned to the model as normal tool results. Transport, connection, protocol, and timeout failures throw by default.
-
-Provide `onError` to observe or convert failures:
-
-- For `callTool` errors, return a model-visible tool result. Returning `undefined` produces a default `{ isError: true, content: [...] }` result.
-- For `connect` and `listTools` errors during tool discovery, return `Tool[]` to substitute tools or `undefined` to expose no tools for that server. Returning any other shape throws a `TypeError`.
+MCP tool results with `isError: true` are returned to the model as normal tool results. Tool-call transport, protocol, and timeout failures are converted into model-visible `isError` tool results. Tool discovery failures for one server do not prevent healthy servers from exposing their tools.

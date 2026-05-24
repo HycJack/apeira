@@ -1,46 +1,42 @@
 import type { AgentPlugin } from '@apeira/core'
 import type { Client } from '@modelcontextprotocol/sdk/client/index.js'
 
-import type { MCPPluginOptions } from './types/plugin'
-import type { MCPServerState, MCPTool } from './types/runtime'
+import type { MCPConfig, MCPToolDefinition } from './types/plugin'
+import type { MCPServerState, MCPTool, MCPToolCatalog } from './types/runtime'
 
+import { ToolListChangedNotificationSchema } from '@modelcontextprotocol/sdk/types.js'
 import { rawTool } from '@xsai/tool'
 
 import { name, version } from '../package.json'
 import { createMCPClient, createMCPTransport, getRequestOptions } from './utils/client'
-import { handleResolveToolsError, handleToolCallError } from './utils/error'
-import { defaultNameMapper, identityNameMapper } from './utils/names'
-import { shouldIncludeTool } from './utils/tools'
+import { normalizeMCPConfig } from './utils/config'
+import { buildMcpToolName } from './utils/names'
+import { createProgressiveMCPTools } from './utils/progressive'
+import { createCatalogFailure, createErrorToolResult } from './utils/result'
+
+const MAX_MCP_DESCRIPTION_LENGTH = 2048
 
 export type {
-  MCPClientInfo,
-  MCPCustomServerConfig,
-  MCPErrorContext,
-  MCPPluginOptions,
+  MCPConfig,
+  MCPHttpServerConfig,
   MCPServerConfig,
   MCPServerConfigBase,
   MCPSseServerConfig,
   MCPStdioServerConfig,
-  MCPStreamableHTTPServerConfig,
   MCPToolDefinition,
-  MCPToolFilter,
-  MCPToolFilterContext,
-  MCPToolNameMapper,
   MCPToolResult,
 } from './types/plugin'
 
-export const mcp = (options: MCPPluginOptions): AgentPlugin => {
-  const refreshMode = options.refreshTools ?? 'manual'
-  const mapToolName = options.prefixToolNames === false
-    ? identityNameMapper
-    : defaultNameMapper
+export const mcp = (config: MCPConfig): AgentPlugin => {
+  const servers = normalizeMCPConfig(config)
+  let catalog: MCPToolCatalog | undefined
 
   const states = new Map<string, MCPServerState>()
-  for (const serverId of Object.keys(options.servers))
+  for (const serverId of Object.keys(servers))
     states.set(serverId, {})
 
   const getConnectedClient = async (serverId: string, signal?: AbortSignal) => {
-    const config = options.servers[serverId]
+    const config = servers[serverId]
     const state = states.get(serverId)
 
     if (config == null || state == null)
@@ -55,13 +51,17 @@ export const mcp = (options: MCPPluginOptions): AgentPlugin => {
     state.connectPromise = (async () => {
       try {
         const client = createMCPClient({
-          clientInfo: options.clientInfo,
-          clientOptions: config.clientOptions,
           version,
         })
         const transport = await createMCPTransport(config)
 
         await client.connect(transport, getRequestOptions(config, signal))
+
+        client.setNotificationHandler(ToolListChangedNotificationSchema, () => {
+          state.definitions = undefined
+          state.tools = undefined
+          catalog = undefined
+        })
 
         state.client = client
         state.transport = transport
@@ -77,97 +77,162 @@ export const mcp = (options: MCPPluginOptions): AgentPlugin => {
     return state.connectPromise
   }
 
-  const listServerTools = async (serverId: string, signal?: AbortSignal): Promise<MCPTool[]> => {
-    const config = options.servers[serverId]
+  const listServerToolDefinitions = async (serverId: string, signal?: AbortSignal): Promise<MCPToolDefinition[]> => {
+    const config = servers[serverId]
     const state = states.get(serverId)
 
     if (config == null || state == null)
       throw new Error(`Unknown MCP server: ${serverId}`)
 
+    if (state.definitions != null)
+      return state.definitions
+
+    const client: Client = await getConnectedClient(serverId, signal)
+
+    const definitions: MCPToolDefinition[] = []
+    let cursor: string | undefined
+
+    do {
+      const listed = await client.listTools(
+        cursor == null ? undefined : { cursor },
+        getRequestOptions(config, signal),
+      )
+
+      definitions.push(...listed.tools)
+      cursor = listed.nextCursor
+    } while (cursor != null)
+
+    state.definitions = definitions.map(d => ({
+      ...d,
+      description: d.description != null
+        ? d.description.slice(0, MAX_MCP_DESCRIPTION_LENGTH)
+        : d.description,
+    }))
+    state.failure = undefined
+    catalog = undefined
+    return state.definitions
+  }
+
+  const listToolCatalog = async (signal?: AbortSignal): Promise<MCPToolCatalog> => {
+    if (catalog != null)
+      return catalog
+
+    const results = await Promise.allSettled([...states.keys()].map(async (serverId) => {
+      const definitions = await listServerToolDefinitions(serverId, signal)
+
+      return definitions.map(definition => ({
+        definition,
+        name: buildMcpToolName(serverId, definition.name),
+        serverId,
+        toolName: definition.name,
+      }))
+    }))
+
+    if (signal?.aborted)
+      throw signal.reason ?? new Error('MCP tool resolution aborted.')
+
+    const entries = results.flatMap((result, index) => {
+      const serverId = [...states.keys()][index]
+      const state = serverId == null ? undefined : states.get(serverId)
+
+      if (result.status === 'fulfilled') {
+        if (state != null)
+          state.failure = undefined
+
+        return result.value
+      }
+
+      if (serverId != null && state != null)
+        state.failure = createCatalogFailure(serverId, result.reason)
+
+      return []
+    })
+    const entriesByName = new Map(entries.map(entry => [entry.name, entry]))
+    const failures = [...states.values()]
+      .map(state => state.failure)
+      .filter((failure): failure is NonNullable<typeof failure> => failure != null)
+
+    catalog = { entries, entriesByName, failures }
+    return catalog
+  }
+
+  const listServerTools = async (serverId: string, signal?: AbortSignal): Promise<MCPTool[]> => {
+    const serverConfig = servers[serverId]
+    const state = states.get(serverId)
+
+    if (serverConfig == null || state == null)
+      throw new Error(`Unknown MCP server: ${serverId}`)
+
     if (state.tools != null)
       return state.tools
 
-    let client!: Client
-    try {
-      client = await getConnectedClient(serverId, signal)
+    const definitions = await listServerToolDefinitions(serverId, signal)
+    const client: Client = await getConnectedClient(serverId, signal)
+    const tools: MCPTool[] = []
+
+    for (const mcpTool of definitions) {
+      const localToolName = buildMcpToolName(serverId, mcpTool.name)
+
+      tools.push(rawTool({
+        description: mcpTool.description,
+        execute: async (input, executeOptions) => {
+          try {
+            return await client.callTool(
+              {
+                arguments: input as Record<string, unknown>,
+                name: mcpTool.name,
+              },
+              undefined,
+              getRequestOptions(serverConfig, executeOptions.abortSignal),
+            )
+          }
+          catch (error) {
+            return createErrorToolResult(error, {
+              operation: 'callTool',
+              serverId,
+              toolName: mcpTool.name,
+            })
+          }
+        },
+        name: localToolName,
+        parameters: mcpTool.inputSchema,
+      }))
     }
-    catch (error) {
-      return handleResolveToolsError(error, { operation: 'connect', serverId }, options)
-    }
 
-    try {
-      const listed = await client.listTools(undefined, getRequestOptions(config, signal))
-      const tools: MCPTool[] = []
-
-      for (const mcpTool of listed.tools) {
-        if (!await shouldIncludeTool(config, serverId, mcpTool))
-          continue
-
-        const localToolName = (config.nameMapper ?? mapToolName)(serverId, mcpTool.name)
-
-        tools.push(rawTool({
-          description: mcpTool.description,
-          execute: async (input, executeOptions) => {
-            try {
-              return await client.callTool(
-                {
-                  arguments: input as Record<string, unknown>,
-                  name: mcpTool.name,
-                },
-                undefined,
-                getRequestOptions(config, executeOptions.abortSignal),
-              )
-            }
-            catch (error) {
-              return handleToolCallError(error, {
-                operation: 'callTool',
-                serverId,
-                toolName: mcpTool.name,
-              }, options)
-            }
-          },
-          name: localToolName,
-          parameters: mcpTool.inputSchema,
-        }))
-      }
-
-      state.tools = tools
-      return tools
-    }
-    catch (error) {
-      return handleResolveToolsError(error, { operation: 'listTools', serverId }, options)
-    }
-  }
-
-  const refreshTools = async () => {
-    await Promise.all([...states.keys()].map(async (serverId) => {
-      const state = states.get(serverId)
-      const previousTools = state?.tools
-
-      if (state != null)
-        state.tools = undefined
-
-      try {
-        await listServerTools(serverId)
-      }
-      catch {
-        if (state != null)
-          state.tools = previousTools ?? []
-      }
-    }))
+    state.tools = tools
+    return tools
   }
 
   return {
     name,
-    onTurnStart: async () => {
-      if (refreshMode !== 'turn')
-        return
-
-      await refreshTools()
-    },
     resolveTools: async ({ signal }) => {
-      const toolGroups = await Promise.all([...states.keys()].map(async serverId => listServerTools(serverId, signal)))
-      return toolGroups.flat()
+      if (config.progressiveToolDiscovery === true) {
+        return createProgressiveMCPTools({
+          getConnectedClient,
+          listToolCatalog,
+          servers,
+        })
+      }
+
+      const serverIds = [...states.keys()]
+      const results = await Promise.allSettled(serverIds.map(async serverId => listServerTools(serverId, signal)))
+
+      if (signal.aborted)
+        throw signal.reason ?? new Error('MCP tool resolution aborted.')
+
+      results.forEach((result, index) => {
+        const serverId = serverIds[index]
+        const state = serverId == null ? undefined : states.get(serverId)
+
+        if (state == null)
+          return
+
+        state.failure = result.status === 'rejected'
+          ? createCatalogFailure(serverId, result.reason)
+          : undefined
+      })
+
+      return results.flatMap(result => result.status === 'fulfilled' ? result.value : [])
     },
     version,
   }
