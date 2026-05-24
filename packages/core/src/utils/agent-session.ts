@@ -11,7 +11,9 @@ export interface AgentRunOptions<T> {
 export interface AgentSession<T> {
   abort: (reason?: unknown) => void
   clear: () => void
-  emit: (channel: string, event: unknown) => void
+  emit: {
+    <K extends string>(channel: K, event: K extends keyof AgentChannelMap ? AgentChannelMap[K] : unknown): void
+  }
   fork: (options?: SessionForkOptions<T>) => Promise<AgentSession<T>>
   getContext: () => AgentContext<T>
   readonly id: string

@@ -28,7 +28,9 @@ export interface AgentPlugin<T = unknown> {
 }
 
 export interface AgentPluginApi {
-  emit: (channel: string, event: unknown) => void
+  emit: {
+    <K extends string>(channel: K, event: K extends keyof AgentChannelMap ? AgentChannelMap[K] : unknown): void
+  }
   subscribe: {
     <K extends string>(channel: K, listener: K extends keyof AgentChannelMap ? PluginChannelListener<AgentChannelMap[K]> : PluginChannelListener): () => boolean
   }
