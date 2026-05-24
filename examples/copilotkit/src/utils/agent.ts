@@ -322,10 +322,10 @@ export class AbstractApeiraAgent extends AbstractAgent {
         return
       }
 
-      const thread = this.agent.session({ id: this.threadId })
+      const session = this.agent.session({ id: this.threadId })
       let activeRunId: string | undefined
 
-      const unsubscribe = thread.subscribe(AG_UI_CHANNEL, (aguiEvent) => {
+      const unsubscribe = session.subscribe(AG_UI_CHANNEL, (aguiEvent) => {
         const eventThreadId = aguiEvent.threadId ?? (aguiEvent.rawEvent as undefined | { sessionId?: string })?.sessionId
         if (eventThreadId != null && eventThreadId !== this.threadId)
           return
@@ -352,7 +352,7 @@ export class AbstractApeiraAgent extends AbstractAgent {
         }
       })
 
-      const reader = thread.run(userInput).getReader()
+      const reader = session.run(userInput).getReader()
 
       void (async () => {
         try {
@@ -374,7 +374,7 @@ export class AbstractApeiraAgent extends AbstractAgent {
         void reader.cancel().catch(() => undefined)
 
         if (this.isRunning)
-          thread.abort('cancelled')
+          session.abort('cancelled')
       }
     })
   }
