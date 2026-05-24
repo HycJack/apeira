@@ -11,12 +11,9 @@ declare module '@apeira/core' {
   }
 }
 
-export const AG_UI_CHANNEL = 'ag-ui'
-
 export type AGUIEventListener = (event: AGUIEvent) => void
 
 export interface AGUIPluginOptions {
-  channel?: string
   onEvent?: AGUIEventListener
 }
 
@@ -37,7 +34,6 @@ const toErrorMessage = (value: unknown) =>
     : String(value)
 
 export const agui = (options: AGUIPluginOptions = {}): AgentPlugin => {
-  const channel = options.channel ?? AG_UI_CHANNEL
   const turnStates = new Map<string, TurnState>()
 
   let pluginApi: AgentPluginApi | undefined
@@ -53,7 +49,7 @@ export const agui = (options: AGUIPluginOptions = {}): AgentPlugin => {
   }
 
   const emit = (event: AGUIEvent) => {
-    pluginApi?.emit(channel, event)
+    pluginApi?.emit('ag-ui', event)
     options.onEvent?.(event)
   }
 

@@ -4,7 +4,6 @@ import type { BaseEvent, Message, RunAgentInput } from '@copilotkit/react-core/v
 import type { Subscriber } from 'rxjs'
 
 import { createAgent } from '@apeira/core'
-import { AG_UI_CHANNEL } from '@apeira/plugin-ag-ui'
 import {
   AbstractAgent,
   EventType,
@@ -325,7 +324,7 @@ export class AbstractApeiraAgent extends AbstractAgent {
       const session = this.agent.session({ id: this.threadId })
       let activeRunId: string | undefined
 
-      const unsubscribe = session.subscribe(AG_UI_CHANNEL, (aguiEvent) => {
+      const unsubscribe = session.subscribe('ag-ui', (aguiEvent) => {
         const eventThreadId = aguiEvent.threadId ?? (aguiEvent.rawEvent as undefined | { sessionId?: string })?.sessionId
         if (eventThreadId != null && eventThreadId !== this.threadId)
           return

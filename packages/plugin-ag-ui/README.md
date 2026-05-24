@@ -48,9 +48,8 @@ Creates an Apeira plugin that maps agent events to `@ag-ui/core` AGUIEvent types
 
 ```ts
 interface AGUIPluginOptions {
-  channel?: string // Custom event channel name (default: 'ag-ui')
   onEvent?: (event: AGUIEvent) => void // Direct callback for AG-UI events
 }
 ```
 
-Events are emitted on a custom channel via `api.emit()` and delivered synchronously through the `onEvent` callback. Use `agent.subscribe('ag-ui', event => ...)` to receive typed AG-UI events — the package augments `AgentChannelMap` so `event` is automatically inferred as `AGUIEvent`.
+Events are emitted on the `'ag-ui'` channel via `api.emit()` and delivered synchronously through the `onEvent` callback. Use `agent.subscribe('ag-ui', event => ...)` to receive typed AG-UI events — the package augments `AgentChannelMap` so `event` is automatically inferred as `AGUIEvent`.

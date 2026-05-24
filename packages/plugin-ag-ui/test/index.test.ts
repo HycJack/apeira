@@ -3,7 +3,7 @@ import type { AgentPluginApi } from '@apeira/core'
 import { EventType } from '@ag-ui/core'
 import { describe, expect, it } from 'vitest'
 
-import { AG_UI_CHANNEL, agui } from '../src/index'
+import { agui } from '../src/index'
 
 const createPluginApi = () => {
   const emitted: Array<{ channel: string, event: unknown }> = []
@@ -37,13 +37,13 @@ describe('agui', () => {
     await plugin.onEvent?.({ sessionId: 'session-1', turnId: 'turn-1', type: 'turn.done' })
 
     expect(emitted.map(entry => entry.channel)).toEqual([
-      AG_UI_CHANNEL,
-      AG_UI_CHANNEL,
-      AG_UI_CHANNEL,
-      AG_UI_CHANNEL,
-      AG_UI_CHANNEL,
-      AG_UI_CHANNEL,
-      AG_UI_CHANNEL,
+      'ag-ui',
+      'ag-ui',
+      'ag-ui',
+      'ag-ui',
+      'ag-ui',
+      'ag-ui',
+      'ag-ui',
     ])
     expect(emitted.map(entry => (entry.event as { type: string }).type)).toEqual([
       EventType.RUN_STARTED,
