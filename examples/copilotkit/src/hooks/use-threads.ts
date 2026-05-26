@@ -1,10 +1,12 @@
 /* eslint-disable @masknet/browser-no-persistent-storage */
 import type { ItemParam } from '@apeira/core'
+import type { Episode } from '@apeira/core/episodic'
 
 import { useLocalStorage } from 'foxact/use-local-storage'
 import { useCallback, useEffect, useMemo } from 'react'
 
 import { AGENT_NAME } from '../utils/const'
+import { isItemEpisode } from '../utils/is-item-episode'
 
 const THREADS_KEY = 'apeira:copilotkit:threads'
 const ACTIVE_THREAD_KEY = 'apeira:copilotkit:active-thread-id'
@@ -18,7 +20,7 @@ export interface LocalThread {
 }
 
 interface PersistedThreadState {
-  items?: ItemParam[]
+  episodic?: string
 }
 
 const now = () => Date.now()
@@ -37,13 +39,32 @@ const readThreadState = (threadId: string) => {
   }
 }
 
+const readThreadItems = (threadId: string): ItemParam[] => {
+  const items: ItemParam[] = []
+  const lines = (readThreadState(threadId).episodic ?? '').split('\n')
+
+  for (const line of lines) {
+    if (!line.trim())
+      continue
+
+    try {
+      const episode = JSON.parse(line) as Episode
+      if (isItemEpisode(episode))
+        items.push(episode.payload.item)
+    }
+    catch {}
+  }
+
+  return items
+}
+
 const getText = (content: Extract<ItemParam, { type: 'message' }>['content']) =>
   typeof content === 'string'
     ? content
     : content.flatMap(part => 'text' in part ? [part.text] : []).join(' ')
 
 const getThreadName = (threadId: string) => {
-  const message = readThreadState(threadId).items?.find((item): item is Extract<ItemParam, { role: 'user', type: 'message' }> =>
+  const message = readThreadItems(threadId).find((item): item is Extract<ItemParam, { role: 'user', type: 'message' }> =>
     item.type === 'message' && item.role === 'user',
   )
   const text = message == null ? '' : getText(message.content).trim()
@@ -96,8 +117,7 @@ export const useThreads = () => {
   }, [updateThread])
 
   const touchThread = useCallback((threadId: string) => {
-    const state = readThreadState(threadId)
-    if ((state.items?.length ?? 0) === 0)
+    if (readThreadItems(threadId).length === 0)
       return
 
     setThreads((current) => {

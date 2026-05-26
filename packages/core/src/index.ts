@@ -1,8 +1,34 @@
-export * from './types/context'
-export * from './types/event'
-export * from './types/maybe-promise'
-export * from './types/plugin'
-export * from './types/responses'
-export * from './utils/agent'
-export * from './utils/agent-session'
-export * from './utils/linked-abort'
+export type { AgentContext, Instructions, ItemParam, MaybePromise } from './types/base'
+export type {
+  AgentEvent,
+  ApeiraEvent,
+  TurnAbortedEvent,
+  TurnDoneEvent,
+  TurnFailedEvent,
+  TurnInputDrainedEvent,
+  TurnInputQueuedEvent,
+  TurnQueuedEvent,
+  TurnStartEvent,
+  WithId,
+} from './types/event'
+export type {
+  AgentChannelMap,
+  AgentPlugin,
+  AgentPluginApi,
+  AgentPluginOption,
+  ChannelApi,
+  ExtendInputOptions,
+  ExtendInstructionsOptions,
+  PluginChannelListener,
+  PluginHookBase,
+  ResolveToolsOptions,
+  ResponseOptions,
+  SessionInitOptions,
+  SessionState,
+  StorageLike,
+  TurnDoneOptions,
+  TurnStartOptions,
+} from './types/plugin'
+export { createAgent } from './utils/agent'
+export type { Agent, CreateAgentOptions, SessionOptions } from './utils/agent'
+export type { AgentRunOptions, AgentSession, SessionForkOptions } from './utils/agent-session'

@@ -1,10 +1,9 @@
 import type { ResponsesOptions } from '@xsai-ext/responses'
 import type { Tool } from '@xsai/shared-chat'
 
-import type { AgentContext } from './context'
+import type { Episodic } from '../episodic'
+import type { AgentContext, ItemParam, MaybePromise } from './base'
 import type { AgentEvent } from './event'
-import type { MaybePromise } from './maybe-promise'
-import type { ItemParam } from './responses'
 
 export interface AgentChannelMap {
   apeira: AgentEvent
@@ -12,6 +11,7 @@ export interface AgentChannelMap {
 
 export interface AgentPlugin<T = unknown> {
   enforce?: 'post' | 'pre'
+  extendInput?: (options: ExtendInputOptions<T>) => MaybePromise<ItemParam[] | void>
   extendInstructions?: (options: ExtendInstructionsOptions<T>) => MaybePromise<string | void>
   name: string
   onEvent?: (event: AgentEvent) => MaybePromise<void>
@@ -27,14 +27,7 @@ export interface AgentPlugin<T = unknown> {
   version?: string
 }
 
-export interface AgentPluginApi {
-  emit: {
-    <K extends string>(channel: K, event: K extends keyof AgentChannelMap ? AgentChannelMap[K] : unknown): void
-  }
-  subscribe: {
-    <K extends string>(channel: K, listener: K extends keyof AgentChannelMap ? PluginChannelListener<AgentChannelMap[K]> : PluginChannelListener): () => boolean
-  }
-}
+export interface AgentPluginApi extends ChannelApi {}
 
 export type AgentPluginOption<T = unknown>
   = | AgentPlugin<T>
@@ -43,8 +36,23 @@ export type AgentPluginOption<T = unknown>
     | null
     | undefined
 
+export interface ChannelApi {
+  emit: {
+    <K extends string>(channel: K, event: K extends keyof AgentChannelMap ? AgentChannelMap[K] : unknown): void
+  }
+  subscribe: {
+    <K extends string>(channel: K, listener: K extends keyof AgentChannelMap ? PluginChannelListener<AgentChannelMap[K]> : PluginChannelListener): () => boolean
+  }
+}
+
+export interface ExtendInputOptions<T = unknown> extends PluginHookBase<T> {
+  episodic: Episodic
+  input: readonly ItemParam[]
+  turnInput: ItemParam
+}
+
 export interface ExtendInstructionsOptions<T = unknown> extends PluginHookBase<T> {
-  input: ItemParam
+  turnInput: ItemParam
 }
 
 export type PluginChannelListener<T = unknown> = (event: T) => void
@@ -74,8 +82,7 @@ export interface SessionInitOptions<T = unknown> {
 
 export interface SessionState<T = unknown> {
   context: Partial<AgentContext<T>>
-  items: ItemParam[]
-  version: number
+  episodic: string
 }
 
 export interface StorageLike {
@@ -89,5 +96,5 @@ export interface TurnDoneOptions<T = unknown> extends ResponseOptions<T> {
 }
 
 export interface TurnStartOptions<T = unknown> extends PluginHookBase<T> {
-  input: ItemParam
+  turnInput: ItemParam
 }

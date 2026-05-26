@@ -1,5 +1,6 @@
 /* eslint-disable @masknet/browser-no-persistent-storage */
 import type { Agent, CreateAgentOptions, ItemParam } from '@apeira/core'
+import type { Episode } from '@apeira/core/episodic'
 import type { BaseEvent, Message, RunAgentInput } from '@copilotkit/react-core/v2'
 import type { Subscriber } from 'rxjs'
 
@@ -11,10 +12,11 @@ import {
 import { Observable } from 'rxjs'
 
 import { AGENT_ID, AGENT_NAME } from './const'
+import { isItemEpisode } from './is-item-episode'
 
 type PersistedMessageItem = Extract<ItemParam, { type: 'message' }>
 interface PersistedThreadState {
-  items?: ItemParam[]
+  episodic?: string
 }
 
 type PersistedUserMessageItem = Extract<PersistedMessageItem, { role: 'user' }>
@@ -220,7 +222,20 @@ const readPersistedMessages = (threadId: string): Message[] => {
       return []
 
     const state = JSON.parse(raw) as PersistedThreadState
-    const items = state.items ?? []
+
+    const items: ItemParam[] = []
+    const lines = (state.episodic ?? '').split('\n')
+    for (const line of lines) {
+      if (!line.trim())
+        continue
+      try {
+        const episode = JSON.parse(line) as Episode
+        if (isItemEpisode(episode)) {
+          items.push(episode.payload.item)
+        }
+      }
+      catch {}
+    }
 
     return items.flatMap((item): Message[] => {
       // TODO

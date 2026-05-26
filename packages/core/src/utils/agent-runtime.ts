@@ -1,13 +1,17 @@
-import type { AgentContext } from '../types/context'
-import type { SessionState, TurnDoneOptions } from '../types/plugin'
-import type { ItemParam } from '../types/responses'
-import type { AgentCoreOptions, QueuedInput, TurnCompletion, TurnOptions } from './turn-runner'
+import type { ResponsesOptions } from '@xsai-ext/responses'
+
+import type { Episode, Episodic, NewEpisode } from '../episodic'
+import type { AgentContext, Instructions, ItemParam } from '../types/base'
+import type { AgentPlugin, SessionState, TurnDoneOptions } from '../types/plugin'
+import type { EmitTurnEvent, QueuedInput, TurnCompletion } from './turn-runner'
 
 import Queue from 'yocto-queue'
 
+import { merge } from '@moeru/std/merge'
+
+import { createEpisodic } from '../episodic'
 import { linkedAbort } from './linked-abort'
 import { createPendingInput } from './pending-input'
-import { createSessionStore } from './session-store'
 import { runTurn } from './turn-runner'
 
 export interface AgentRuntime<T = unknown> {
@@ -21,29 +25,46 @@ export interface AgentRuntime<T = unknown> {
   snapshot: () => Promise<SessionState<T>>
 }
 
-export interface AgentRuntimeOptions<T> extends AgentCoreOptions<T> {
+export interface AgentRuntimeOptions<T> {
+  agentName: string
+  emit: EmitTurnEvent
+  episodic?: string
+  getContext: (context?: Partial<AgentContext<T>>) => AgentContext<T>
   input?: ItemParam[]
+  instructions: Instructions<T>
   loadSession: () => Promise<SessionState<T> | void> | SessionState<T> | void
   onTurnDone: (options: TurnDoneOptions<T>) => Promise<void> | void
+  plugins: AgentPlugin<T>[]
+  ready: () => Promise<void>
+  responseOptions: Omit<ResponsesOptions, 'abortSignal' | 'input' | 'instructions'>
+  saveSession: (state: SessionState<T>) => Promise<void> | void
   sessionContext?: Partial<AgentContext<T>>
+  sessionId: string
 }
 
 interface ActiveTurn {
   controller: AbortController
   id: string
-  input: ItemParam
 }
 
-const createTurnAbortedBoundary = (): ItemParam => ({
-  content: '<turn_aborted>\nThe previous turn was interrupted on purpose. Any tool calls that were running may have partially executed.\n</turn_aborted>',
-  role: 'user',
-  type: 'message',
-})
+const TURN_ABORTED_CONTENT = '<turn_aborted>\nThe previous turn was interrupted on purpose. Any tool calls that were running may have partially executed.\n</turn_aborted>'
+
+const cloneContext = <T>(context: Partial<AgentContext<T>>): Partial<AgentContext<T>> =>
+  ({ ...context })
+
+const toNewEpisode = ({ id, ...rest }: Episode): NewEpisode =>
+  rest
 
 export const createAgentRuntime = <T>(options: AgentRuntimeOptions<T>): AgentRuntime<T> => {
   const pendingInput = createPendingInput<T>()
   const pendingTurns = new Queue<QueuedInput<T>>()
-  const session = createSessionStore<T>(options.input, options.sessionContext)
+  const initialSessionContext = cloneContext<T>(options.sessionContext ?? {})
+
+  let episodic = createEpisodic(options.episodic)
+  let sessionContext = cloneContext(initialSessionContext)
+
+  if (options.episodic == null)
+    episodic.appendItems(options.input ?? [], { source: 'user' })
 
   let acceptingInputTurnId: string | undefined
   let activeTurn: ActiveTurn | undefined
@@ -56,6 +77,35 @@ export const createAgentRuntime = <T>(options: AgentRuntimeOptions<T>): AgentRun
   const abort: AgentRuntime<T>['abort'] = reason =>
     activeTurn?.controller.abort(reason)
 
+  const hydrateSession = (state: SessionState<T>) => {
+    episodic = createEpisodic(state.episodic)
+    sessionContext = cloneContext(state.context)
+  }
+
+  const snapshotSession = (): SessionState<T> => ({
+    context: cloneContext(sessionContext),
+    episodic: episodic.toJSONL(),
+  })
+
+  const resetSession = () => {
+    episodic = createEpisodic(options.episodic)
+    if (options.episodic == null)
+      episodic.appendItems(options.input ?? [], { source: 'user' })
+    sessionContext = cloneContext(initialSessionContext)
+  }
+
+  const mergeWorkingEpisodic = (workingEpisodic: Episodic, fromId: number) => {
+    const nextEpisodes = workingEpisodic.read({ fromId })
+
+    for (const episode of nextEpisodes)
+      episodic.append(toNewEpisode(episode))
+  }
+
+  const forkEpisodic = () => {
+    const fromId = episodic.read({ limit: 1 })[0]?.id ?? 0
+    return [fromId, createEpisodic(episodic.read({ fromId: 0 }))] as const
+  }
+
   const ensureLoaded = async () => {
     await options.ready()
 
@@ -67,7 +117,7 @@ export const createAgentRuntime = <T>(options: AgentRuntimeOptions<T>): AgentRun
         const snapshot = await options.loadSession()
 
         if (snapshot != null)
-          session.hydrate(snapshot)
+          hydrateSession(snapshot)
 
         loaded = true
       }
@@ -85,20 +135,6 @@ export const createAgentRuntime = <T>(options: AgentRuntimeOptions<T>): AgentRun
     pendingMutation = next.catch(() => undefined)
 
     return next
-  }
-
-  const turnOptions: TurnOptions<T> = {
-    agentName: options.agentName,
-    emit: options.emit,
-    getContext: options.getContext,
-    instructions: options.instructions,
-    mutateSession,
-    plugins: options.plugins,
-    ready: options.ready,
-    responseOptions: options.responseOptions,
-    saveSession: options.saveSession,
-    session,
-    sessionId: options.sessionId,
   }
 
   const completeTurn = (id: string, completion: TurnCompletion) => {
@@ -137,23 +173,23 @@ export const createAgentRuntime = <T>(options: AgentRuntimeOptions<T>): AgentRun
     void mutateSession(async () => {
       await ensureLoaded()
 
-      session.reset()
-      await options.saveSession(session.snapshot())
+      resetSession()
+      await options.saveSession(snapshotSession())
     }).catch(() => undefined)
   }
 
   const setContext: AgentRuntime<T>['setContext'] = (context) => {
     void mutateSession(async () => {
       await ensureLoaded()
-      session.setContext(context)
-      await options.saveSession(session.snapshot())
+      sessionContext = merge(sessionContext, context)
+      await options.saveSession(snapshotSession())
     }).catch(() => undefined)
   }
 
   const snapshot: AgentRuntime<T>['snapshot'] = async () => {
     await pendingMutation
     await ensureLoaded()
-    return session.snapshot()
+    return snapshotSession()
   }
 
   const pruneAbortedPendingTurns = () => {
@@ -168,6 +204,52 @@ export const createAgentRuntime = <T>(options: AgentRuntimeOptions<T>): AgentRun
     }
 
     return undefined
+  }
+
+  const runWorkingTurn = async (
+    controller: AbortController,
+    turn: QueuedInput<T>,
+  ): Promise<TurnCompletion<T>> => {
+    const [formId, workingEpisodic] = forkEpisodic()
+    const completion = await runTurn<T>({
+      agentName: options.agentName,
+      controller,
+      drainInput: () => pendingInput.drain(turn.id!),
+      emit: options.emit,
+      episodic: workingEpisodic,
+      getContext: options.getContext,
+      instructions: options.instructions,
+      plugins: options.plugins,
+      ready: options.ready,
+      responseOptions: options.responseOptions,
+      sessionId: options.sessionId,
+      turn: turn as QueuedInput<T> & { id: string },
+    })
+
+    if (completion.type !== 'done')
+      return completion
+
+    if (controller.signal.aborted)
+      return { reason: controller.signal.reason, type: 'aborted' }
+
+    let committed = false
+    await mutateSession(async () => {
+      if (controller.signal.aborted)
+        return
+
+      mergeWorkingEpisodic(workingEpisodic, formId)
+      await options.saveSession(snapshotSession())
+
+      if (!controller.signal.aborted)
+        committed = true
+    })
+
+    if (committed)
+      return completion
+
+    return controller.signal.aborted
+      ? { reason: controller.signal.reason, type: 'aborted' }
+      : completion
   }
 
   const runQueuedTurn = async (turn: QueuedInput<T>) => {
@@ -185,7 +267,6 @@ export const createAgentRuntime = <T>(options: AgentRuntimeOptions<T>): AgentRun
     activeTurn = {
       controller,
       id: turn.id!,
-      input: turn.input,
     }
     acceptingInputTurnId = turn.id
 
@@ -197,12 +278,7 @@ export const createAgentRuntime = <T>(options: AgentRuntimeOptions<T>): AgentRun
         completion = { reason: controller.signal.reason, type: 'aborted' }
       }
       else {
-        completion = await runTurn<T>({
-          ...turnOptions,
-          controller,
-          drainInput: () => pendingInput.drain(turn.id!),
-          turn: turn as QueuedInput<T> & { id: string },
-        })
+        completion = await runWorkingTurn(controller, turn)
       }
     }
     catch (error) {
@@ -222,7 +298,7 @@ export const createAgentRuntime = <T>(options: AgentRuntimeOptions<T>): AgentRun
       try {
         await options.onTurnDone({
           ...completion.context,
-          snapshot: session.snapshot(),
+          snapshot: snapshotSession(),
         })
       }
       catch (error) {
@@ -239,23 +315,21 @@ export const createAgentRuntime = <T>(options: AgentRuntimeOptions<T>): AgentRun
 
     pumping = true
 
-    pumpReady = (async () => {
-      try {
-        while (true) {
-          const turn = pendingTurns.dequeue()
-          if (turn == null)
-            break
+    const start = async () => {
+      do {
+        const turn = pendingTurns.dequeue()
+        if (turn == null)
+          break
 
-          await runQueuedTurn(turn)
-        }
-      }
-      finally {
-        pumping = false
+        await runQueuedTurn(turn)
+      } while (pendingTurns.size > 0)
+    }
 
-        if (pendingTurns.size > 0)
-          await pumpTurns()
-      }
-    })()
+    pumpReady = start().finally(() => {
+      pumping = false
+      if (pendingTurns.size > 0)
+        void pumpTurns()
+    })
 
     return pumpReady
   }
@@ -295,7 +369,16 @@ export const createAgentRuntime = <T>(options: AgentRuntimeOptions<T>): AgentRun
 
       void mutateSession(async () => {
         await ensureLoaded()
-        session.append([createTurnAbortedBoundary()])
+        episodic.append({
+          meta: { source: 'runtime', turnId: turn.id },
+          payload: {
+            content: TURN_ABORTED_CONTENT,
+            reason: 'interrupt',
+            title: 'turn interrupted',
+          },
+          type: 'boundary',
+        })
+        await options.saveSession(snapshotSession())
       }).catch(() => undefined)
     }
   }

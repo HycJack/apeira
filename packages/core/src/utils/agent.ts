@@ -1,9 +1,8 @@
 import type { ResponsesOptions } from '@xsai-ext/responses'
 
-import type { AgentContext, Instructions } from '../types/context'
+import type { AgentContext, Instructions, ItemParam } from '../types/base'
 import type { AgentEvent } from '../types/event'
 import type { AgentPlugin, AgentPluginApi, AgentPluginOption, PluginChannelListener, SessionInitOptions, SessionState } from '../types/plugin'
-import type { ItemParam } from '../types/responses'
 import type { AgentSession, SessionForkOptions } from './agent-session'
 
 import { merge } from '@moeru/std/merge'
@@ -14,15 +13,8 @@ export interface Agent<T> extends Omit<AgentSession<T>, 'fork' | 'id' | 'remove'
   session: (options?: SessionOptions<T>) => AgentSession<T>
 }
 
-export type CreateAgentOptions<T = unknown> = CreateAgentBaseOptions<T> & CreateAgentContextOptions<T>
-
-export interface SessionOptions<T> {
-  context?: Partial<AgentContext<T>>
-  id?: string
-  input?: ItemParam[]
-}
-
-interface CreateAgentBaseOptions<T> {
+export interface CreateAgentOptions<T = unknown> {
+  context?: AgentContext<T>
   input?: ItemParam[]
   instructions: Instructions<T>
   name: string
@@ -30,13 +22,12 @@ interface CreateAgentBaseOptions<T> {
   plugins?: AgentPluginOption<T>[]
 }
 
-type CreateAgentContextOptions<T> = [RequiredKeys<T>] extends [never]
-  ? { context?: AgentContext<T> }
-  : { context: AgentContext<T> }
-
-type RequiredKeys<T> = {
-  [K in keyof T]-?: Record<never, never> extends Pick<T, K> ? never : K
-}[keyof T]
+export interface SessionOptions<T> {
+  context?: Partial<AgentContext<T>>
+  episodic?: string
+  id?: string
+  input?: ItemParam[]
+}
 
 const DEFAULT_SESSION_ID = 'default'
 
@@ -48,7 +39,12 @@ const parseSessionState = <T>(value: null | string | undefined): SessionState<T>
     return undefined
 
   try {
-    return JSON.parse(value) as SessionState<T>
+    const state = JSON.parse(value) as Partial<SessionState<T>>
+
+    if (state == null || typeof state.episodic !== 'string' || typeof state.context !== 'object' || state.context == null)
+      return undefined
+
+    return state as SessionState<T>
   }
   catch {
     return undefined
@@ -236,6 +232,7 @@ export const createAgent = <T = unknown>(options: CreateAgentOptions<T>): Agent<
     const runtime = createAgentRuntime({
       agentName: options.name,
       emit: (turnId, event) => emit(id, turnId, event),
+      episodic: sessionOptions.episodic,
       getContext: resolveContext,
       input: sessionOptions.input,
       instructions: options.instructions,
@@ -293,10 +290,10 @@ export const createAgent = <T = unknown>(options: CreateAgentOptions<T>): Agent<
           unsubscribe?.()
         },
         start: (controller) => {
-          unsubscribe = pluginApi.subscribe('apeira', (event: unknown) => {
+          unsubscribe = subscribeSession('apeira', (event) => {
             const agentEvent = event as AgentEvent
 
-            if (agentEvent.sessionId !== id || agentEvent.turnId !== turnId)
+            if (agentEvent.turnId !== turnId)
               return
 
             controller.enqueue(agentEvent)
@@ -351,17 +348,22 @@ export const createAgent = <T = unknown>(options: CreateAgentOptions<T>): Agent<
 
       const forked = createAgentSession(forkId, {
         context: forkContext,
+        episodic: snapshot.episodic,
         id: forkId,
-        input: snapshot.items,
       })
 
       sessions.set(forkId, forked)
 
-      await saveSessionState(forkId, {
-        context: forkContext,
-        items: snapshot.items,
-        version: 0,
-      })
+      try {
+        await saveSessionState(forkId, {
+          context: forkContext,
+          episodic: snapshot.episodic,
+        })
+      }
+      catch (error) {
+        sessions.delete(forkId)
+        throw error
+      }
 
       return forked
     })

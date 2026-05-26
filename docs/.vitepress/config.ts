@@ -44,6 +44,13 @@ export default defineConfig({
       },
       {
         items: [
+          { link: '/advanced/episodic', text: 'Episodic' },
+          { link: '/advanced/plugin-api', text: 'Plugin API' },
+        ],
+        text: 'Advanced',
+      },
+      {
+        items: [
           { link: '/reference/core', text: 'Core API' },
           { link: '/reference/packages', text: 'Packages' },
         ],

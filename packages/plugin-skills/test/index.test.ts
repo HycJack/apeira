@@ -92,10 +92,10 @@ describe('skills', () => {
     const result = await plugin.extendInstructions?.({
       agentName: 'agent',
       context: {},
-      input: { content: 'hello', role: 'user', type: 'message' },
       sessionId: 'session',
       signal: new AbortController().signal,
       turnId: 'turn',
+      turnInput: { content: 'hello', role: 'user', type: 'message' },
     })
 
     expect(result).toContain('<available_skills>')
@@ -108,10 +108,10 @@ describe('skills', () => {
     await plugin.onTurnStart?.({
       agentName: 'agent',
       context: {},
-      input: { content: 'hello', role: 'user', type: 'message' },
       sessionId: 'session',
       signal: new AbortController().signal,
       turnId: 'turn',
+      turnInput: { content: 'hello', role: 'user', type: 'message' },
     })
 
     expect(skillSet.getSkills()).toEqual([inspectSkill])
@@ -180,10 +180,10 @@ describe('skills', () => {
     const result = await plugin.extendInstructions?.({
       agentName: 'agent',
       context: {},
-      input: { content: 'hello', role: 'user', type: 'message' },
       sessionId: 'session',
       signal: new AbortController().signal,
       turnId: 'turn',
+      turnInput: { content: 'hello', role: 'user', type: 'message' },
     })
 
     expect(result).toContain('<name>inspect</name>')
@@ -207,7 +207,7 @@ describe('skills', () => {
     })
 
     // high priority wins dedupe
-    expect(plugin.extendInstructions?.({ agentName: 'agent', context: {}, input: { content: 'hello', role: 'user', type: 'message' }, sessionId: 'session', signal: new AbortController().signal, turnId: 'turn' })).toContain('high')
+    expect(plugin.extendInstructions?.({ agentName: 'agent', context: {}, sessionId: 'session', signal: new AbortController().signal, turnId: 'turn', turnInput: { content: 'hello', role: 'user', type: 'message' } })).toContain('high')
   })
 })
 
