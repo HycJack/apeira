@@ -64,7 +64,7 @@ export const createEpisodic = (initial?: readonly Episode[] | string): Episodic 
     let errorCount = 0
     let lineStart = 0
 
-    while (true) {
+    while (lineStart < nextJSONL.length) {
       const nl = nextJSONL.indexOf('\n', lineStart)
       const lineEnd = nl === -1 ? nextJSONL.length : nl
       const line = nextJSONL.slice(lineStart, lineEnd).trim()
