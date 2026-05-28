@@ -155,16 +155,21 @@ const resolveInputExtensions = async <T>(
   return extensions
 }
 
-const chainStepHooks = <H extends (step: never) => unknown>(
+const chainHooks = <H extends (...args: never[]) => unknown>(
+  mode: 'all' | 'first',
   ...hooks: (H | undefined)[]
 ): H | undefined => {
   const list = hooks.filter(Boolean) as H[]
   if (list.length === 0)
     return undefined
 
-  return (async (step: Parameters<H>[0]) => {
-    for (const hook of list)
-      await hook(step)
+  return (async (...args: Parameters<H>) => {
+    for (const hook of list) {
+      const result = await hook(...args)
+      if (result != null && mode === 'first')
+        return result
+    }
+    return undefined
   }) as H
 }
 
@@ -192,10 +197,16 @@ const chainPrepareStepHooks = (
 }
 
 const createOnFinish = <T>(options: RunTurnOptions<T>): ResponsesOptions['onFinish'] =>
-  chainStepHooks(options.responseOptions.onFinish, ...options.plugins.map(plugin => plugin.onFinish))
+  chainHooks('all', options.responseOptions.onFinish, ...options.plugins.map(plugin => plugin.onFinish))
 
 const createOnStepFinish = <T>(options: RunTurnOptions<T>): ResponsesOptions['onStepFinish'] =>
-  chainStepHooks(options.responseOptions.onStepFinish, ...options.plugins.map(plugin => plugin.onStepFinish))
+  chainHooks('all', options.responseOptions.onStepFinish, ...options.plugins.map(plugin => plugin.onStepFinish))
+
+const createPostToolCall = <T>(options: RunTurnOptions<T>): ResponsesOptions['postToolCall'] =>
+  chainHooks('first', options.responseOptions.postToolCall, ...options.plugins.map(plugin => plugin.postToolCall))
+
+const createPreToolCall = <T>(options: RunTurnOptions<T>): ResponsesOptions['preToolCall'] =>
+  chainHooks('first', options.responseOptions.preToolCall, ...options.plugins.map(plugin => plugin.preToolCall))
 
 const createPrepareStep = <T>(options: RunTurnOptions<T>): ResponsesOptions['prepareStep'] =>
   chainPrepareStepHooks(
@@ -232,7 +243,9 @@ const runResponse = async <T>(
     instructions,
     onFinish: createOnFinish(options),
     onStepFinish: createOnStepFinish(options),
+    postToolCall: createPostToolCall(options),
     prepareStep: createPrepareStep(options),
+    preToolCall: createPreToolCall(options),
     stopWhen: options.responseOptions.stopWhen ?? stepCountAtLeast(20),
     tools,
   })

@@ -20,7 +20,9 @@ export interface AgentPlugin<T = unknown> {
   onStepFinish?: ResponsesOptions['onStepFinish']
   onTurnDone?: (options: TurnDoneOptions<T>) => MaybePromise<void>
   onTurnStart?: (options: TurnStartOptions<T>) => MaybePromise<void>
+  postToolCall?: ResponsesOptions['postToolCall']
   prepareStep?: ResponsesOptions['prepareStep']
+  preToolCall?: ResponsesOptions['preToolCall']
   resolveTools?: (options: ResolveToolsOptions<T>) => MaybePromise<Tool[] | void>
   setup?: (api: AgentPluginApi) => MaybePromise<void>
   storage?: StorageLike

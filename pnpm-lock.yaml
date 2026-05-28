@@ -170,17 +170,17 @@ catalogs:
       version: 4.4.3
   xsai:
     '@xsai-ext/responses':
-      specifier: ^0.5.0-beta.4
-      version: 0.5.0-beta.4
+      specifier: ^0.5.0-beta.5
+      version: 0.5.0-beta.5
     '@xsai/shared':
-      specifier: ^0.5.0-beta.4
-      version: 0.5.0-beta.4
+      specifier: ^0.5.0-beta.5
+      version: 0.5.0-beta.5
     '@xsai/shared-chat':
-      specifier: ^0.5.0-beta.4
-      version: 0.5.0-beta.4
+      specifier: ^0.5.0-beta.5
+      version: 0.5.0-beta.5
     '@xsai/tool':
-      specifier: ^0.5.0-beta.4
-      version: 0.5.0-beta.4
+      specifier: ^0.5.0-beta.5
+      version: 0.5.0-beta.5
 
 importers:
 
@@ -266,7 +266,7 @@ importers:
         version: 1000.1.5
       '@xsai/tool':
         specifier: catalog:xsai
-        version: 0.5.0-beta.4(zod-to-json-schema@3.25.2(zod@4.4.3))(zod@4.4.3)
+        version: 0.5.0-beta.5(zod-to-json-schema@3.25.2(zod@4.4.3))(zod@4.4.3)
       chat:
         specifier: 'catalog:'
         version: 4.29.0(zod@4.4.3)
@@ -308,7 +308,7 @@ importers:
         version: 1.2.8(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
       '@xsai/tool':
         specifier: catalog:xsai
-        version: 0.5.0-beta.4(zod-to-json-schema@3.25.2(zod@4.4.3))(zod@4.4.3)
+        version: 0.5.0-beta.5(zod-to-json-schema@3.25.2(zod@4.4.3))(zod@4.4.3)
       class-variance-authority:
         specifier: 'catalog:'
         version: 0.7.1
@@ -366,7 +366,7 @@ importers:
         version: 1000.1.5
       '@xsai/tool':
         specifier: catalog:xsai
-        version: 0.5.0-beta.4(zod-to-json-schema@3.25.2(zod@4.4.3))(zod@4.4.3)
+        version: 0.5.0-beta.5(zod-to-json-schema@3.25.2(zod@4.4.3))(zod@4.4.3)
       tinyrainbow:
         specifier: 'catalog:'
         version: 3.1.0
@@ -390,13 +390,13 @@ importers:
         version: 0.1.0-beta.18
       '@xsai-ext/responses':
         specifier: catalog:xsai
-        version: 0.5.0-beta.4
+        version: 0.5.0-beta.5
       '@xsai/shared':
         specifier: catalog:xsai
-        version: 0.5.0-beta.4
+        version: 0.5.0-beta.5
       '@xsai/shared-chat':
         specifier: catalog:xsai
-        version: 0.5.0-beta.4
+        version: 0.5.0-beta.5
       yocto-queue:
         specifier: 'catalog:'
         version: 1.2.2
@@ -418,7 +418,7 @@ importers:
         version: 0.6.0
       '@xsai/tool':
         specifier: catalog:xsai
-        version: 0.5.0-beta.4(zod-to-json-schema@3.25.2(zod@4.4.3))(zod@4.4.3)
+        version: 0.5.0-beta.5(zod-to-json-schema@3.25.2(zod@4.4.3))(zod@4.4.3)
       linkedom:
         specifier: 'catalog:'
         version: 0.18.12
@@ -446,7 +446,7 @@ importers:
         version: 1.29.0(zod@4.4.3)
       '@xsai/tool':
         specifier: catalog:xsai
-        version: 0.5.0-beta.4(zod-to-json-schema@3.25.2(zod@4.4.3))(zod@4.4.3)
+        version: 0.5.0-beta.5(zod-to-json-schema@3.25.2(zod@4.4.3))(zod@4.4.3)
     devDependencies:
       '@apeira/core':
         specifier: 'workspace:'
@@ -456,7 +456,7 @@ importers:
     dependencies:
       '@xsai/tool':
         specifier: catalog:xsai
-        version: 0.5.0-beta.4(zod-to-json-schema@3.25.2(zod@4.4.3))(zod@4.4.3)
+        version: 0.5.0-beta.5(zod-to-json-schema@3.25.2(zod@4.4.3))(zod@4.4.3)
       zod:
         specifier: 'catalog:'
         version: 4.4.3
@@ -2726,20 +2726,20 @@ packages:
   '@workflow/serde@4.1.0-beta.2':
     resolution: {integrity: sha512-8kkeoQKLDaKXefjV5dbhBj2aErfKp1Mc4pb6tj8144cF+Em5SPbyMbyLCHp+BVrFfFVCBluCtMx+jjvaFVZGww==}
 
-  '@xsai-ext/responses@0.5.0-beta.4':
-    resolution: {integrity: sha512-eZLZFys07PBLC7tK299ZJBpxTpZrY1grdVf8bWtBQiEoCl4p6cCUgOFoEIk6m3YmhkoHn76NXuuedOEHe9ivMw==}
+  '@xsai-ext/responses@0.5.0-beta.5':
+    resolution: {integrity: sha512-u9D3WhSsbxYmsquaRcHrtfdLvsSZ2bOL3Y/XpD30tIQ6ChZGApJPCN4XRQ3e95R8NTjXyYrqB81b++ozR663zQ==}
 
-  '@xsai/shared-chat@0.5.0-beta.4':
-    resolution: {integrity: sha512-oGGj24Rs4lqeByEnSsFSogeJCaczwVYtpTSarmy1va0zJQZV099cHDb1fftpZh8GN1zTZc9asGaj9w+1DFYaYg==}
+  '@xsai/shared-chat@0.5.0-beta.5':
+    resolution: {integrity: sha512-C92lFboVFQAtod2M7Hhao2xSa0e7oNG4RHNpKSszBpK8pPkjozJGbbAmCKPDJCptomPeWk+kqpbRDJLdihS+TA==}
 
-  '@xsai/shared-stream@0.5.0-beta.4':
-    resolution: {integrity: sha512-5Bg367lDPXwF2TQUVusoJm9rR6uy1BaBXvbQr4O7jhIb+RvasQ5xOdq1BzJFtHdz+qSI0pli1pFPhCFsv8MXUg==}
+  '@xsai/shared-stream@0.5.0-beta.5':
+    resolution: {integrity: sha512-U42u/fOL09lyOQ0GOauGdU1Btnrh03S5ewuMrBwXvT5TtjazVeq0yASGqmqbmMLLGM3ITfBzgpaVnyP40/0ORQ==}
 
-  '@xsai/shared@0.5.0-beta.4':
-    resolution: {integrity: sha512-RzmJe7d8PAQGcVlrX8igKkdHR0z9mkUX1rC71JvBCoanmBQ7s/z7x9gAmmvmFSlvH5q6N2XQ+oExRK3I9lfM2A==}
+  '@xsai/shared@0.5.0-beta.5':
+    resolution: {integrity: sha512-umpX/2kfOWfkn7YaEOttADHhYUsYPEF9L21IAlJojGW9aZs9qQ0MTlpgZ0thBVsuHVSjsfQbvXPzGHPh+HCJ1A==}
 
-  '@xsai/tool@0.5.0-beta.4':
-    resolution: {integrity: sha512-x22Iv+y9Qezcb6pvQIWB1elg7IydvEUjOGU/RDPSvbHOy1zguGi6s48jYOIwoZQjUhyIFUibd+JckR0V6qQp2w==}
+  '@xsai/tool@0.5.0-beta.5':
+    resolution: {integrity: sha512-6Rra0X5XFKibj1rpLiJeFeNQR+uEjB99r2hiPo8qXZ7L4DczQ6nb960ohZpBooqreZrcuptZds9mv4U6Fsdfew==}
 
   accepts@2.0.0:
     resolution: {integrity: sha512-5cvg6CtKwfgdmVqY1WIiXKc3Q1bkRqGLi+2W/6ao+6Y7gu/RCwRuAhGEzh5B4KlszSuTLgZYuqFqo5bImjNKng==}
@@ -5841,8 +5841,8 @@ packages:
     resolution: {integrity: sha512-ICP2e+jsHvAj2E2lIHxa5tjXRlKDJo4IdvPvCXbXQGdzSfmSpNVyIKMvoZHjDY9DP0zV17iI85o90vRFXNccRw==}
     engines: {node: '>=12'}
 
-  xsschema@0.5.0-beta.4:
-    resolution: {integrity: sha512-83qmJX9EEJ4AN+KgMZxVTS1c8k9ZPQhbJ8AXWL1W7Vn88ztuZ3esZfLPZMpIdKPSRPJk7igRFD1MonrBz/MpbA==}
+  xsschema@0.5.0-beta.5:
+    resolution: {integrity: sha512-os+NKNJfIuoPggPwVl92QQHbhtfGe0kwBtIZ85oD8wuksLrFfMhh4eF4LdlkbsQzvD/ttHQ6lHazNX9aY6g1vg==}
     peerDependencies:
       '@valibot/to-json-schema': ^1.0.0
       arktype: ^2.1.20
@@ -8148,12 +8148,12 @@ snapshots:
 
   '@workflow/serde@4.1.0-beta.2': {}
 
-  '@xsai-ext/responses@0.5.0-beta.4':
+  '@xsai-ext/responses@0.5.0-beta.5':
     dependencies:
-      '@xsai/shared': 0.5.0-beta.4
-      '@xsai/shared-chat': 0.5.0-beta.4
-      '@xsai/shared-stream': 0.5.0-beta.4
-      '@xsai/tool': 0.5.0-beta.4(zod-to-json-schema@3.25.2(zod@4.4.3))(zod@4.4.3)
+      '@xsai/shared': 0.5.0-beta.5
+      '@xsai/shared-chat': 0.5.0-beta.5
+      '@xsai/shared-stream': 0.5.0-beta.5
+      '@xsai/tool': 0.5.0-beta.5(zod-to-json-schema@3.25.2(zod@4.4.3))(zod@4.4.3)
     transitivePeerDependencies:
       - '@valibot/to-json-schema'
       - arktype
@@ -8162,21 +8162,21 @@ snapshots:
       - zod
       - zod-to-json-schema
 
-  '@xsai/shared-chat@0.5.0-beta.4':
+  '@xsai/shared-chat@0.5.0-beta.5':
     dependencies:
-      '@xsai/shared': 0.5.0-beta.4
+      '@xsai/shared': 0.5.0-beta.5
 
-  '@xsai/shared-stream@0.5.0-beta.4':
+  '@xsai/shared-stream@0.5.0-beta.5':
     dependencies:
-      '@xsai/shared': 0.5.0-beta.4
+      '@xsai/shared': 0.5.0-beta.5
 
-  '@xsai/shared@0.5.0-beta.4': {}
+  '@xsai/shared@0.5.0-beta.5': {}
 
-  '@xsai/tool@0.5.0-beta.4(zod-to-json-schema@3.25.2(zod@4.4.3))(zod@4.4.3)':
+  '@xsai/tool@0.5.0-beta.5(zod-to-json-schema@3.25.2(zod@4.4.3))(zod@4.4.3)':
     dependencies:
-      '@xsai/shared': 0.5.0-beta.4
-      '@xsai/shared-chat': 0.5.0-beta.4
-      xsschema: 0.5.0-beta.4(zod-to-json-schema@3.25.2(zod@4.4.3))(zod@4.4.3)
+      '@xsai/shared': 0.5.0-beta.5
+      '@xsai/shared-chat': 0.5.0-beta.5
+      xsschema: 0.5.0-beta.5(zod-to-json-schema@3.25.2(zod@4.4.3))(zod@4.4.3)
     transitivePeerDependencies:
       - '@valibot/to-json-schema'
       - arktype
@@ -11903,7 +11903,7 @@ snapshots:
 
   xml-name-validator@4.0.0: {}
 
-  xsschema@0.5.0-beta.4(zod-to-json-schema@3.25.2(zod@4.4.3))(zod@4.4.3):
+  xsschema@0.5.0-beta.5(zod-to-json-schema@3.25.2(zod@4.4.3))(zod@4.4.3):
     optionalDependencies:
       zod: 4.4.3
       zod-to-json-schema: 3.25.2(zod@4.4.3)
