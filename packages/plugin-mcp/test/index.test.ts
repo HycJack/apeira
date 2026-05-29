@@ -97,7 +97,6 @@ const createResolveOptions = () => ({
   input: [{ content: 'hello', role: 'user' as const, type: 'message' as const }],
   sessionId: 'session',
   signal: new AbortController().signal,
-  tools: [],
   turnId: 'turn',
   turnInput: { content: 'hello', role: 'user' as const, type: 'message' as const },
 })
@@ -136,7 +135,7 @@ describe('mcp', () => {
         },
       },
     })
-    const tools = await plugin.resolveTools?.(createResolveOptions())
+    const tools = await plugin.extendTools?.(createResolveOptions())
 
     expect(fixtures.stdioTransports[0]).toEqual({
       args: ['server.js'],
@@ -182,7 +181,7 @@ describe('mcp', () => {
         },
       },
     })
-    const tools = await plugin.resolveTools?.(createResolveOptions())
+    const tools = await plugin.extendTools?.(createResolveOptions())
     const result = await tools?.[0]?.execute({ query: 'apeira' }, {
       messages: [],
       toolCallId: 'call_1',
@@ -219,7 +218,7 @@ describe('mcp', () => {
       },
     })
 
-    await plugin.resolveTools?.(createResolveOptions())
+    await plugin.extendTools?.(createResolveOptions())
 
     expect(fixtures.httpTransports).toEqual([
       {
@@ -250,7 +249,7 @@ describe('mcp', () => {
       },
     })
 
-    await plugin.resolveTools?.(createResolveOptions())
+    await plugin.extendTools?.(createResolveOptions())
 
     expect(fixtures.sseTransports[0]).toMatchObject({
       options: {
@@ -276,7 +275,7 @@ describe('mcp', () => {
       },
     })
 
-    await plugin.resolveTools?.(createResolveOptions())
+    await plugin.extendTools?.(createResolveOptions())
 
     expect(fixtures.wsTransports).toEqual(['ws://localhost:8080/mcp'])
   })
@@ -296,7 +295,7 @@ describe('mcp', () => {
       },
     })
 
-    await plugin.resolveTools?.(createResolveOptions())
+    await plugin.extendTools?.(createResolveOptions())
 
     expect(fixtures.stdioTransports[0]).toMatchObject({
       args: ['server.js'],
@@ -336,7 +335,7 @@ describe('mcp', () => {
         },
       },
     })
-    const tools = await plugin.resolveTools?.(createResolveOptions())
+    const tools = await plugin.extendTools?.(createResolveOptions())
 
     await expect(tools?.[0]?.execute({}, { messages: [], toolCallId: 'call_1' }))
       .resolves
@@ -363,7 +362,7 @@ describe('mcp', () => {
         },
       },
     })
-    const tools = await plugin.resolveTools?.(createResolveOptions())
+    const tools = await plugin.extendTools?.(createResolveOptions())
 
     await expect(tools?.[0]?.execute({}, { messages: [], toolCallId: 'call_1' }))
       .resolves
@@ -390,9 +389,9 @@ describe('mcp', () => {
       },
     })
 
-    expect((await plugin.resolveTools?.(createResolveOptions()))?.map(tool => tool.function.name))
+    expect((await plugin.extendTools?.(createResolveOptions()))?.map(tool => tool.function.name))
       .toEqual(['mcp__local__first'])
-    expect((await plugin.resolveTools?.(createResolveOptions()))?.map(tool => tool.function.name))
+    expect((await plugin.extendTools?.(createResolveOptions()))?.map(tool => tool.function.name))
       .toEqual(['mcp__local__first'])
 
     expect(listTools).toHaveBeenCalledTimes(1)
@@ -419,7 +418,7 @@ describe('mcp', () => {
     })
     const resolveOptions = createResolveOptions()
 
-    expect((await plugin.resolveTools?.(resolveOptions))?.map(tool => tool.function.name))
+    expect((await plugin.extendTools?.(resolveOptions))?.map(tool => tool.function.name))
       .toEqual(['mcp__local__first', 'mcp__local__second'])
     expect(listTools).toHaveBeenNthCalledWith(1, undefined, {
       signal: resolveOptions.signal,
@@ -453,7 +452,7 @@ describe('mcp', () => {
       },
     })
 
-    expect((await plugin.resolveTools?.(createResolveOptions()))?.map(tool => tool.function.name))
+    expect((await plugin.extendTools?.(createResolveOptions()))?.map(tool => tool.function.name))
       .toEqual(['mcp__docs__search'])
   })
 
@@ -483,7 +482,7 @@ describe('mcp', () => {
       },
       progressiveToolDiscovery: true,
     })
-    const tools = await plugin.resolveTools?.(createResolveOptions())
+    const tools = await plugin.extendTools?.(createResolveOptions())
 
     expect(tools?.map(tool => tool.function.name)).toEqual([
       'search_mcp_tools',
@@ -565,7 +564,7 @@ describe('mcp', () => {
       },
       progressiveToolDiscovery: true,
     })
-    const tools = await plugin.resolveTools?.(createResolveOptions())
+    const tools = await plugin.extendTools?.(createResolveOptions())
 
     await expect(tools?.[2]?.execute({
       arguments: {},
@@ -595,7 +594,7 @@ describe('mcp', () => {
       },
       progressiveToolDiscovery: true,
     })
-    const tools = await plugin.resolveTools?.(createResolveOptions())
+    const tools = await plugin.extendTools?.(createResolveOptions())
 
     await expect(tools?.[1]?.execute({ name: 'not_an_mcp_tool' }, {
       messages: [],
@@ -637,7 +636,7 @@ describe('mcp', () => {
       },
       progressiveToolDiscovery: true,
     })
-    const tools = await plugin.resolveTools?.(createResolveOptions())
+    const tools = await plugin.extendTools?.(createResolveOptions())
     const searchResult = await tools?.[0]?.execute({ query: 'documentation' }, {
       messages: [],
       toolCallId: 'call_1',

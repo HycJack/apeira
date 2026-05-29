@@ -11,6 +11,7 @@ interface AgentPlugin {
   enforce?: 'post' | 'pre'
   extendInput?: (options: ExtendInputOptions) => MaybePromise<ItemParam[] | void>
   extendInstructions?: (options: ExtendInstructionsOptions) => MaybePromise<string | void>
+  extendTools?: (options: ResponseOptions) => MaybePromise<Tool[] | void>
   onEvent?: (event: AgentEvent) => void
   onFinish?: ResponsesOptions['onFinish']
   onSessionInit?: (options: SessionInitOptions) => MaybePromise<void>
@@ -20,7 +21,6 @@ interface AgentPlugin {
   postToolCall?: ResponsesOptions['postToolCall']
   prepareStep?: ResponsesOptions['prepareStep']
   preToolCall?: ResponsesOptions['preToolCall']
-  resolveTools?: (options: ResolveToolsOptions) => MaybePromise<Tool[] | void>
   setup?: (api: AgentPluginApi) => MaybePromise<void>
   storage?: {
     getItem: (key: string) => MaybePromise<null | string | undefined>
@@ -59,7 +59,7 @@ interface PluginHookBase {
 
 - `extendInstructions` — append content to the system prompt. Receives the merged context and current `turnInput`.
 - `extendInput` — append temporary model input items for the next model call. This is the hook that receives the working `episodic` log. Returned items are not persisted unless the plugin appends episodes itself.
-- `resolveTools` — inject tools into model calls for a session.
+- `extendTools` — inject tools into model calls for a session.
 - `onFinish`, `onStepFinish`, `prepareStep`, `preToolCall`, `postToolCall` — pass-through hooks to xsAI response lifecycle.
   - `preToolCall` — called before a tool is executed. Return a modified tool call or a tool result to short-circuit execution. The first plugin to return a non-empty value wins.
   - `postToolCall` — called after a tool is executed. Return a modified tool result to override the output. The first plugin to return a non-empty value wins.

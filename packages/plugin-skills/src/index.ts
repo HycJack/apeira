@@ -331,14 +331,7 @@ export const skills = (options: SkillsPluginOptions = {}): AgentPlugin => {
 
       return prompt.length > 0 ? prompt : undefined
     },
-    name,
-    onTurnStart: async () => {
-      if (refreshMode !== 'turn')
-        return
-
-      await skillSet.refresh()
-    },
-    resolveTools: async () => {
+    extendTools: async () => {
       const skillsList = skillSet.getSkills()
 
       if (skillsList.length === 0)
@@ -350,6 +343,13 @@ export const skills = (options: SkillsPluginOptions = {}): AgentPlugin => {
         tools.push(await createSkillReferenceTool(skillSet, referenceToolName))
 
       return tools
+    },
+    name,
+    onTurnStart: async () => {
+      if (refreshMode !== 'turn')
+        return
+
+      await skillSet.refresh()
     },
     version,
   }

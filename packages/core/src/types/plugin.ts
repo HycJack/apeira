@@ -13,6 +13,7 @@ export interface AgentPlugin<T = unknown> {
   enforce?: 'post' | 'pre'
   extendInput?: (options: ExtendInputOptions<T>) => MaybePromise<ItemParam[] | void>
   extendInstructions?: (options: ExtendInstructionsOptions<T>) => MaybePromise<string | void>
+  extendTools?: (options: ResponseOptions<T>) => MaybePromise<Tool[] | void>
   name: string
   onEvent?: (event: AgentEvent) => MaybePromise<void>
   onFinish?: ResponsesOptions['onFinish']
@@ -23,7 +24,6 @@ export interface AgentPlugin<T = unknown> {
   postToolCall?: ResponsesOptions['postToolCall']
   prepareStep?: ResponsesOptions['prepareStep']
   preToolCall?: ResponsesOptions['preToolCall']
-  resolveTools?: (options: ResolveToolsOptions<T>) => MaybePromise<Tool[] | void>
   setup?: (api: AgentPluginApi) => MaybePromise<void>
   storage?: StorageLike
   version?: string
@@ -65,10 +65,6 @@ export interface PluginHookBase<T = unknown> {
   sessionId: string
   signal: AbortSignal
   turnId: string
-}
-
-export interface ResolveToolsOptions<T = unknown> extends ResponseOptions<T> {
-  tools: readonly Tool[]
 }
 
 export interface ResponseOptions<T = unknown> extends PluginHookBase<T> {

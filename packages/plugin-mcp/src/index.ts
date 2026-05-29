@@ -205,8 +205,7 @@ export const mcp = (config: MCPConfig): AgentPlugin => {
   }
 
   return {
-    name,
-    resolveTools: async ({ signal }) => {
+    extendTools: async ({ signal }) => {
       if (config.progressiveToolDiscovery === true) {
         return createProgressiveMCPTools({
           getConnectedClient,
@@ -235,6 +234,7 @@ export const mcp = (config: MCPConfig): AgentPlugin => {
 
       return results.flatMap(result => result.status === 'fulfilled' ? result.value : [])
     },
+    name,
     version,
   }
 }

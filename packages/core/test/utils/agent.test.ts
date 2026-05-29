@@ -301,6 +301,10 @@ describe('createAgent', () => {
           calls.push(`extendInput:${input.length}`)
           return [message('temporary plugin input')]
         },
+        extendTools: () => {
+          calls.push('extendTools')
+          return [weatherTool]
+        },
         name: 'test-plugin',
         onEvent: (event) => {
           if (!(event.type.startsWith('turn.')))
@@ -322,10 +326,6 @@ describe('createAgent', () => {
         },
         onTurnStart: () => {
           calls.push('onTurnStart')
-        },
-        resolveTools: ({ tools }) => {
-          calls.push(`resolveTools:${tools.length}`)
-          return [weatherTool]
         },
         setup: () => {
           calls.push('setup')
@@ -367,7 +367,7 @@ describe('createAgent', () => {
       'loadSession',
       'onTurnStart',
       'extendInput:1',
-      'resolveTools:0',
+      'extendTools',
       'onStepFinish',
       'onFinish',
       'saveSession:3',

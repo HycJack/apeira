@@ -32,8 +32,7 @@ const TOOL_FACTORIES: Array<{ factory: () => Promise<Tool> | Tool, name: string 
 ]
 
 export const commonTools = (options: CommonToolsPluginOptions = {}): AgentPlugin => ({
-  name,
-  resolveTools: async () => {
+  extendTools: async () => {
     const picks = new Set(options.include)
     const skips = new Set(options.exclude ?? [])
     const hasInclude = options.include != null
@@ -46,5 +45,6 @@ export const commonTools = (options: CommonToolsPluginOptions = {}): AgentPlugin
       return true
     }).map(async ({ factory }) => factory()))
   },
+  name,
   version,
 })

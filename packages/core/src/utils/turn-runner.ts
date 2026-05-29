@@ -4,7 +4,7 @@ import type { Tool } from '@xsai/shared-chat'
 import type { Episodic } from '../episodic'
 import type { AgentContext, Instructions, ItemParam } from '../types/base'
 import type { ApeiraEvent } from '../types/event'
-import type { AgentPlugin, ExtendInputOptions, ExtendInstructionsOptions, ResolveToolsOptions, ResponseOptions, TurnStartOptions } from '../types/plugin'
+import type { AgentPlugin, ExtendInputOptions, ExtendInstructionsOptions, ResponseOptions, TurnStartOptions } from '../types/plugin'
 
 import { merge } from '@moeru/std/merge'
 import { responses, stepCountAtLeast } from '@xsai-ext/responses'
@@ -117,20 +117,20 @@ const resolveInstructions = async <T>(
   return parts.join('\n\n')
 }
 
-const resolveTools = async <T>(
+const resolveToolExtensions = async <T>(
   options: RunTurnOptions<T>,
   pluginOptions: ResponseOptions<T>,
 ) => {
   let tools = [...(options.responseOptions.tools ?? [])]
 
   for (const plugin of options.plugins) {
-    if (plugin.resolveTools == null)
+    if (plugin.extendTools == null)
       continue
 
-    const resolvedTools = await plugin.resolveTools({ ...pluginOptions, tools } satisfies ResolveToolsOptions<T>)
+    const extendedTools = await plugin.extendTools(pluginOptions)
 
-    if (resolvedTools != null)
-      tools = mergeTools([...tools, ...resolvedTools])
+    if (extendedTools != null)
+      tools = mergeTools([...tools, ...extendedTools])
   }
 
   return tools.length > 0 ? tools : options.responseOptions.tools
@@ -234,7 +234,7 @@ const runResponse = async <T>(
   })
   const responseInput = assembled.items
   const responseOptions = createInputHookOptions(options, context, responseInput)
-  const tools = await resolveTools(options, responseOptions)
+  const tools = await resolveToolExtensions(options, responseOptions)
 
   const result = responses({
     ...options.responseOptions,

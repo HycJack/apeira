@@ -21,7 +21,6 @@ export type {
   ExtendInstructionsOptions,
   PluginChannelListener,
   PluginHookBase,
-  ResolveToolsOptions,
   ResponseOptions,
   SessionInitOptions,
   SessionState,

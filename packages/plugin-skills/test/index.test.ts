@@ -119,13 +119,12 @@ describe('skills', () => {
 
   it('provides a skill tool backed by skill set content', async () => {
     const plugin = skills({ skills: [inspectSkill] })
-    const tools = await plugin.resolveTools?.({
+    const tools = await plugin.extendTools?.({
       agentName: 'agent',
       context: {},
       input: [{ content: 'hello', role: 'user', type: 'message' }],
       sessionId: 'session',
       signal: new AbortController().signal,
-      tools: [],
       turnId: 'turn',
       turnInput: { content: 'hello', role: 'user', type: 'message' },
     })
@@ -151,13 +150,12 @@ describe('skills', () => {
         skills: [referencedSkill],
       })],
     })
-    const tools = await plugin.resolveTools?.({
+    const tools = await plugin.extendTools?.({
       agentName: 'agent',
       context: {},
       input: [{ content: 'hello', role: 'user', type: 'message' }],
       sessionId: 'session',
       signal: new AbortController().signal,
-      tools: [],
       turnId: 'turn',
       turnInput: { content: 'hello', role: 'user', type: 'message' },
     })
@@ -195,13 +193,12 @@ describe('skills', () => {
     const high = createSkillSet({ priority: 10, skills: [{ ...inspectSkill, description: 'high' }] })
     const plugin = skills({ sets: [low, high] })
 
-    await plugin.resolveTools?.({
+    await plugin.extendTools?.({
       agentName: 'agent',
       context: {},
       input: [{ content: 'hello', role: 'user', type: 'message' }],
       sessionId: 'session',
       signal: new AbortController().signal,
-      tools: [],
       turnId: 'turn',
       turnInput: { content: 'hello', role: 'user', type: 'message' },
     })
