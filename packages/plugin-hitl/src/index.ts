@@ -1,4 +1,4 @@
-import type { AgentPlugin } from '@apeira/core'
+import type { Agent, AgentPlugin } from '@apeira/core'
 import type { CompletionToolCall, CompletionToolResult } from '@xsai/shared-chat'
 
 import type { ApprovalDecision, HITLEvent, HumanInTheLoopOptions } from './types'
@@ -14,6 +14,7 @@ export type {
   AutoReviewPolicy,
   HITLAutoReviewedEvent,
   HITLBaseEvent,
+  HITLControlEvent,
   HITLEvent,
   HITLRequestEvent,
   HITLResolvedEvent,
@@ -44,28 +45,25 @@ interface PendingResolution {
 
 type ResolvePending = (toolCallId: string, resolution: ApprovalDecision) => boolean
 
-const pendingResolverByToolCallId = new Map<string, ResolvePending>()
-const resolvePending = (toolCallId: string, resolution: ApprovalDecision) => {
-  return pendingResolverByToolCallId.get(toolCallId)?.(toolCallId, resolution) ?? false
+export const approveToolCall = (agent: Agent, params: { toolCallId: string }) => {
+  agent.emit('hitl', { toolCallId: params.toolCallId, type: 'control.approve' })
 }
 
-export const approveToolCall = (toolCallId: string) =>
-  resolvePending(toolCallId, { type: 'approve' })
-
-export const rejectToolCall = (toolCallId: string, reason?: string) =>
-  resolvePending(toolCallId, { reason, type: 'reject' })
+export const rejectToolCall = (agent: Agent, params: { reason?: string, toolCallId: string }) => {
+  agent.emit('hitl', { reason: params.reason, toolCallId: params.toolCallId, type: 'control.reject' })
+}
 
 export const humanInTheLoop = (options: HumanInTheLoopOptions = {}): AgentPlugin => {
   const pendingByKey = new Map<string, PendingResolution>()
   const pendingKeyByToolCallId = new Map<string, string>()
   let currentTurnId = ''
   let emit: (event: HITLEvent) => void = () => {}
-  let unsubscribe: (() => void) | undefined
+  let unsubscribeApeira: (() => void) | undefined
+  let unsubscribeHitl: (() => void) | undefined
 
   const removePending = (toolCallId: string, key?: string) => {
     const resolvedKey = key ?? pendingKeyByToolCallId.get(toolCallId)
 
-    pendingResolverByToolCallId.delete(toolCallId)
     pendingKeyByToolCallId.delete(toolCallId)
 
     if (resolvedKey != null)
@@ -110,13 +108,21 @@ export const humanInTheLoop = (options: HumanInTheLoopOptions = {}): AgentPlugin
     enforce: 'pre',
     init: (agent) => {
       emit = event => agent.emit('hitl', event)
-      unsubscribe = agent.subscribe('apeira', (event) => {
+      unsubscribeApeira = agent.subscribe('apeira', (event) => {
         if (event.type === 'turn.start') {
           currentTurnId = event.turnId
         }
         else if (['turn.aborted', 'turn.done', 'turn.failed'].includes(event.type)) {
           if (currentTurnId === event.turnId)
             currentTurnId = ''
+        }
+      })
+      unsubscribeHitl = agent.subscribe('hitl', (event) => {
+        if (event.type === 'control.approve') {
+          resolvePendingForPlugin(event.toolCallId, { type: 'approve' })
+        }
+        else if (event.type === 'control.reject') {
+          resolvePendingForPlugin(event.toolCallId, { reason: event.reason, type: 'reject' })
         }
       })
     },
@@ -187,7 +193,6 @@ export const humanInTheLoop = (options: HumanInTheLoopOptions = {}): AgentPlugin
 
       pendingByKey.set(key, pending)
       pendingKeyByToolCallId.set(toolCall.toolCallId, key)
-      pendingResolverByToolCallId.set(toolCall.toolCallId, resolvePendingForPlugin)
 
       emit({
         ...eventBase,
@@ -216,8 +221,10 @@ export const humanInTheLoop = (options: HumanInTheLoopOptions = {}): AgentPlugin
       }
     },
     stop: () => {
-      unsubscribe?.()
-      unsubscribe = undefined
+      unsubscribeApeira?.()
+      unsubscribeApeira = undefined
+      unsubscribeHitl?.()
+      unsubscribeHitl = undefined
     },
     version,
   }

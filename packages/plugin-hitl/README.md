@@ -44,10 +44,38 @@ agent.subscribe('hitl', (event) => {
   if (event.type !== 'hitl.request')
     return
   console.log(`Approve ${event.toolName}: ${event.toolCallId}`)
-  approveToolCall(event.toolCallId)
-  rejectToolCall(event.toolCallId, 'User rejected')
+  approveToolCall(agent, { toolCallId: event.toolCallId })
+  // or: rejectToolCall(agent, { toolCallId: event.toolCallId, reason: 'User rejected' })
 })
 ```
+
+You can also drive approvals by emitting control events directly on the agent's `hitl` channel:
+
+```ts
+agent.emit('hitl', { toolCallId: 'call_123', type: 'control.approve' })
+agent.emit('hitl', { reason: 'Unsafe', toolCallId: 'call_123', type: 'control.reject' })
+```
+
+Approval state is bound to the plugin instance (and therefore to the agent). Multiple agents do not share pending state.
+
+## Events
+
+The plugin emits and listens on the `hitl` channel.
+
+### Output events (from plugin)
+
+| Type | Description |
+|------|-------------|
+| `hitl.auto_reviewed` | A decision was made automatically by policy |
+| `hitl.request` | A tool call is pending human approval |
+| `hitl.resolved` | A pending tool call was resolved |
+
+### Control events (to plugin)
+
+| Type | Description |
+|------|-------------|
+| `control.approve` | Approve a pending tool call by `toolCallId` |
+| `control.reject` | Reject a pending tool call by `toolCallId`, with optional `reason` |
 
 ## API
 
@@ -57,15 +85,15 @@ Installs a `preToolCall` hook that evaluates each tool call and either:
 
 - auto-approves it
 - auto-rejects it
-- suspends execution until `approveToolCall()` or `rejectToolCall()` is called
+- suspends execution until an approval control event is received
 
-### `approveToolCall(toolCallId)`
+### `approveToolCall(agent, { toolCallId })`
 
-Resolves one pending tool call and lets the original tool execute.
+Emits a `control.approve` event on the agent's `hitl` channel to resolve one pending tool call and let the original tool execute.
 
-### `rejectToolCall(toolCallId, reason?)`
+### `rejectToolCall(agent, { toolCallId, reason? })`
 
-Resolves one pending tool call with a rejection result instead of executing it.
+Emits a `control.reject` event on the agent's `hitl` channel to resolve one pending tool call with a rejection result instead of executing it.
 
 ### `autoReviewByPattern({ always, never })`
 

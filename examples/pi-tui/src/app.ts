@@ -1,4 +1,4 @@
-import type { AgentEvent, AgentEventListener } from '@apeira/core'
+import type { AgentEvent } from '@apeira/core'
 import type { HITLEvent, HITLRequestEvent } from '@apeira/plugin-hitl'
 import type { Component, MarkdownTheme, SlashCommand } from '@earendil-works/pi-tui'
 
@@ -290,13 +290,11 @@ export const createPiTuiExampleApp = () => {
   const approvalDialog = new ApprovalDialog({
     borderColor: c.cyan,
     onApprove: (request) => {
-      if (!approveToolCall(request.toolCallId))
-        return
+      approveToolCall(agent, { toolCallId: request.toolCallId })
       tui.requestRender()
     },
     onReject: (request) => {
-      if (!rejectToolCall(request.toolCallId, 'Rejected by user'))
-        return
+      rejectToolCall(agent, { reason: 'Rejected by user', toolCallId: request.toolCallId })
       tui.requestRender()
     },
     selectListTheme: {
@@ -607,6 +605,7 @@ export const createPiTuiExampleApp = () => {
   }
 
   const onHitlEvent = (event: HITLEvent) => {
+    // eslint-disable-next-line ts/switch-exhaustiveness-check
     switch (event.type) {
       case 'hitl.auto_reviewed':
         break
@@ -625,7 +624,7 @@ export const createPiTuiExampleApp = () => {
   }
 
   const unsubscribeAgent = agent.subscribe('apeira', onEvent)
-  const unsubscribeHitl = agent.subscribe('hitl', onHitlEvent as AgentEventListener)
+  const unsubscribeHitl = agent.subscribe('hitl', onHitlEvent)
 
   const shutdown = (code: number) => {
     if (stopped)

@@ -1,5 +1,6 @@
 export type { ItemParam, MaybePromise } from './types/base'
 export type {
+  AgentCustomEvent,
   AgentEvent,
   ApeiraEvent,
   TurnAbortedEvent,

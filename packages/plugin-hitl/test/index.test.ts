@@ -1,7 +1,7 @@
 import type { Agent, AgentChannel, AgentEventListener } from '@apeira/core'
 import type { CompletionToolCall, ToolExecuteOptions } from '@xsai/shared-chat'
 
-import { afterEach, describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vitest'
 
 import { approveToolCall, autoReviewByPattern, humanInTheLoop, rejectToolCall } from '../src/index'
 
@@ -51,13 +51,6 @@ const createExecuteOptions = (signal?: AbortSignal): ToolExecuteOptions => ({
   abortSignal: signal,
   messages: [],
   toolCallId: 'call-1',
-})
-
-afterEach(() => {
-  approveToolCall('call-1')
-  approveToolCall('call-2')
-  rejectToolCall('call-1')
-  rejectToolCall('call-2')
 })
 
 describe('autoReviewByPattern', () => {
@@ -167,7 +160,7 @@ describe('humanInTheLoop', () => {
     const pending = plugin.preToolCall?.(toolCall, createExecuteOptions(new AbortController().signal))
 
     expect(mockAgent.emitted.filter(entry => entry.channel === 'hitl').map(entry => (entry.event as { type: string }).type)).toEqual(['hitl.request'])
-    expect(approveToolCall(toolCall.toolCallId)).toBe(true)
+    mockAgent.emit('hitl', { toolCallId: toolCall.toolCallId, type: 'control.approve' })
     await expect(pending).resolves.toEqual(toolCall)
 
     const resolved = mockAgent.emitted.findLast(entry => (entry.event as { type: string }).type === 'hitl.resolved')
@@ -188,7 +181,7 @@ describe('humanInTheLoop', () => {
     mockAgent.emit('apeira', { turnId: 'turn-1', type: 'turn.start' })
 
     const pending = plugin.preToolCall?.(createToolCall(), createExecuteOptions(new AbortController().signal))
-    expect(rejectToolCall('call-1', 'No write access')).toBe(true)
+    mockAgent.emit('hitl', { reason: 'No write access', toolCallId: 'call-1', type: 'control.reject' })
 
     await expect(pending).resolves.toMatchObject({
       result: 'Denied.',
@@ -213,8 +206,8 @@ describe('humanInTheLoop', () => {
     const toolCall = createToolCall()
     const pending = plugin.preToolCall?.(toolCall, createExecuteOptions(new AbortController().signal))
 
-    expect(approveToolCall(toolCall.toolCallId)).toBe(true)
-    expect(approveToolCall(toolCall.toolCallId)).toBe(false)
+    mockAgent.emit('hitl', { toolCallId: toolCall.toolCallId, type: 'control.approve' })
+    mockAgent.emit('hitl', { toolCallId: toolCall.toolCallId, type: 'control.approve' })
     await expect(pending).resolves.toEqual(toolCall)
     expect(mockAgent.emitted.filter(entry => (entry.event as { type: string }).type === 'hitl.resolved')).toHaveLength(1)
   })
@@ -231,8 +224,10 @@ describe('humanInTheLoop', () => {
     controller.abort('stop')
 
     await expect(pending).rejects.toBe('stop')
-    expect(approveToolCall('call-2')).toBe(false)
-    expect(rejectToolCall('call-2')).toBe(false)
+    const resolvedCount = mockAgent.emitted.filter(entry => (entry.event as { type: string }).type === 'hitl.resolved').length
+    mockAgent.emit('hitl', { toolCallId: 'call-2', type: 'control.approve' })
+    mockAgent.emit('hitl', { toolCallId: 'call-2', type: 'control.reject' })
+    expect(mockAgent.emitted.filter(entry => (entry.event as { type: string }).type === 'hitl.resolved').length).toBe(resolvedCount)
   })
 
   it('rejects immediately when the signal is already aborted', async () => {
@@ -248,6 +243,42 @@ describe('humanInTheLoop', () => {
     await expect(
       plugin.preToolCall?.(createToolCall({ toolCallId: 'call-2' }), createExecuteOptions(controller.signal)),
     ).rejects.toBe('already-aborted')
-    expect(approveToolCall('call-2')).toBe(false)
+    const resolvedCount = mockAgent.emitted.filter(entry => (entry.event as { type: string }).type === 'hitl.resolved').length
+    mockAgent.emit('hitl', { toolCallId: 'call-2', type: 'control.approve' })
+    expect(mockAgent.emitted.filter(entry => (entry.event as { type: string }).type === 'hitl.resolved').length).toBe(resolvedCount)
+  })
+
+  it('approves via sugar function', async () => {
+    const plugin = humanInTheLoop()
+    const mockAgent = createMockAgent()
+
+    await plugin.init?.(mockAgent)
+    mockAgent.emit('apeira', { turnId: 'turn-1', type: 'turn.start' })
+
+    const toolCall = createToolCall({ toolCallId: 'call-sugar' })
+    const pending = plugin.preToolCall?.(toolCall, createExecuteOptions(new AbortController().signal))
+
+    expect(mockAgent.emitted.filter(entry => entry.channel === 'hitl').map(entry => (entry.event as { type: string }).type)).toEqual(['hitl.request'])
+
+    approveToolCall(mockAgent, { toolCallId: 'call-sugar' })
+    await expect(pending).resolves.toEqual(toolCall)
+  })
+
+  it('rejects via sugar function', async () => {
+    const plugin = humanInTheLoop({ rejectionMessage: 'Sugar denied.' })
+    const mockAgent = createMockAgent()
+
+    await plugin.init?.(mockAgent)
+    mockAgent.emit('apeira', { turnId: 'turn-1', type: 'turn.start' })
+
+    const toolCall = createToolCall({ toolCallId: 'call-sugar-reject' })
+    const pending = plugin.preToolCall?.(toolCall, createExecuteOptions(new AbortController().signal))
+
+    rejectToolCall(mockAgent, { reason: 'Too sweet', toolCallId: 'call-sugar-reject' })
+    await expect(pending).resolves.toMatchObject({
+      result: 'Sugar denied.',
+      toolCallId: 'call-sugar-reject',
+      toolName: 'write',
+    })
   })
 })

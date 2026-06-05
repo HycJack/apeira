@@ -23,8 +23,15 @@ export interface HITLBaseEvent {
   turnId: string
 }
 
+export interface HITLControlEvent {
+  reason?: string
+  toolCallId: string
+  type: 'control.approve' | 'control.reject'
+}
+
 export type HITLEvent
   = | HITLAutoReviewedEvent
+    | HITLControlEvent
     | HITLRequestEvent
     | HITLResolvedEvent
 
