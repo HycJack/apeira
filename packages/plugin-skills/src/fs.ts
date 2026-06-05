@@ -1,6 +1,6 @@
 import type { Dirent } from 'node:fs'
 
-import type { Skill, SkillDiagnostic, SkillReference, SkillSet, SkillSetSnapshot } from './index'
+import type { Skill, SkillDiagnostic, SkillReference, SkillSet, SkillSetSnapshot } from './types/index'
 
 import fs from 'node:fs/promises'
 import path from 'node:path'

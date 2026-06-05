@@ -57,6 +57,37 @@ describe('formatSkillsForSystemPrompt', () => {
     expect(prompt).toContain('Use &lt;fast&gt; &amp; &quot;safe&quot; mode.')
     expect(prompt).toContain('/repo/agents/skills/a&amp;b/SKILL.md')
   })
+
+  it('renders fully when budget is sufficient', () => {
+    const prompt = formatSkillsForSystemPrompt([inspectSkill], 10_000)
+    expect(prompt).toContain('<description>Use when inspecting code.</description>')
+    expect(prompt).toContain('<name>inspect</name>')
+  })
+
+  it('truncates descriptions when budget is tight', () => {
+    const longDescSkill: Skill = { ...inspectSkill, description: 'A'.repeat(500) }
+    const prompt = formatSkillsForSystemPrompt([longDescSkill], 150)
+    expect(prompt).toContain('...')
+    expect(prompt).not.toContain('A'.repeat(500))
+  })
+
+  it('omits descriptions when budget is very tight', () => {
+    const prompt = formatSkillsForSystemPrompt([inspectSkill], 98)
+    expect(prompt).toContain('<name>inspect</name>')
+    expect(prompt).toContain('<location>')
+    expect(prompt).not.toContain('<description>')
+  })
+
+  it('omits low-priority skills when budget is extremely tight', () => {
+    const extraSkill: Skill = { ...inspectSkill, name: 'extra', description: 'Extra.', filePath: '/x/SKILL.md' }
+    const prompt = formatSkillsForSystemPrompt([inspectSkill, extraSkill], 100)
+    expect(prompt).toContain('<name>inspect</name>')
+    expect(prompt).not.toContain('<name>extra</name>')
+  })
+
+  it('returns empty string when budget cannot fit even header/footer', () => {
+    expect(formatSkillsForSystemPrompt([inspectSkill], 10)).toBe('')
+  })
 })
 
 describe('formatSkillInvocation', () => {
@@ -97,6 +128,21 @@ describe('skills', () => {
     const result = await plugin.extendInstructions?.(createOptions())
 
     expect(result).toContain('<available_skills>')
+  })
+
+  it('derives budget from contextLength in auto mode', async () => {
+    const plugin = skills({ skills: [inspectSkill] })
+    // 8K context -> instructionsBudget = 8000 * 0.02 = 160 tokens ≈ 640 chars
+    const result = await plugin.extendInstructions?.({ state: { contextLength: 8_000 }, turnId: 'test' })
+    expect(result).toContain('<available_skills>')
+    expect(result).toContain('<description>Use when inspecting code.</description>')
+  })
+
+  it('respects fixed budget when provided', async () => {
+    const plugin = skills({ instructionsBudget: 98, skills: [inspectSkill] })
+    const result = await plugin.extendInstructions?.(createOptions())
+    expect(result).toContain('<name>inspect</name>')
+    expect(result).not.toContain('<description>')
   })
 
   it('refreshes from host loader at turn start', async () => {
