@@ -5,6 +5,8 @@ import type { Skill, SkillDiagnostic, SkillReference, SkillSet, SkillSetSnapshot
 import fs from 'node:fs/promises'
 import path from 'node:path'
 
+import { parse } from 'yaml'
+
 export interface FSSkillSetOptions {
   /** Allowed reference file extensions. Defaults to ['.md', '.mdx', '.txt']. */
   allowedReferenceExtensions?: string[]
@@ -14,30 +16,19 @@ export interface FSSkillSetOptions {
   priority?: number
 }
 
-interface SkillFrontmatter {
-  description?: string
-  name?: string
-}
-
-const parseFrontmatter = (content: string): { body: string, frontmatter: SkillFrontmatter } => {
-  const frontmatter: SkillFrontmatter = {}
-
-  const match = /^---\n([\s\S]*?)\n---\n?/.exec(content)
-
+const parseFrontmatter = <T>(content: string): { attrs?: T, body: string } => {
+  // eslint-disable-next-line sonarjs/slow-regex, regexp/no-super-linear-backtracking
+  const match = /^\uFEFF?---\s*\n([\s\S]*?)\n---\s*(?:\n|$)/.exec(content)
   if (match == null)
-    return { body: content.trim(), frontmatter }
+    return { attrs: undefined, body: content.trim() }
 
-  for (const line of match[1].split('\n')) {
-    if (line.startsWith('name:'))
-      frontmatter.name = line.slice(5).trim()
-    else if (line.startsWith('description:'))
-      frontmatter.description = line.slice(12).trim()
+  let attrs: T | undefined
+  try {
+    attrs = parse(match[1]) as T
   }
+  catch {}
 
-  return {
-    body: content.slice(match[0].length).trim(),
-    frontmatter,
-  }
+  return { attrs, body: content.slice(match[0].length).trim() }
 }
 
 const normalizeReferencePath = (value: string) =>
@@ -129,14 +120,14 @@ const readSkillEntry = async (
 
   try {
     const content = await fs.readFile(filePath, 'utf8')
-    const parsed = parseFrontmatter(content)
+    const { attrs, body } = parseFrontmatter<{ description?: string, name?: string }>(content)
     const referenceResult = await readSkillReferences(skillDir, allowedExtensions)
 
     skills.push({
-      content: parsed.body,
-      description: parsed.frontmatter.description ?? '',
+      content: body,
+      description: attrs?.description ?? '',
       filePath,
-      name: parsed.frontmatter.name ?? entryName,
+      name: attrs?.name ?? entryName,
       references: referenceResult.references,
     })
     diagnostics.push(...referenceResult.diagnostics)

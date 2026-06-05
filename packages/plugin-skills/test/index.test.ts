@@ -279,4 +279,35 @@ describe('fsSkillSet', () => {
     const ref = await skillSet.getSkillReference('math', 'references/formulas.md')
     expect(ref?.content).toContain('E=mc^2')
   })
+
+  it('parses standard YAML frontmatter', async () => {
+    await fs.mkdir(path.join(testDir, 'yaml-test'), { recursive: true })
+    await fs.writeFile(
+      path.join(testDir, 'yaml-test', 'SKILL.md'),
+      '---\nname: "quoted-name"\ndescription: |\n  Multi-line\n  description.\n---\n\nContent.',
+    )
+
+    const skillSet = fsSkillSet({ directory: testDir })
+    await skillSet.refresh()
+
+    const skill = skillSet.getSkill('quoted-name')
+    expect(skill?.name).toBe('quoted-name')
+    expect(skill?.description).toBe('Multi-line\ndescription.\n')
+    expect(skill?.content).toBe('Content.')
+  })
+
+  it('gracefully handles invalid YAML frontmatter', async () => {
+    await fs.mkdir(path.join(testDir, 'bad-yaml'), { recursive: true })
+    await fs.writeFile(
+      path.join(testDir, 'bad-yaml', 'SKILL.md'),
+      '---\nname: [unclosed\n---\n\nContent.',
+    )
+
+    const skillSet = fsSkillSet({ directory: testDir })
+    await skillSet.refresh()
+
+    const skill = skillSet.getSkill('bad-yaml')
+    expect(skill?.name).toBe('bad-yaml')
+    expect(skill?.content).toBe('Content.')
+  })
 })
