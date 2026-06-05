@@ -1,4 +1,4 @@
-import type { AgentPlugin, MaybePromise } from '@apeira/core'
+import type { Agent, AgentPlugin, MaybePromise } from '@apeira/core'
 
 import { tool } from '@xsai/tool'
 import { z } from 'zod'
@@ -324,6 +324,7 @@ export const skills = (options: SkillsPluginOptions = {}): AgentPlugin => {
 
   const referenceToolName = options.referenceToolName ?? 'skill_reference'
   const toolName = options.toolName ?? 'skill'
+  let unsubscribe: (() => void) | undefined
 
   return {
     extendInstructions: () => {
@@ -344,12 +345,20 @@ export const skills = (options: SkillsPluginOptions = {}): AgentPlugin => {
 
       return tools
     },
-    name,
-    onTurnStart: async () => {
+    init: (agent: Agent) => {
       if (refreshMode !== 'turn')
         return
 
-      await skillSet.refresh()
+      unsubscribe = agent.subscribe('apeira', (event) => {
+        if ((event as { type: string }).type !== 'turn.start')
+          return
+        void skillSet.refresh()
+      })
+    },
+    name,
+    stop: () => {
+      unsubscribe?.()
+      unsubscribe = undefined
     },
     version,
   }

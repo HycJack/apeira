@@ -15,7 +15,7 @@ Use this when you want the single default entry point.
 The stream-first agent runtime.
 
 ```ts
-import { createAgent } from '@apeira/core'
+import { createAgent, run } from '@apeira/core'
 ```
 
 Provides:
@@ -26,7 +26,7 @@ Provides:
 - fire-and-forget submission through `send()`
 - global event subscriptions
 - abort, interrupt, and clear behavior
-- Episodic session history and session management
+- `init()` / `stop()` plugin lifecycle
 
 ## @apeira/plugin-skills
 
@@ -54,13 +54,3 @@ import { agui } from '@apeira/plugin-ag-ui'
 ```
 
 Maps agent events (text messages, reasoning, tool calls, errors, run state) to the AG-UI protocol. Used by the CopilotKit example.
-
-## @apeira/plugin-unstorage
-
-Wraps the `unstorage` universal storage layer as an Apeira storage plugin. See the [Unstorage plugin](/plugins/unstorage) guide.
-
-```ts
-import { unstorage } from '@apeira/plugin-unstorage'
-```
-
-Provides session persistence through any `unstorage` backend (filesystem, Redis, S3, etc.).

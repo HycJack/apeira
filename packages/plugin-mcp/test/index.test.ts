@@ -1,3 +1,4 @@
+import type { ExtendOptions } from '@apeira/core'
 import type { Transport } from '@modelcontextprotocol/sdk/shared/transport.js'
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
@@ -15,6 +16,7 @@ const fixtures = vi.hoisted(() => ({
 
 interface MockClient {
   callTool: ReturnType<typeof vi.fn>
+  close: ReturnType<typeof vi.fn>
   connect: ReturnType<typeof vi.fn>
   listTools: ReturnType<typeof vi.fn>
   setNotificationHandler?: ReturnType<typeof vi.fn>
@@ -22,6 +24,7 @@ interface MockClient {
 
 interface MockClientFixture {
   callTool?: ReturnType<typeof vi.fn>
+  close?: ReturnType<typeof vi.fn>
   connect?: ReturnType<typeof vi.fn>
   listTools?: ReturnType<typeof vi.fn>
   setNotificationHandler?: ReturnType<typeof vi.fn>
@@ -36,6 +39,7 @@ const createTransport = () => ({
 vi.mock('@modelcontextprotocol/sdk/client/index.js', () => {
   class Client {
     callTool: ReturnType<typeof vi.fn>
+    close: ReturnType<typeof vi.fn>
     connect: ReturnType<typeof vi.fn>
     listTools: ReturnType<typeof vi.fn>
     setNotificationHandler: ReturnType<typeof vi.fn>
@@ -43,6 +47,7 @@ vi.mock('@modelcontextprotocol/sdk/client/index.js', () => {
     constructor() {
       const fixture = fixtures.clients.shift() ?? {}
 
+      this.close = fixture.close ?? vi.fn(async () => undefined)
       this.connect = fixture.connect ?? vi.fn(async () => undefined)
       this.listTools = fixture.listTools ?? vi.fn(async () => ({ tools: [] }))
       this.callTool = fixture.callTool ?? vi.fn(async () => ({ content: [] }))
@@ -91,15 +96,7 @@ vi.mock('@modelcontextprotocol/sdk/client/websocket.js', () => ({
   },
 }))
 
-const createResolveOptions = () => ({
-  agentName: 'agent',
-  context: {},
-  input: [{ content: 'hello', role: 'user' as const, type: 'message' as const }],
-  sessionId: 'session',
-  signal: new AbortController().signal,
-  turnId: 'turn',
-  turnInput: { content: 'hello', role: 'user' as const, type: 'message' as const },
-})
+const createState = (): ExtendOptions => ({ state: {}, turnId: 'test' })
 
 describe('mcp', () => {
   beforeEach(() => {
@@ -135,7 +132,7 @@ describe('mcp', () => {
         },
       },
     })
-    const tools = await plugin.extendTools?.(createResolveOptions())
+    const tools = await plugin.extendTools?.(createState())
 
     expect(fixtures.stdioTransports[0]).toEqual({
       args: ['server.js'],
@@ -181,7 +178,7 @@ describe('mcp', () => {
         },
       },
     })
-    const tools = await plugin.extendTools?.(createResolveOptions())
+    const tools = await plugin.extendTools?.(createState())
     const result = await tools?.[0]?.execute({ query: 'apeira' }, {
       messages: [],
       toolCallId: 'call_1',
@@ -193,7 +190,7 @@ describe('mcp', () => {
         name: 'search',
       },
       undefined,
-      { signal: undefined, timeout: 600_000 },
+      { timeout: 600_000 },
     )
     expect(result).toEqual({
       content: [{ text: 'Found result.', type: 'text' }],
@@ -218,7 +215,7 @@ describe('mcp', () => {
       },
     })
 
-    await plugin.extendTools?.(createResolveOptions())
+    await plugin.extendTools?.(createState())
 
     expect(fixtures.httpTransports).toEqual([
       {
@@ -249,7 +246,7 @@ describe('mcp', () => {
       },
     })
 
-    await plugin.extendTools?.(createResolveOptions())
+    await plugin.extendTools?.(createState())
 
     expect(fixtures.sseTransports[0]).toMatchObject({
       options: {
@@ -275,7 +272,7 @@ describe('mcp', () => {
       },
     })
 
-    await plugin.extendTools?.(createResolveOptions())
+    await plugin.extendTools?.(createState())
 
     expect(fixtures.wsTransports).toEqual(['ws://localhost:8080/mcp'])
   })
@@ -295,7 +292,7 @@ describe('mcp', () => {
       },
     })
 
-    await plugin.extendTools?.(createResolveOptions())
+    await plugin.extendTools?.(createState())
 
     expect(fixtures.stdioTransports[0]).toMatchObject({
       args: ['server.js'],
@@ -335,7 +332,7 @@ describe('mcp', () => {
         },
       },
     })
-    const tools = await plugin.extendTools?.(createResolveOptions())
+    const tools = await plugin.extendTools?.(createState())
 
     await expect(tools?.[0]?.execute({}, { messages: [], toolCallId: 'call_1' }))
       .resolves
@@ -362,7 +359,7 @@ describe('mcp', () => {
         },
       },
     })
-    const tools = await plugin.extendTools?.(createResolveOptions())
+    const tools = await plugin.extendTools?.(createState())
 
     await expect(tools?.[0]?.execute({}, { messages: [], toolCallId: 'call_1' }))
       .resolves
@@ -389,9 +386,9 @@ describe('mcp', () => {
       },
     })
 
-    expect((await plugin.extendTools?.(createResolveOptions()))?.map(tool => tool.function.name))
+    expect((await plugin.extendTools?.(createState()))?.map(tool => tool.function.name))
       .toEqual(['mcp__local__first'])
-    expect((await plugin.extendTools?.(createResolveOptions()))?.map(tool => tool.function.name))
+    expect((await plugin.extendTools?.(createState()))?.map(tool => tool.function.name))
       .toEqual(['mcp__local__first'])
 
     expect(listTools).toHaveBeenCalledTimes(1)
@@ -416,16 +413,14 @@ describe('mcp', () => {
         },
       },
     })
-    const resolveOptions = createResolveOptions()
+    const resolveOptions = createState()
 
     expect((await plugin.extendTools?.(resolveOptions))?.map(tool => tool.function.name))
       .toEqual(['mcp__local__first', 'mcp__local__second'])
     expect(listTools).toHaveBeenNthCalledWith(1, undefined, {
-      signal: resolveOptions.signal,
       timeout: undefined,
     })
     expect(listTools).toHaveBeenNthCalledWith(2, { cursor: 'next' }, {
-      signal: resolveOptions.signal,
       timeout: undefined,
     })
   })
@@ -452,7 +447,7 @@ describe('mcp', () => {
       },
     })
 
-    expect((await plugin.extendTools?.(createResolveOptions()))?.map(tool => tool.function.name))
+    expect((await plugin.extendTools?.(createState()))?.map(tool => tool.function.name))
       .toEqual(['mcp__docs__search'])
   })
 
@@ -482,7 +477,7 @@ describe('mcp', () => {
       },
       progressiveToolDiscovery: true,
     })
-    const tools = await plugin.extendTools?.(createResolveOptions())
+    const tools = await plugin.extendTools?.(createState())
 
     expect(tools?.map(tool => tool.function.name)).toEqual([
       'search_mcp_tools',
@@ -541,7 +536,7 @@ describe('mcp', () => {
         name: 'search',
       },
       undefined,
-      { signal: undefined, timeout: 600_000 },
+      { timeout: 600_000 },
     )
     expect(listTools).toHaveBeenCalledTimes(1)
   })
@@ -564,7 +559,7 @@ describe('mcp', () => {
       },
       progressiveToolDiscovery: true,
     })
-    const tools = await plugin.extendTools?.(createResolveOptions())
+    const tools = await plugin.extendTools?.(createState())
 
     await expect(tools?.[2]?.execute({
       arguments: {},
@@ -594,7 +589,7 @@ describe('mcp', () => {
       },
       progressiveToolDiscovery: true,
     })
-    const tools = await plugin.extendTools?.(createResolveOptions())
+    const tools = await plugin.extendTools?.(createState())
 
     await expect(tools?.[1]?.execute({ name: 'not_an_mcp_tool' }, {
       messages: [],
@@ -636,7 +631,7 @@ describe('mcp', () => {
       },
       progressiveToolDiscovery: true,
     })
-    const tools = await plugin.extendTools?.(createResolveOptions())
+    const tools = await plugin.extendTools?.(createState())
     const searchResult = await tools?.[0]?.execute({ query: 'documentation' }, {
       messages: [],
       toolCallId: 'call_1',

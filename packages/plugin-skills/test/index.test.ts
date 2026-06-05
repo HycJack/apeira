@@ -1,3 +1,5 @@
+import type { Agent, ExtendOptions } from '@apeira/core'
+
 import type { Skill } from '../src/index'
 
 import fs from 'node:fs/promises'
@@ -5,6 +7,7 @@ import path from 'node:path'
 
 import { fileURLToPath } from 'node:url'
 
+import { sleep } from '@moeru/std/sleep'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
 import { fsSkillSet } from '../src/fs'
@@ -14,6 +17,8 @@ import {
   formatSkillsForSystemPrompt,
   skills,
 } from '../src/index'
+
+const createOptions = (): ExtendOptions => ({ state: {}, turnId: 'test' })
 
 const inspectSkill: Skill = {
   content: 'Inspect the code carefully.',
@@ -89,14 +94,7 @@ describe('createSkillSet', () => {
 describe('skills', () => {
   it('injects available skills through extendInstructions', async () => {
     const plugin = skills({ skills: [inspectSkill] })
-    const result = await plugin.extendInstructions?.({
-      agentName: 'agent',
-      context: {},
-      sessionId: 'session',
-      signal: new AbortController().signal,
-      turnId: 'turn',
-      turnInput: { content: 'hello', role: 'user', type: 'message' },
-    })
+    const result = await plugin.extendInstructions?.(createOptions())
 
     expect(result).toContain('<available_skills>')
   })
@@ -105,29 +103,23 @@ describe('skills', () => {
     const skillSet = createSkillSet({ loadSkills: () => [inspectSkill] })
     const plugin = skills({ refresh: 'turn', sets: [skillSet] })
 
-    await plugin.onTurnStart?.({
-      agentName: 'agent',
-      context: {},
-      sessionId: 'session',
-      signal: new AbortController().signal,
-      turnId: 'turn',
-      turnInput: { content: 'hello', role: 'user', type: 'message' },
-    })
+    // eslint-disable-next-line @masknet/type-no-force-cast-via-top-type
+    const agent = {
+      emit: () => {},
+      subscribe: (_channel: string, listener: (event: unknown) => void) => {
+        listener({ turnId: 'turn-1', type: 'turn.start' })
+        return () => {}
+      },
+    } as unknown as Agent
+    await plugin.init?.(agent)
+    await sleep(10)
 
     expect(skillSet.getSkills()).toEqual([inspectSkill])
   })
 
   it('provides a skill tool backed by skill set content', async () => {
     const plugin = skills({ skills: [inspectSkill] })
-    const tools = await plugin.extendTools?.({
-      agentName: 'agent',
-      context: {},
-      input: [{ content: 'hello', role: 'user', type: 'message' }],
-      sessionId: 'session',
-      signal: new AbortController().signal,
-      turnId: 'turn',
-      turnInput: { content: 'hello', role: 'user', type: 'message' },
-    })
+    const tools = await plugin.extendTools?.(createOptions())
 
     expect(tools?.[0]?.function.name).toBe('skill')
     expect(await tools?.[0]?.execute({ additionalInstructions: 'Focus on tests.', name: 'inspect' }, {
@@ -150,15 +142,7 @@ describe('skills', () => {
         skills: [referencedSkill],
       })],
     })
-    const tools = await plugin.extendTools?.({
-      agentName: 'agent',
-      context: {},
-      input: [{ content: 'hello', role: 'user', type: 'message' }],
-      sessionId: 'session',
-      signal: new AbortController().signal,
-      turnId: 'turn',
-      turnInput: { content: 'hello', role: 'user', type: 'message' },
-    })
+    const tools = await plugin.extendTools?.(createOptions())
     const referenceTool = tools?.find(candidate => candidate.function.name === 'skill_reference')
 
     expect(tools?.map(candidate => candidate.function.name)).toEqual(['skill', 'skill_reference'])
@@ -175,14 +159,7 @@ describe('skills', () => {
     })
     const plugin = skills({ sets: [setA, setB] })
 
-    const result = await plugin.extendInstructions?.({
-      agentName: 'agent',
-      context: {},
-      sessionId: 'session',
-      signal: new AbortController().signal,
-      turnId: 'turn',
-      turnInput: { content: 'hello', role: 'user', type: 'message' },
-    })
+    const result = await plugin.extendInstructions?.(createOptions())
 
     expect(result).toContain('<name>inspect</name>')
     expect(result).toContain('<name>extra</name>')
@@ -193,18 +170,10 @@ describe('skills', () => {
     const high = createSkillSet({ priority: 10, skills: [{ ...inspectSkill, description: 'high' }] })
     const plugin = skills({ sets: [low, high] })
 
-    await plugin.extendTools?.({
-      agentName: 'agent',
-      context: {},
-      input: [{ content: 'hello', role: 'user', type: 'message' }],
-      sessionId: 'session',
-      signal: new AbortController().signal,
-      turnId: 'turn',
-      turnInput: { content: 'hello', role: 'user', type: 'message' },
-    })
+    await plugin.extendTools?.(createOptions())
 
     // high priority wins dedupe
-    expect(plugin.extendInstructions?.({ agentName: 'agent', context: {}, sessionId: 'session', signal: new AbortController().signal, turnId: 'turn', turnInput: { content: 'hello', role: 'user', type: 'message' } })).toContain('high')
+    expect(plugin.extendInstructions?.(createOptions())).toContain('high')
   })
 })
 
