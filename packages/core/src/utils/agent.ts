@@ -131,7 +131,7 @@ export const createAgent = (options: CreateAgentOptions): Agent => {
 
   const clear = () => {
     queue.clear()
-    setInput([])
+    setInput(options.input ?? [])
     state = structuredClone(options.state ?? {})
     channel.emit('apeira', { turnId: crypto.randomUUID(), type: 'agent.cleared' })
   }
