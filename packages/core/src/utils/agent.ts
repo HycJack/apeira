@@ -7,6 +7,8 @@ import type { AgentState } from '../types/state'
 import type { AgentChannel } from './channel'
 import type { AgentQueue } from './queue'
 
+import { merge } from '@moeru/std'
+
 import { createAgentChannel } from './channel'
 import { chain, chainPrepareStep, normalizePlugins } from './plugins'
 import { createAgentQueue } from './queue'
@@ -17,6 +19,7 @@ export interface Agent extends AgentChannel, AgentQueue {
   getState: () => AgentState
   init: () => Promise<void>
   setInput: (input: ItemParam[]) => void
+  setState: (patch: Partial<AgentState>) => void
   stop: () => Promise<void>
 }
 
@@ -79,6 +82,9 @@ export const createAgent = (options: CreateAgentOptions): Agent => {
   const setInput: Agent['setInput'] = nextInput =>
     input = structuredClone(nextInput)
 
+  const setState: Agent['setState'] = nextState =>
+    state = merge(state, nextState)
+
   const stop = async () => {
     for (const plugin of plugins.toReversed()) {
       try {
@@ -138,6 +144,7 @@ export const createAgent = (options: CreateAgentOptions): Agent => {
     getState,
     init,
     setInput,
+    setState,
     stop,
   }
 

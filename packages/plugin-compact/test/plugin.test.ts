@@ -200,6 +200,7 @@ describe('compact plugin', () => {
       remove: async () => {},
       send: () => 'turn-test',
       setInput,
+      setState: () => {},
       stop: async () => {},
       subscribe: () => () => {},
     }
