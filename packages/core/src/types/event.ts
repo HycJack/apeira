@@ -1,5 +1,9 @@
 import type { Event as XSAIEvent } from '@xsai-ext/responses'
 
+export interface AgentClearedEvent {
+  type: 'agent.cleared'
+}
+
 export interface AgentCustomEvent {
   apeira: AgentEvent
 }
@@ -7,7 +11,8 @@ export interface AgentCustomEvent {
 export type AgentEvent = WithId<ApeiraEvent | XSAIEvent>
 
 export type ApeiraEvent
-  = | TurnAbortedEvent
+  = | AgentClearedEvent
+    | TurnAbortedEvent
     | TurnDoneEvent
     | TurnFailedEvent
     | TurnInputDrainedEvent

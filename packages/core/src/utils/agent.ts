@@ -29,9 +29,9 @@ export interface CreateAgentOptions {
 }
 
 export const createAgent = (options: CreateAgentOptions): Agent => {
-  const input = structuredClone(options.input ?? [])
   const plugins = normalizePlugins(options.plugins ?? [])
-  const state = options.state ?? {}
+  let input = structuredClone(options.input ?? [])
+  let state = structuredClone(options.state ?? {})
 
   const responseOptions = {
     ...options.options,
@@ -77,7 +77,7 @@ export const createAgent = (options: CreateAgentOptions): Agent => {
   const getState: Agent['getState'] = () => structuredClone(state)
 
   const setInput: Agent['setInput'] = nextInput =>
-    input.splice(0, input.length, ...structuredClone(nextInput))
+    input = structuredClone(nextInput)
 
   const stop = async () => {
     for (const plugin of plugins.toReversed()) {
@@ -123,9 +123,17 @@ export const createAgent = (options: CreateAgentOptions): Agent => {
     },
   })
 
+  const clear = () => {
+    queue.clear()
+    setInput([])
+    state = structuredClone(options.state ?? {})
+    channel.emit('apeira', { turnId: crypto.randomUUID(), type: 'agent.cleared' })
+  }
+
   agent = {
     ...channel,
     ...queue,
+    clear,
     getInput,
     getState,
     init,
