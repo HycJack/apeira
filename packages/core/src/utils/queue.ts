@@ -131,6 +131,7 @@ export const createAgentQueue = ({ channel, init, runner }: CreateAgentQueueOpti
   const clear: AgentQueue['clear'] = () => {
     activeTurn?.controller.abort('cleared')
     pendingInput.length = 0
+    pendingTurns.clear()
   }
 
   const interrupt: AgentQueue['interrupt'] = (reason) => {
