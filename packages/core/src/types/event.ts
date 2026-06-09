@@ -1,4 +1,4 @@
-import type { Event as XSAIEvent } from '@xsai-ext/responses'
+import type { Event as XSAIEvent } from '@xsai/shared-chat'
 
 export interface AgentClearedEvent {
   type: 'agent.cleared'
