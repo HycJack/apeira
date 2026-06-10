@@ -2,7 +2,8 @@ import type { Message } from '@xsai/shared-chat'
 
 import { describe, expect, it } from 'vitest'
 
-import { fromChat, fromResponses, toChat, toResponses } from '../../src/index'
+import { fromChat, toChat } from '../../src/utils/runner-chat'
+import { fromResponses, toResponses } from '../../src/utils/runner-responses'
 
 describe('input conversion', () => {
   it('converts Responses content to Chat content', () => {

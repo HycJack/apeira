@@ -1,10 +1,38 @@
 import type { ResponsesOptions } from '@xsai-ext/responses'
 
+import type { ItemParam } from '../types/base'
+import type { AgentInput } from '../types/input'
 import type { ResponsesRunnerOptions, Runner } from '../types/runner'
 
 import { stepCountAtLeast, responses as xsaiResponses } from '@xsai-ext/responses'
 
-import { fromResponses, toResponses } from './input'
+export const toResponses = (inputs: readonly AgentInput[]): ItemParam[] =>
+  inputs.flatMap((input): ItemParam[] => {
+    if (input.type !== 'message' || input.role !== 'assistant')
+      return [input]
+
+    const message: ItemParam = {
+      content: input.content,
+      id: input.id,
+      phase: input.phase,
+      role: 'assistant',
+      status: input.status,
+      type: 'message',
+    }
+
+    return [
+      message,
+      ...(input.tool_calls?.map((toolCall): ItemParam => ({
+        arguments: toolCall.function.arguments ?? '',
+        call_id: toolCall.id,
+        name: toolCall.function.name ?? '',
+        type: 'function_call',
+      })) ?? []),
+    ]
+  })
+
+export const fromResponses = (inputs: ItemParam[]): AgentInput[] =>
+  inputs
 
 export const responses = (options: ResponsesRunnerOptions): Runner =>
   async (context) => {
