@@ -13,8 +13,6 @@ export const run = (agent: Agent, input: AgentInput, options?: AgentSendOptions)
   return new ReadableStream<AgentEvent>({
     cancel: () => {
       unsubscribe?.()
-      if (turnId != null && turnId === agent.getActiveTurnId())
-        agent.abort('stream cancelled')
     },
     start: (controller) => {
       const send = () => {
