@@ -5,8 +5,7 @@ import type { Agent, AgentEvent, AgentPluginOption, AgentState, ItemParam } from
 import { stepCountAtLeast } from '@xsai-ext/responses'
 import { describe, expect, it, vi } from 'vitest'
 
-import { createAgent, responses, run } from '../../src/index'
-import { user } from '../../src/index'
+import { createAgent, developer, responses, run, user } from '../../src/index'
 import { createMockFetch, sleep } from '../_shared'
 
 const createTestAgent = (opts?: {
@@ -350,12 +349,28 @@ describe('queue', () => {
     expect(turnEvents.some(e => e.type === 'turn.aborted')).toBe(true)
   })
 
-  it('interrupt returns active turn id and aborts', async () => {
-    const { agent } = createTestAgent({ delayMs: 100 })
+  it('interrupt returns the active turn id and records a boundary for the next turn', async () => {
+    const { agent, inputs } = createTestAgent({ delayMs: 100 })
+    const boundary = developer([
+      '<turn_aborted>',
+      'The previous turn was interrupted on purpose. Any running unified exec processes may still be running in the background. If any tools/commands were aborted, they may have partially executed.',
+      '</turn_aborted>',
+    ].join('\n'))
+
     const id = agent.send(user('hi'))
     await sleep(10)
-    const interruptedId = agent.interrupt('test')
-    expect(interruptedId).toBe(id)
+
+    expect(agent.interrupt('test')).toBe(id)
+    expect(agent.interrupt('test again')).toBeUndefined()
+
+    await sleep(20)
+
+    expect(agent.getInput()).toEqual([boundary])
+
+    agent.send(user('next'))
+    await sleep(150)
+
+    expect(inputs.at(-1)).toEqual([boundary, user('next')])
   })
 
   it('clears pending input and aborts active turn', async () => {

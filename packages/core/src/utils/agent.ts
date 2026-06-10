@@ -10,6 +10,7 @@ import type { AgentQueue } from './queue'
 import { merge } from '@moeru/std'
 
 import { createAgentChannel } from './channel'
+import { developer } from './input'
 import { chain, chainPrepareStep, normalizePlugins } from './plugins'
 import { createAgentQueue } from './queue'
 
@@ -119,11 +120,26 @@ export const createAgent = (options: CreateAgentOptions): Agent => {
         tools,
       })
 
-      input.push(...opts.input, ...result.output)
+      if (!opts.abortSignal?.aborted)
+        input.push(...opts.input, ...result.output)
 
       return result
     },
   })
+
+  const interrupt: Agent['interrupt'] = (reason) => {
+    const turnId = queue.interrupt(reason)
+
+    if (turnId != null) {
+      input.push(developer([
+        '<turn_aborted>',
+        '  The previous turn was interrupted on purpose. Any running unified exec processes may still be running in the background. If any tools/commands were aborted, they may have partially executed.',
+        '</turn_aborted>',
+      ].join('\n')))
+    }
+
+    return turnId
+  }
 
   const clear = () => {
     queue.clear()
@@ -139,6 +155,7 @@ export const createAgent = (options: CreateAgentOptions): Agent => {
     getInput,
     getState,
     init,
+    interrupt,
     setInput,
     setState,
     stop,

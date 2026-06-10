@@ -135,9 +135,9 @@ export const createAgentQueue = ({ channel, init, runner }: CreateAgentQueueOpti
   }
 
   const interrupt: AgentQueue['interrupt'] = (reason) => {
-    const id = activeTurn?.id
-    activeTurn?.controller.abort(reason)
-    return id
+    const active = activeTurn?.controller.signal.aborted === false ? activeTurn : undefined
+    active?.controller.abort(reason)
+    return active?.id
   }
 
   const remove: AgentQueue['remove'] = async () => {
