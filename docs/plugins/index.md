@@ -8,20 +8,20 @@ For the full plugin interface and API details, see [Plugin API](/advanced/plugin
 
 ```ts
 import { skills } from '@apeira/plugin-skills'
-import { createAgent } from 'apeira'
+import { createAgent, responses } from 'apeira'
 
 const agent = createAgent({
   instructions: 'You are a helpful assistant.',
-  options: {
-    apiKey: process.env.OPENAI_API_KEY,
-    baseURL: 'https://api.openai.com/v1/',
-    model: 'gpt-5.5',
-  },
   plugins: [
     skills({
       sets: [mySkillSet],
     }),
   ],
+  runner: responses({
+    apiKey: process.env.OPENAI_API_KEY,
+    baseURL: 'https://api.openai.com/v1/',
+    model: 'gpt-5.5',
+  }),
 })
 ```
 

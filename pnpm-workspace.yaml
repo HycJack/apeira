@@ -7,6 +7,7 @@ minimumReleaseAgeExclude:
   - '@xsai/shared@0.5.0-beta.6'
   - '@xsai/tool@0.5.0-beta.6'
   - xsschema@0.5.0-beta.6
+  - '@xsai/stream-text@0.5.0-beta.6'
 
 shellEmulator: true
 
@@ -57,7 +58,7 @@ catalog:
   pkgroll: ^2.27.1
   react: ^19.2.7
   react-dom: ^19.2.7
-  rxjs: ^7.8.2
+  rxjs: 7.8.1
   sanitize-html: ^2.17.4
   tailwind-merge: ^3.6.0
   tinyrainbow: ^3.1.0
@@ -79,4 +80,9 @@ catalogs:
     '@xsai-ext/responses': ^0.5.0-beta.6
     '@xsai/shared': ^0.5.0-beta.6
     '@xsai/shared-chat': ^0.5.0-beta.6
+    '@xsai/stream-text': ^0.5.0-beta.6
     '@xsai/tool': ^0.5.0-beta.6
+
+allowBuilds:
+  '@scarf/scarf': false
+  esbuild: false

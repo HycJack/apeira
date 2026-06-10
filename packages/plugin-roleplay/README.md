@@ -15,22 +15,22 @@ pnpm add @apeira/plugin-roleplay
 ## Usage
 
 ```ts
-import { createAgent } from '@apeira/core'
+import { createAgent, responses } from '@apeira/core'
 import { roleplay } from '@apeira/plugin-roleplay'
 
 const agent = createAgent({
   instructions: '',
-  options: {
-    apiKey: process.env.OPENAI_API_KEY,
-    baseURL: 'https://api.openai.com/v1/',
-    model: 'gpt-5.5',
-  },
   plugins: [
     roleplay({
       card,
       greetingIndex: 0,
     }),
   ],
+  runner: responses({
+    apiKey: process.env.OPENAI_API_KEY,
+    baseURL: 'https://api.openai.com/v1/',
+    model: 'gpt-5.5',
+  }),
   state: {
     userName: 'Alice',
   },
