@@ -79,7 +79,7 @@ const agent = createAgent({
 The spread object includes `apiKey`, `baseURL`, and `model`, so you can mix in extra options:
 
 ```ts
-import { stepCountAtLeast } from '@xsai/shared-chat'
+import { stepCountAtLeast } from 'apeira'
 
 const agent = createAgent({
   runner: chat({
@@ -102,7 +102,7 @@ Check whether your provider supports the Responses API. If it does, use `respons
 Both runners support multi-step turns: after tool calls finish, the runner can automatically submit a follow-up request to the model. By default, Apeira stops after at most 20 steps:
 
 ```ts
-import { stepCountAtLeast } from '@xsai/shared-chat'
+import { stepCountAtLeast } from 'apeira'
 
 const runner = responses({
   apiKey: process.env.OPENAI_API_KEY,
@@ -114,7 +114,7 @@ const runner = responses({
 You can combine conditions:
 
 ```ts
-import { and, hasToolCall, stepCountAtLeast } from '@xsai/shared-chat'
+import { and, hasToolCall, stepCountAtLeast } from 'apeira'
 
 const runner = chat({
   apiKey: process.env.OPENAI_API_KEY,
@@ -138,11 +138,10 @@ Available stop helpers:
 
 ## Custom runners
 
-A runner is any function matching the `Runner` interface. The types are imported from `@apeira/core`; some helper types such as `CompletionStep`, `Tool`, and `Usage` come from `@xsai/shared-chat`:
+A runner is any function matching the `Runner` interface:
 
 ```ts
-import type { Runner, RunnerContext, RunnerResult } from '@apeira/core'
-import type { CompletionStep, Tool, Usage } from '@xsai/shared-chat'
+import type { CompletionStep, Runner, RunnerContext, RunnerResult, Tool, Usage } from '@apeira/core'
 
 const myRunner: Runner = async (context) => {
   // You must implement the full pipeline yourself:
