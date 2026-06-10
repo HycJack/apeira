@@ -98,7 +98,7 @@ const agent = createAgent({
 
 Check whether your provider supports the Responses API. If it does, use `responses()`. Otherwise, use `chat()`.
 
-- **`responses()`** — Responses API. Requires provider support. Offers server-side state, built-in truncation, and reasoning model features.
+- **`responses()`** — Responses API. Requires provider support.
 - **`chat()`** — Chat Completions API. Works with any OpenAI-compatible endpoint, including local models and most third-party providers.
 
 ## Multi-step turns and `stopWhen`
