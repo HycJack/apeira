@@ -153,7 +153,6 @@ const myRunner: Runner = async (context) => {
   // - handle streaming or polling
   // - execute tool calls and emit tool-result.done
   // - emit text.delta / text.start / text.done
-  // - emit turn lifecycle events
   // - respect context.abortSignal
   // - return the final output
 
@@ -170,6 +169,10 @@ const myRunner: Runner = async (context) => {
 }
 ```
 
-A custom runner receives the full conversation history, instructions, plugin-provided tools, and an event channel. You are responsible for the entire turn lifecycle: streaming model output, executing tools, handling multi-step loops, and emitting Apeira events through `context.channel.emit('apeira', event)`. The function must return the model's output as `AgentInput[]`.
+A custom runner is responsible for model execution, tool execution, multi-step
+loops, and emitting model/tool stream events through `context.channel`.
+
+Turn lifecycle events such as `turn.start`, `turn.done`, `turn.failed`, and
+`turn.aborted` are managed by Apeira's queue.
 
 This is useful when you need to integrate a non-OpenAI backend, add custom preprocessing, or implement a mock runner for testing.
