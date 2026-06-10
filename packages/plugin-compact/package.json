@@ -1,8 +1,8 @@
 {
   "name": "@apeira/plugin-compact",
-  "private": true,
   "type": "module",
   "version": "0.0.4",
+  "private": true,
   "description": "Automatic context compaction for Apeira agents.",
   "author": "Moeru AI",
   "license": "MIT",

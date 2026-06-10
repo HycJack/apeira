@@ -1,8 +1,8 @@
 {
   "name": "@apeira/plugin-hitl",
-  "private": true,
   "type": "module",
   "version": "0.0.4",
+  "private": true,
   "description": "Human-in-the-loop tool approval for Apeira.",
   "author": "Moeru AI",
   "license": "MIT",
