@@ -1,6 +1,7 @@
 import type { Agent, AgentEventListener } from '@apeira/core'
 
-import { assistant, createAgent, developer, responses, run, user } from '@apeira/core'
+import { assistant, createAgent, developer, run, user } from '@apeira/core'
+import { responses } from '@apeira/core/responses'
 import { describe, expect, it, vi } from 'vitest'
 
 import { compact } from '../src/index'

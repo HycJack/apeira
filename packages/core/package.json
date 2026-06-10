@@ -20,6 +20,8 @@
   "sideEffects": false,
   "exports": {
     ".": "./src/index.ts",
+    "./chat": "./src/chat.ts",
+    "./responses": "./src/responses.ts",
     "./package.json": "./package.json"
   },
   "files": [
@@ -30,6 +32,14 @@
       ".": {
         "types": "./dist/index.d.ts",
         "default": "./dist/index.js"
+      },
+      "./chat": {
+        "types": "./dist/chat.d.ts",
+        "default": "./dist/chat.js"
+      },
+      "./responses": {
+        "types": "./dist/responses.d.ts",
+        "default": "./dist/responses.js"
       },
       "./package.json": "./package.json"
     },

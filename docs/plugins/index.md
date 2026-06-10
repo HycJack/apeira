@@ -8,7 +8,8 @@ For the full plugin interface and API details, see [Plugin API](/advanced/plugin
 
 ```ts
 import { skills } from '@apeira/plugin-skills'
-import { createAgent, responses } from 'apeira'
+import { createAgent } from 'apeira'
+import { responses } from 'apeira/responses'
 
 const agent = createAgent({
   instructions: 'You are a helpful assistant.',

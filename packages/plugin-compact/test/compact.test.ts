@@ -1,4 +1,5 @@
-import { assistant, developer, responses, user } from '@apeira/core'
+import { assistant, developer, user } from '@apeira/core'
+import { responses } from '@apeira/core/responses'
 import { describe, expect, it } from 'vitest'
 
 import { executeCompact, hardTruncateInput } from '../src/index'

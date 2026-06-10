@@ -1,6 +1,6 @@
 import type { HITLRequestEvent } from '@apeira/plugin-hitl'
 
-import { responses } from '@apeira/core'
+import { responses } from '@apeira/core/responses'
 import { agui } from '@apeira/plugin-ag-ui'
 import { hitl } from '@apeira/plugin-hitl'
 import {

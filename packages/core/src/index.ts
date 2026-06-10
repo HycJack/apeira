@@ -27,8 +27,6 @@ export type {
 export type { AgentPlugin, AgentPluginOption, ExtendOptions } from './types/plugin'
 export type * from './types/re-export'
 export type {
-  ChatRunnerOptions,
-  ResponsesRunnerOptions,
   Runner,
   RunnerContext,
   RunnerResult,
@@ -40,5 +38,3 @@ export type { AgentChannel, AgentEventListener } from './utils/channel'
 export { assistant, developer, system, user } from './utils/input'
 export * from './utils/re-export'
 export { run } from './utils/run'
-export { chat } from './utils/runner-chat'
-export { responses } from './utils/runner-responses'

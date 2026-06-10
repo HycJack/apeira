@@ -1,6 +1,7 @@
 import { env } from 'node:process'
 
-import { createAgent, responses } from '@apeira/core'
+import { createAgent } from '@apeira/core'
+import { responses } from '@apeira/core/responses'
 import { commonTools } from '@apeira/plugin-common-tools'
 
 const model = env.APEIRA_MODEL ?? 'qwen3.5:0.8b'

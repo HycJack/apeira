@@ -11,7 +11,8 @@ pnpm add @apeira/plugin-ag-ui
 ## Usage
 
 ```ts
-import { createAgent, responses } from '@apeira/core'
+import { createAgent } from '@apeira/core'
+import { responses } from '@apeira/core/responses'
 import { agui } from '@apeira/plugin-ag-ui'
 
 const agent = createAgent({

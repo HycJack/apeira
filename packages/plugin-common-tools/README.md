@@ -11,7 +11,8 @@ pnpm add @apeira/plugin-common-tools
 ## Usage
 
 ```ts
-import { createAgent, responses } from '@apeira/core'
+import { createAgent } from '@apeira/core'
+import { responses } from '@apeira/core/responses'
 import { commonTools } from '@apeira/plugin-common-tools'
 
 const agent = createAgent({

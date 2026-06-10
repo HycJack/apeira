@@ -5,7 +5,8 @@ import type { Agent, AgentEvent, AgentPluginOption, AgentState, ItemParam } from
 import { stepCountAtLeast } from '@xsai-ext/responses'
 import { describe, expect, it, vi } from 'vitest'
 
-import { createAgent, developer, responses, run, user } from '../../src/index'
+import { createAgent, developer, run, user } from '../../src/index'
+import { responses } from '../../src/responses'
 import { createMockFetch, sleep } from '../_shared'
 
 const createTestAgent = (opts?: {

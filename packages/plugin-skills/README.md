@@ -13,7 +13,8 @@ pnpm add @apeira/plugin-skills
 ### Filesystem skill set (built-in, Node.js only)
 
 ```ts
-import { createAgent, responses } from '@apeira/core'
+import { createAgent } from '@apeira/core'
+import { responses } from '@apeira/core/responses'
 import { skills } from '@apeira/plugin-skills'
 import { fsSkillSet } from '@apeira/plugin-skills/fs'
 

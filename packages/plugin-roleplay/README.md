@@ -15,7 +15,8 @@ pnpm add @apeira/plugin-roleplay
 ## Usage
 
 ```ts
-import { createAgent, responses } from '@apeira/core'
+import { createAgent } from '@apeira/core'
+import { responses } from '@apeira/core/responses'
 import { roleplay } from '@apeira/plugin-roleplay'
 
 const agent = createAgent({

@@ -2,7 +2,8 @@ import type { ItemParam } from '@apeira/core'
 
 import type { RoleplayEvent } from '../src'
 
-import { createAgent, developer, responses, run, user } from '@apeira/core'
+import { createAgent, developer, run, user } from '@apeira/core'
+import { responses } from '@apeira/core/responses'
 import { compact } from '@apeira/plugin-compact'
 import { describe, expect, it, vi } from 'vitest'
 

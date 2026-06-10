@@ -18,7 +18,11 @@
     "xsai"
   ],
   "sideEffects": false,
-  "exports": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./chat": "./src/chat.ts",
+    "./responses": "./src/responses.ts"
+  },
   "files": [
     "dist"
   ],
@@ -27,6 +31,14 @@
       ".": {
         "types": "./dist/index.d.ts",
         "default": "./dist/index.js"
+      },
+      "./chat": {
+        "types": "./dist/chat.d.ts",
+        "default": "./dist/chat.js"
+      },
+      "./responses": {
+        "types": "./dist/responses.d.ts",
+        "default": "./dist/responses.js"
       },
       "./package.json": "./package.json"
     },

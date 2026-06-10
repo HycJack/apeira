@@ -13,7 +13,8 @@ pnpm add @apeira/plugin-mcp
 ### JS config
 
 ```ts
-import { createAgent, responses } from '@apeira/core'
+import { createAgent } from '@apeira/core'
+import { responses } from '@apeira/core/responses'
 import { mcp } from '@apeira/plugin-mcp'
 
 const agent = createAgent({
@@ -47,7 +48,8 @@ const agent = createAgent({
 ### JSON config
 
 ```ts
-import { createAgent, responses } from '@apeira/core'
+import { createAgent } from '@apeira/core'
+import { responses } from '@apeira/core/responses'
 import { mcp } from '@apeira/plugin-mcp'
 
 import config from '../.mcp.json'

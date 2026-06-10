@@ -5,7 +5,8 @@ This page walks through creating an agent, submitting a turn, and consuming the 
 ## Create an agent
 
 ```ts
-import { createAgent, responses } from 'apeira'
+import { createAgent } from 'apeira'
+import { responses } from 'apeira/responses'
 
 const agent = createAgent({
   instructions: 'You are a concise assistant.',

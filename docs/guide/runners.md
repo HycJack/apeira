@@ -7,7 +7,8 @@ A runner is a backend adapter that turns an agent's instructions and input histo
 Uses the OpenAI [Responses API](https://platform.openai.com/docs/api-reference/responses) via `@xsai-ext/responses`.
 
 ```ts
-import { createAgent, responses } from 'apeira'
+import { createAgent } from 'apeira'
+import { responses } from 'apeira/responses'
 
 const agent = createAgent({
   instructions: 'You are a concise assistant.',
@@ -26,7 +27,8 @@ You can pass any option supported by `@xsai-ext/responses` except the ones Apeir
 Uses the Chat Completions API via `@xsai/stream-text`.
 
 ```ts
-import { chat, createAgent } from 'apeira'
+import { createAgent } from 'apeira'
+import { chat } from 'apeira/chat'
 
 const agent = createAgent({
   instructions: 'You are a concise assistant.',
@@ -48,7 +50,8 @@ You can use [`@xsai-ext/providers`](https://xsai.js.org/docs/packages-ext/provid
 
 ```ts
 import { openai } from '@xsai-ext/providers'
-import { chat, createAgent } from 'apeira'
+import { createAgent } from 'apeira'
+import { chat } from 'apeira/chat'
 
 const agent = createAgent({
   runner: chat({
@@ -65,7 +68,8 @@ For runtime-agnostic code or explicit keys, use the `create` entry:
 
 ```ts
 import { createGoogle } from '@xsai-ext/providers/create'
-import { createAgent, responses } from 'apeira'
+import { createAgent } from 'apeira'
+import { responses } from 'apeira/responses'
 
 const google = createGoogle('foo-bar-baz')
 

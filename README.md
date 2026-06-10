@@ -5,7 +5,8 @@ stream-first Agent Runtime.
 ## Usage
 
 ```ts
-import { createAgent, responses, run } from '@apeira/core'
+import { createAgent, run } from '@apeira/core'
+import { responses } from '@apeira/core/responses'
 
 const agent = createAgent({
   instructions: 'You are a concise assistant.',

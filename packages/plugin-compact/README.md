@@ -13,7 +13,8 @@ pnpm add @apeira/plugin-compact
 ## Usage
 
 ```ts
-import { createAgent, responses } from '@apeira/core'
+import { createAgent } from '@apeira/core'
+import { responses } from '@apeira/core/responses'
 import { compact } from '@apeira/plugin-compact'
 
 const agent = createAgent({
