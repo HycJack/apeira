@@ -1,4 +1,5 @@
-import { createAgent, responses } from '@apeira/core'
+import { createAgent } from '@apeira/core'
+import { responses } from '@apeira/core/responses'
 import { commonTools } from '@apeira/plugin-common-tools'
 import { autoReviewByPattern, humanInTheLoop } from '@apeira/plugin-hitl'
 import { skills } from '@apeira/plugin-skills'
