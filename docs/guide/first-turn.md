@@ -17,7 +17,7 @@ const agent = createAgent({
 })
 ```
 
-`responses()` configures the Responses backend. Use `chat()` instead for Chat Completions. Apeira manages `input`, `instructions`, and `abortSignal` internally.
+`responses()` configures the Responses backend. See [Runners](/guide/runners) for choosing between `responses()` and `chat()`, or using provider presets. Apeira manages `input`, `instructions`, and `abortSignal` internally.
 
 ## Run a turn
 

@@ -26,7 +26,7 @@ export default defineConfig({
       {
         items: [
           { link: '/guide/first-turn', text: 'First Turn' },
-
+          { link: '/guide/runners', text: 'Runners' },
           { link: '/guide/agent-lifecycle', text: 'Agent Lifecycle' },
           { link: '/guide/events', text: 'Events' },
         ],
@@ -51,13 +51,6 @@ export default defineConfig({
           { link: '/advanced/plugin-api', text: 'Plugin API' },
         ],
         text: 'Advanced',
-      },
-      {
-        items: [
-          { link: '/reference/core', text: 'Core API' },
-          { link: '/reference/packages', text: 'Packages' },
-        ],
-        text: 'Reference',
       },
     ],
 

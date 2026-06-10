@@ -82,21 +82,19 @@ agent.abort('user cancelled')
 agent.clear()
 ```
 
-
-
 ## State
 
 Agent `state` is a plain object that plugins and instructions can read and write.
 
 ```ts
 const agent = createAgent({
-  instructions: state => `You are helping ${state.userId ?? 'a user'}.`,
+  instructions: state => `You are helping ${state.userName ?? 'a user'}.`,
   runner: responses({
     apiKey: process.env.OPENAI_API_KEY,
     baseURL: 'https://api.openai.com/v1/',
     model: 'gpt-5.5',
   }),
-  state: { userId: 'user_123' },
+  state: { userName: 'user_123' },
 })
 ```
 

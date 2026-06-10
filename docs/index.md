@@ -17,8 +17,6 @@ features:
     details: Submit a turn and consume its lifecycle and model events as a ReadableStream.
   - title: Small runtime
     details: Apeira keeps the core focused on turn queueing, aborts, and event delivery.
-  - title: Episodic state
-    details: History is an append-only JSONL log; each model call receives assembled context from that log.
   - title: xsAI-based
     details: Model calls, tools, steps, and streaming events are powered by @xsai-ext/responses.
 ---
