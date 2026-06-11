@@ -10,7 +10,7 @@ import type { AgentStateManager } from './state-manager'
 
 import { createAgentChannel } from './channel'
 import { developer } from './input'
-import { chain, chainPrepareStep, normalizePlugins } from './plugins'
+import { chain, chainPrepareStep, normalizePlugins } from './plugin'
 import { createAgentQueue } from './queue'
 import { createAgentStateManager } from './state-manager'
 
