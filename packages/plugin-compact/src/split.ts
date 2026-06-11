@@ -6,9 +6,9 @@ export interface RetainedMessage {
 }
 
 export interface SplitHistoryResult {
-  compressible: ItemParam[]
+  compressible: readonly ItemParam[]
   hasEnoughTurns: boolean
-  preserved: ItemParam[]
+  preserved: readonly ItemParam[]
 }
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
@@ -40,12 +40,12 @@ export const getMessageText = (item: ItemParam): string => {
     .join('\n')
 }
 
-export const estimateTokens = (items: ItemParam[]): number => {
+export const estimateTokens = (items: readonly ItemParam[]): number => {
   const json = JSON.stringify(items)
   return Math.ceil(json.length / 4)
 }
 
-export const splitHistory = (items: ItemParam[], preserveTurns: number): SplitHistoryResult => {
+export const splitHistory = (items: readonly ItemParam[], preserveTurns: number): SplitHistoryResult => {
   if (preserveTurns <= 0) {
     return {
       compressible: items,
@@ -76,7 +76,7 @@ export const splitHistory = (items: ItemParam[], preserveTurns: number): SplitHi
 }
 
 export const selectRetainedUserMessages = (
-  items: ItemParam[],
+  items: readonly ItemParam[],
   maxTokens: number,
 ): RetainedMessage[] => {
   const userMessages = items
@@ -103,8 +103,8 @@ export const selectRetainedUserMessages = (
 }
 
 export const buildCompactInput = (
-  compressible: ItemParam[],
-  retained: RetainedMessage[],
+  compressible: readonly ItemParam[],
+  retained: readonly RetainedMessage[],
 ): ItemParam[] => {
   return compressible.filter(item => !retained.some(retainedMessage => retainedMessage.item === item))
 }

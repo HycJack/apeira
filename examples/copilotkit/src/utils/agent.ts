@@ -231,7 +231,7 @@ const readPersistedInput = (threadId: string): ItemParam[] => {
   }
 }
 
-const persistInput = (threadId: string, input: ItemParam[]) => {
+const persistInput = (threadId: string, input: readonly ItemParam[]) => {
   localStorage.setItem(getStorageKey(threadId), JSON.stringify({ input }))
 }
 

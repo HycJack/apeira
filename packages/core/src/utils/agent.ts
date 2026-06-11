@@ -1,5 +1,6 @@
 import type { Tool } from '@xsai/shared-chat'
 
+import type { DeepReadonly } from '../types/base'
 import type { AgentInput } from '../types/input'
 import type { AgentPluginOption, ExtendOptions } from '../types/plugin'
 import type { Runner } from '../types/runner'
@@ -15,16 +16,16 @@ import { createAgentQueue } from './queue'
 import { createAgentStateManager } from './state-manager'
 
 export interface Agent extends AgentChannel, AgentQueue {
-  getInput: () => AgentInput[]
+  getInput: () => readonly AgentInput[]
   init: () => Promise<void>
-  setInput: (input: AgentInput[]) => void
+  setInput: (input: readonly AgentInput[]) => void
   state: Readonly<AgentStateManager>
   stop: () => Promise<void>
 }
 
 export interface CreateAgentOptions {
-  input?: AgentInput[]
-  instructions: ((state: AgentState) => Promise<string> | string) | string
+  input?: readonly AgentInput[]
+  instructions: ((state: DeepReadonly<AgentState>) => Promise<string> | string) | string
   plugins?: AgentPluginOption[]
   runner: Runner
   state?: AgentState
@@ -32,7 +33,7 @@ export interface CreateAgentOptions {
 
 export const createAgent = (options: CreateAgentOptions): Agent => {
   const plugins = normalizePlugins(options.plugins ?? [])
-  let input = structuredClone(options.input ?? [])
+  let input: AgentInput[] = structuredClone(options.input ?? []) as AgentInput[]
 
   const hooks = {
     onFinish: chain('every', plugins.map(p => p.onFinish)),
@@ -74,10 +75,10 @@ export const createAgent = (options: CreateAgentOptions): Agent => {
     return initPromise
   }
 
-  const getInput: Agent['getInput'] = () => structuredClone(input)
+  const getInput: Agent['getInput'] = () => input
 
   const setInput: Agent['setInput'] = nextInput =>
-    input = structuredClone(nextInput)
+    input = structuredClone(nextInput) as AgentInput[]
 
   const stop = async () => {
     for (const plugin of plugins.toReversed()) {

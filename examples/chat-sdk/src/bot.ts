@@ -13,7 +13,7 @@ import { readJSON, threadFilePath, writeJSON } from './storage'
 const TELEGRAM_USER_ID = env.TELEGRAM_USER_ID
 const TELEGRAM_BOT_TOKEN = env.TELEGRAM_BOT_TOKEN
 
-const threadInputs = new Map<string, ItemParam[]>()
+const threadInputs = new Map<string, readonly ItemParam[]>()
 
 const getThreadInput = async (threadId: string) => {
   const cached = threadInputs.get(threadId)

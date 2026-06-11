@@ -21,7 +21,7 @@ export type Runner = (context: RunnerContext) => Promise<RunnerResult>
 export interface RunnerContext {
   abortSignal?: AbortSignal
   channel: AgentChannel
-  input: AgentInput[]
+  input: readonly AgentInput[]
   instructions: string
   onFinish?: (step?: CompletionStep) => Promise<unknown> | unknown
   onStepFinish?: (step: CompletionStep) => Promise<unknown> | unknown

@@ -18,7 +18,7 @@ export const readJSON = async <T>(path: string): Promise<T[]> => {
   }
 }
 
-export const writeJSON = async <T>(path: string, items: T[]): Promise<void> => {
+export const writeJSON = async <T>(path: string, items: readonly T[]): Promise<void> => {
   await ensureDir(baseDir)
   await writeFile(path, `${JSON.stringify(items, null, 2)}\n`)
 }

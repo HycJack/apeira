@@ -31,11 +31,11 @@ export interface CompactHistoryOptions {
 }
 
 export interface CompactHistoryResult {
-  input: ItemParam[]
+  input: readonly ItemParam[]
   summary: string
 }
 
-const extractAssistantSummary = (items: ItemParam[]): string => {
+const extractAssistantSummary = (items: readonly ItemParam[]): string => {
   for (const item of items.toReversed()) {
     if (item.type !== 'message' || item.role !== 'assistant')
       continue
@@ -50,7 +50,7 @@ const extractAssistantSummary = (items: ItemParam[]): string => {
 }
 
 const splitWithEmergencyPreserve = (
-  items: ItemParam[],
+  items: readonly ItemParam[],
   preserveTurns: number,
   contextLength: number,
 ) => {
@@ -71,7 +71,7 @@ const splitWithEmergencyPreserve = (
 export const assembleCompactedInput = (
   summary: string,
   retainedUserMessages: RetainedMessage[],
-  preservedTurns: ItemParam[],
+  preservedTurns: readonly ItemParam[],
 ): ItemParam[] => [
   ...retainedUserMessages.map(retained => user(retained.text)),
   developer(`<context_summary>\n${summary}\n</context_summary>`),
@@ -79,7 +79,7 @@ export const assembleCompactedInput = (
 ]
 
 export const hardTruncateInput = (
-  items: ItemParam[],
+  items: readonly ItemParam[],
   preserveTurns: number,
   contextLength: number,
 ): ItemParam[] => {
@@ -98,7 +98,7 @@ export const executeCompact = async ({
   maxRetainedUserTokens,
   preserveTurns,
   signal,
-}: CompactHistoryOptions & { input: ItemParam[] }): Promise<CompactHistoryResult> => {
+}: CompactHistoryOptions & { input: readonly ItemParam[] }): Promise<CompactHistoryResult> => {
   const initialSplit = splitHistory(input, preserveTurns)
   if (!initialSplit.hasEnoughTurns || initialSplit.compressible.length === 0)
     return { input, summary: '' }
