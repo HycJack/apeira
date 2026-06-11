@@ -6,20 +6,19 @@ import type { Runner } from '../types/runner'
 import type { AgentState } from '../types/state'
 import type { AgentChannel } from './channel'
 import type { AgentQueue } from './queue'
-
-import { merge } from '@moeru/std'
+import type { AgentStateManager } from './state-manager'
 
 import { createAgentChannel } from './channel'
 import { developer } from './input'
 import { chain, chainPrepareStep, normalizePlugins } from './plugins'
 import { createAgentQueue } from './queue'
+import { createAgentStateManager } from './state-manager'
 
 export interface Agent extends AgentChannel, AgentQueue {
   getInput: () => AgentInput[]
-  getState: () => AgentState
   init: () => Promise<void>
   setInput: (input: AgentInput[]) => void
-  setState: (patch: Partial<AgentState>) => void
+  state: Readonly<AgentStateManager>
   stop: () => Promise<void>
 }
 
@@ -34,7 +33,6 @@ export interface CreateAgentOptions {
 export const createAgent = (options: CreateAgentOptions): Agent => {
   const plugins = normalizePlugins(options.plugins ?? [])
   let input = structuredClone(options.input ?? [])
-  let state = structuredClone(options.state ?? {})
 
   const hooks = {
     onFinish: chain('every', plugins.map(p => p.onFinish)),
@@ -46,9 +44,11 @@ export const createAgent = (options: CreateAgentOptions): Agent => {
 
   const channel = createAgentChannel()
 
+  const state = createAgentStateManager(options.state ?? {})
+
   const resolveInstructions = async (opts: ExtendOptions) => {
     const base = typeof options.instructions === 'function'
-      ? await options.instructions(state)
+      ? await options.instructions(state.get())
       : options.instructions
 
     const extensions: string[] = []
@@ -76,13 +76,8 @@ export const createAgent = (options: CreateAgentOptions): Agent => {
 
   const getInput: Agent['getInput'] = () => structuredClone(input)
 
-  const getState: Agent['getState'] = () => structuredClone(state)
-
   const setInput: Agent['setInput'] = nextInput =>
     input = structuredClone(nextInput)
-
-  const setState: Agent['setState'] = nextState =>
-    state = structuredClone(merge(state, nextState))
 
   const stop = async () => {
     for (const plugin of plugins.toReversed()) {
@@ -99,7 +94,7 @@ export const createAgent = (options: CreateAgentOptions): Agent => {
     runner: async (opts) => {
       const extendOptions: ExtendOptions = {
         signal: opts.abortSignal,
-        state,
+        state: state.get(),
         turnId: opts.turnId,
       }
 
@@ -144,7 +139,7 @@ export const createAgent = (options: CreateAgentOptions): Agent => {
   const clear = () => {
     queue.clear()
     setInput(options.input ?? [])
-    state = structuredClone(options.state ?? {})
+    state.set(options.state ?? {})
     channel.emit('apeira', { turnId: crypto.randomUUID(), type: 'agent.cleared' })
   }
 
@@ -153,11 +148,10 @@ export const createAgent = (options: CreateAgentOptions): Agent => {
     ...queue,
     clear,
     getInput,
-    getState,
     init,
     interrupt,
     setInput,
-    setState,
+    state,
     stop,
   }
 

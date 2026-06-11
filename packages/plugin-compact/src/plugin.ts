@@ -41,7 +41,7 @@ export const compact = (options: CompactPluginOptions): AgentPlugin => {
     return agent
   }
 
-  const getContextLength = () => getAgent().getState().contextLength ?? DEFAULT_CONTEXT_LENGTH
+  const getContextLength = () => getAgent().state.get().contextLength ?? DEFAULT_CONTEXT_LENGTH
 
   const compactHistoricalInput = async (historicalInput: ItemParam[]) => {
     const contextLength = getContextLength()

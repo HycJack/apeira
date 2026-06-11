@@ -23,12 +23,11 @@ const createMockAgent = (): MockAgent => {
     emitted,
     getActiveTurnId: () => undefined,
     getInput: () => [],
-    getState: () => ({}),
     init: async () => {},
     interrupt: () => undefined,
     send: () => 'turn-mock',
     setInput: () => {},
-    setState: () => {},
+    state: { get: () => ({}), set: () => {}, update: () => {} },
     stop: async () => {},
     subscribe: ((channel: string, listener: AgentEventListener) => {
       if (!listeners.has(channel))

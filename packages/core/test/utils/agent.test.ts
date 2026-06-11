@@ -44,13 +44,10 @@ describe('createAgent', () => {
     expect(agent.getInput()).toEqual([])
   })
 
-  it('returns a cloned agent state', () => {
+  it('returns the current agent state', () => {
     const { agent } = createTestAgent({ state: { contextLength: 8_000 } })
-    const state = agent.getState()
 
-    state.contextLength = 16_000
-
-    expect(agent.getState()).toEqual({ contextLength: 8_000 })
+    expect(agent.state.get()).toEqual({ contextLength: 8_000 })
   })
 
   it('replaces input with a cloned value', () => {
@@ -74,21 +71,19 @@ describe('createAgent', () => {
     } as Partial<AgentState>
     const mutablePatch = patch as { nested: { second: boolean } }
 
-    agent.setState(patch)
+    agent.state.update(patch)
     mutablePatch.nested.second = false
 
-    expect(agent.getState()).toEqual({
+    expect(agent.state.get()).toEqual({
       nested: { first: true, second: true },
     })
   })
 
-  it('leaves state unchanged when cloning a merged patch fails', () => {
+  it('merges state patches', () => {
     const { agent } = createTestAgent({ state: { contextLength: 8_000 } })
 
-    expect(() => agent.setState({
-      invalid: () => {},
-    } as Partial<AgentState>)).toThrow()
-    expect(agent.getState()).toEqual({ contextLength: 8_000 })
+    agent.state.update({ contextLength: 16_000 })
+    expect(agent.state.get()).toEqual({ contextLength: 16_000 })
   })
 })
 
@@ -399,11 +394,11 @@ describe('queue', () => {
     agent.subscribe('apeira', event => events.push(event))
 
     agent.setInput([user('changed')])
-    agent.setState({ contextLength: 16_000 })
+    agent.state.update({ contextLength: 16_000 })
     agent.clear()
 
     expect(agent.getInput()).toEqual([user('initial')])
-    expect(agent.getState()).toEqual({ contextLength: 8_000 })
+    expect(agent.state.get()).toEqual({ contextLength: 8_000 })
     expect(events.filter(event => event.type === 'agent.cleared')).toHaveLength(1)
     expect(events.find(event => event.type === 'agent.cleared')?.turnId).toBeTruthy()
   })
@@ -430,7 +425,7 @@ describe('queue', () => {
       state: { contextLength: 8_000 },
     })
 
-    agent.setState({ contextLength: 16_000 })
+    agent.state.update({ contextLength: 16_000 })
     agent.clear()
     agent.send(user('after clear'))
     await sleep(50)

@@ -47,7 +47,7 @@ export const roleplay = (options: RoleplayPluginOptions): AgentPlugin => {
 
   const createCBSContext = (
     pickCache = turnPickCache,
-    state: AgentState = getAgent().getState(),
+    state: AgentState = getAgent().state.get(),
   ): CBSContext => ({
     charName: getCard().data.nickname ?? getCard().data.name,
     pickCache,

@@ -42,7 +42,7 @@ describe('roleplay plugin', () => {
 
     await agent.init()
 
-    expect(agent.getState()).toEqual({ userName: 'Alice' })
+    expect(agent.state.get()).toEqual({ userName: 'Alice' })
     expect(assistantText(agent.getInput()[0])).toBe('Welcome, Alice.')
     expect(events).toContainEqual({
       greetingIndex: 1,
@@ -195,7 +195,7 @@ describe('roleplay plugin', () => {
 
     agent.emit('apeira', { turnId: 'one', type: 'turn.start' })
     expect(await plugin.extendInstructions?.({
-      state: agent.getState(),
+      state: agent.state.get(),
       turnId: 'one',
     })).toBe('first')
     const first = await plugin.prepareStep?.({
@@ -219,7 +219,7 @@ describe('roleplay plugin', () => {
 
     agent.emit('apeira', { turnId: 'two', type: 'turn.start' })
     expect(await plugin.extendInstructions?.({
-      state: agent.getState(),
+      state: agent.state.get(),
       turnId: 'two',
     })).toBe('second')
     random.mockRestore()

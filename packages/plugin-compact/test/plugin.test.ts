@@ -123,11 +123,11 @@ describe('compact plugin', () => {
       emit: () => {},
       getActiveTurnId: () => undefined,
       getInput: () => historicalInput,
-      getState: () => ({ contextLength: 1000 }),
       init: async () => {},
       interrupt: () => undefined,
       send: () => 'turn-test',
       setInput,
+      state: { get: () => ({ contextLength: 1000 }), set: () => {}, update: () => {} },
       stop: async () => {},
       // @ts-expect-error wrong types
       subscribe: (_channel: string, nextListener: AgentEventListener) => {
@@ -194,12 +194,11 @@ describe('compact plugin', () => {
       emit: () => {},
       getActiveTurnId: () => undefined,
       getInput: () => historicalInput,
-      getState: () => ({ contextLength: 1000 }),
       init: async () => {},
       interrupt: () => undefined,
       send: () => 'turn-test',
       setInput,
-      setState: () => {},
+      state: { get: () => ({ contextLength: 1000 }), set: () => {}, update: () => {} },
       stop: async () => {},
       subscribe: () => () => {},
     }

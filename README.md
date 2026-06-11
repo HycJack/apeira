@@ -97,10 +97,10 @@ const agent = createAgent({
 })
 ```
 
-`state` is shared across all turns on the same agent. Use it for context that should persist across the agent's lifetime. Update it with `agent.setState(patch)`:
+`state` is shared across all turns on the same agent. Use it for context that should persist across the agent's lifetime. Update it with `agent.state.update(patch)`:
 
 ```ts
-agent.setState({ userId: 'user_456' })
+agent.state.update({ userId: 'user_456' })
 ```
 
 ### Abort And Clear
