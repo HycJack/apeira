@@ -18,15 +18,17 @@ import type {
   AgentSystemMessageInput,
   AgentUserMessageInput,
 } from '../types/input'
-import type { ChatRunnerOptions, Runner } from '../types/runner'
+import type { DynamicOptions, Runner } from '../types/runner'
 
 import { stepCountAtLeast } from '@xsai/shared-chat'
 import { streamText } from '@xsai/stream-text'
 
+export type ChatRunnerOptions = Omit<StreamTextOptions, DynamicOptions>
 type ChatContentPart = CommonContentPart | RefusalContentPart
 type FunctionOutputContentPart = Exclude<AgentFunctionCallOutputInput['output'], string>[number]
 type InputContentPart = Exclude<AgentUserMessageInput['content'], string>[number]
 type OutputContentPart = Exclude<AgentAssistantMessageInput['content'], string>[number]
+
 type ResponsesContentPart = FunctionOutputContentPart | InputContentPart | OutputContentPart
 
 export const toChat = (inputs: readonly AgentInput[]): Message[] => {

@@ -2,9 +2,11 @@ import type { ResponsesOptions } from '@xsai-ext/responses'
 
 import type { ItemParam } from '../types/base'
 import type { AgentInput } from '../types/input'
-import type { ResponsesRunnerOptions, Runner } from '../types/runner'
+import type { DynamicOptions, Runner } from '../types/runner'
 
 import { stepCountAtLeast, responses as xsaiResponses } from '@xsai-ext/responses'
+
+export type ResponsesRunnerOptions = Omit<ResponsesOptions, DynamicOptions>
 
 export const toResponses = (inputs: readonly AgentInput[]): ItemParam[] =>
   inputs.flatMap((input): ItemParam[] => {
