@@ -17,6 +17,7 @@ import { createAgentStateManager } from './state-manager'
 export interface Agent extends AgentChannel, AgentQueue {
   getInput: () => readonly AgentInput[]
   init: () => Promise<void>
+  runner: Runner
   setInput: (input: readonly AgentInput[]) => void
   state: Readonly<AgentStateManager>
   stop: () => Promise<void>
@@ -150,6 +151,7 @@ export const createAgent = (options: CreateAgentOptions): Agent => {
     getInput,
     init,
     interrupt,
+    runner: options.runner,
     setInput,
     state,
     stop,
