@@ -1,6 +1,6 @@
 import type { Tool } from '@xsai/shared-chat'
 
-import type { Agent, AgentEvent, AgentPluginOption, AgentState, ItemParam } from '../../src/index'
+import type { Agent, AgentEvent, AgentInput, AgentPluginOption, AgentState } from '../../src/index'
 
 import { stepCountAtLeast } from '@xsai-ext/responses'
 import { describe, expect, it, vi } from 'vitest'
@@ -11,7 +11,7 @@ import { createMockFetch, sleep } from '../_shared'
 
 const createTestAgent = (opts?: {
   delayMs?: number
-  input?: ItemParam[]
+  input?: AgentInput[]
   instructions?: ((state: Readonly<AgentState>) => string) | string
   plugins?: AgentPluginOption[]
   state?: AgentState

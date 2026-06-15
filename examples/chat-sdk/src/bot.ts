@@ -1,4 +1,4 @@
-import type { ItemParam } from '@apeira/core'
+import type { AgentInput } from '@apeira/core'
 
 import { env, exit } from 'node:process'
 
@@ -13,14 +13,14 @@ import { readJSON, threadFilePath, writeJSON } from './storage'
 const TELEGRAM_USER_ID = env.TELEGRAM_USER_ID
 const TELEGRAM_BOT_TOKEN = env.TELEGRAM_BOT_TOKEN
 
-const threadInputs = new Map<string, readonly ItemParam[]>()
+const threadInputs = new Map<string, readonly AgentInput[]>()
 
 const getThreadInput = async (threadId: string) => {
   const cached = threadInputs.get(threadId)
   if (cached != null)
     return cached
 
-  const items = await readJSON<ItemParam>(threadFilePath(threadId))
+  const items = await readJSON<AgentInput>(threadFilePath(threadId))
   threadInputs.set(threadId, items)
   return items
 }

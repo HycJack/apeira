@@ -1,7 +1,7 @@
-import type { ItemParam } from '@apeira/core'
+import type { AgentInput } from '@apeira/core'
 
 export const createMockFetch = (opts?: {
-  responseItem?: ItemParam | ItemParam[]
+  responseItem?: AgentInput | AgentInput[]
   responseText?: string | string[]
   totalTokens?: number | number[]
 }) => {
@@ -22,7 +22,7 @@ export const createMockFetch = (opts?: {
     callIndex++
 
     const encoder = new TextEncoder()
-    const defaultAssistant: ItemParam = { content: [{ text, type: 'output_text' }], role: 'assistant', type: 'message' }
+    const defaultAssistant: AgentInput = { content: [{ text, type: 'output_text' }], role: 'assistant', type: 'message' }
     const assistant = Array.isArray(responseItem)
       ? (responseItem[callIndex - 1] ?? responseItem.at(-1) ?? defaultAssistant)
       : responseItem ?? defaultAssistant

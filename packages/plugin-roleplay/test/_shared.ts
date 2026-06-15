@@ -1,4 +1,4 @@
-import type { ItemParam } from '@apeira/core'
+import type { AgentInput } from '@apeira/core'
 import type { CharacterCardV1, CharacterCardV2, CharacterCardV3 } from '@risuai/ccardlib'
 
 export const createV1Card = (
@@ -63,10 +63,10 @@ export const createV3Card = (
 })
 
 export const createMockFetch = (responseText = 'response') => {
-  const bodies: Array<{ input: ItemParam[], instructions?: string }> = []
+  const bodies: Array<{ input: AgentInput[], instructions?: string }> = []
 
   const fetch: typeof globalThis.fetch = async (_url, init) => {
-    const body = JSON.parse(String(init?.body)) as { input: ItemParam[], instructions?: string }
+    const body = JSON.parse(String(init?.body)) as { input: AgentInput[], instructions?: string }
     bodies.push(body)
 
     const assistant = {

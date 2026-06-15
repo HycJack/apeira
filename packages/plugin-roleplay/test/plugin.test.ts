@@ -1,4 +1,4 @@
-import type { ItemParam } from '@apeira/core'
+import type { AgentInput } from '@apeira/core'
 
 import type { RoleplayEvent } from '../src'
 
@@ -16,7 +16,7 @@ const runner = responses({
   model: 'test',
 })
 
-const assistantText = (item: ItemParam | undefined) => {
+const assistantText = (item: AgentInput | undefined) => {
   if (item?.type !== 'message' || item.role !== 'assistant' || !Array.isArray(item.content))
     return undefined
   const part = item.content[0]

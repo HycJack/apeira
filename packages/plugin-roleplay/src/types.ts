@@ -1,4 +1,4 @@
-import type { ItemParam } from '@apeira/core'
+import type { AgentInput } from '@apeira/core'
 import type {
   CharacterCardV1,
   CharacterCardV2,
@@ -9,7 +9,7 @@ export type RoleplayEvent
   = | {
     categories: RoleplayPromptCategory[]
     instructionExtension: string
-    temporaryInput: ItemParam[]
+    temporaryInput: AgentInput[]
     turnId?: string
     type: 'prompt.assembled'
   }

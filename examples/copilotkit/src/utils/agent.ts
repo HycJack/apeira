@@ -1,5 +1,5 @@
 /* eslint-disable @masknet/browser-no-persistent-storage */
-import type { Agent, CreateAgentOptions, ItemParam } from '@apeira/core'
+import type { Agent, AgentInput, CreateAgentOptions } from '@apeira/core'
 import type { AGUIEvent } from '@apeira/plugin-ag-ui'
 import type { HITLEvent } from '@apeira/plugin-hitl'
 import type { BaseEvent, Message, RunAgentInput } from '@copilotkit/react-core/v2'
@@ -15,10 +15,10 @@ import { Observable } from 'rxjs'
 
 import { AGENT_ID, AGENT_NAME } from './const'
 
-type PersistedMessageItem = Extract<ItemParam, { type: 'message' }>
+type PersistedMessageItem = Extract<AgentInput, { type: 'message' }>
 
 interface PersistedThreadState {
-  input?: ItemParam[]
+  input?: AgentInput[]
 }
 
 type PersistedUserMessageItem = Extract<PersistedMessageItem, { role: 'user' }>
@@ -92,7 +92,7 @@ const getAttachmentType = (mimeType: string | undefined, filename: string | unde
   return 'document' as const
 }
 
-const toUserInput = (messages: RunAgentInput['messages']): ItemParam | undefined => {
+const toUserInput = (messages: RunAgentInput['messages']): AgentInput | undefined => {
   const lastUserMessage = [...messages].reverse().find(message => message.role === 'user')
 
   if (lastUserMessage == null)
@@ -217,7 +217,7 @@ const toUserMessageContent = (value: PersistedUserMessageItem['content']): Extra
   return content.length > 0 ? content : toMessageText(value)
 }
 
-const readPersistedInput = (threadId: string): ItemParam[] => {
+const readPersistedInput = (threadId: string): AgentInput[] => {
   try {
     const raw = localStorage.getItem(getStorageKey(threadId))
     if (raw == null)
@@ -231,7 +231,7 @@ const readPersistedInput = (threadId: string): ItemParam[] => {
   }
 }
 
-const persistInput = (threadId: string, input: readonly ItemParam[]) => {
+const persistInput = (threadId: string, input: readonly AgentInput[]) => {
   localStorage.setItem(getStorageKey(threadId), JSON.stringify({ input }))
 }
 

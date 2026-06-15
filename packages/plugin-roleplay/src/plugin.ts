@@ -1,4 +1,4 @@
-import type { Agent, AgentPlugin, AgentState, ItemParam } from '@apeira/core'
+import type { Agent, AgentInput, AgentPlugin, AgentState } from '@apeira/core'
 import type { CharacterCardV3 } from '@risuai/ccardlib'
 
 import type {
@@ -102,10 +102,10 @@ export const roleplay = (options: RoleplayPluginOptions): AgentPlugin => {
       const context = createCBSContext()
       const definition = assembleCharacterDefinition(getCard(), context)
       const postHistoryInstructions = assemblePostHistoryInstructions(getCard(), context)
-      const characterInput: ItemParam[] = definition.length > 0
+      const characterInput: AgentInput[] = definition.length > 0
         ? [system(definition)]
         : []
-      const postHistoryInput: ItemParam[] = postHistoryInstructions.length > 0
+      const postHistoryInput: AgentInput[] = postHistoryInstructions.length > 0
         ? [system(postHistoryInstructions)]
         : []
       const temporaryInput = [

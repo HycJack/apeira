@@ -1,14 +1,14 @@
-import type { ItemParam } from '@apeira/core'
+import type { AgentInput } from '@apeira/core'
 
 export interface RetainedMessage {
-  item: ItemParam
+  item: AgentInput
   text: string
 }
 
 export interface SplitHistoryResult {
-  compressible: readonly ItemParam[]
+  compressible: readonly AgentInput[]
   hasEnoughTurns: boolean
-  preserved: readonly ItemParam[]
+  preserved: readonly AgentInput[]
 }
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
@@ -27,7 +27,7 @@ const readContentPartText = (part: unknown): string => {
   return ''
 }
 
-export const getMessageText = (item: ItemParam): string => {
+export const getMessageText = (item: AgentInput): string => {
   if (item.type !== 'message')
     return ''
 
@@ -40,12 +40,12 @@ export const getMessageText = (item: ItemParam): string => {
     .join('\n')
 }
 
-export const estimateTokens = (items: readonly ItemParam[]): number => {
+export const estimateTokens = (items: readonly AgentInput[]): number => {
   const json = JSON.stringify(items)
   return Math.ceil(json.length / 4)
 }
 
-export const splitHistory = (items: readonly ItemParam[], preserveTurns: number): SplitHistoryResult => {
+export const splitHistory = (items: readonly AgentInput[], preserveTurns: number): SplitHistoryResult => {
   if (preserveTurns <= 0) {
     return {
       compressible: items,
@@ -76,7 +76,7 @@ export const splitHistory = (items: readonly ItemParam[], preserveTurns: number)
 }
 
 export const selectRetainedUserMessages = (
-  items: readonly ItemParam[],
+  items: readonly AgentInput[],
   maxTokens: number,
 ): RetainedMessage[] => {
   const userMessages = items
@@ -103,8 +103,8 @@ export const selectRetainedUserMessages = (
 }
 
 export const buildCompactInput = (
-  compressible: readonly ItemParam[],
+  compressible: readonly AgentInput[],
   retained: readonly RetainedMessage[],
-): ItemParam[] => {
+): AgentInput[] => {
   return compressible.filter(item => !retained.some(retainedMessage => retainedMessage.item === item))
 }

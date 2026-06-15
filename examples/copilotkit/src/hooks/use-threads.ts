@@ -1,5 +1,5 @@
 /* eslint-disable @masknet/browser-no-persistent-storage */
-import type { ItemParam } from '@apeira/core'
+import type { AgentInput } from '@apeira/core'
 
 import { useLocalStorage } from 'foxact/use-local-storage'
 import { useCallback, useEffect, useMemo } from 'react'
@@ -18,7 +18,7 @@ export interface LocalThread {
 }
 
 interface PersistedThreadState {
-  input?: ItemParam[]
+  input?: AgentInput[]
 }
 
 const now = () => Date.now()
@@ -37,16 +37,16 @@ const readThreadState = (threadId: string) => {
   }
 }
 
-const readThreadItems = (threadId: string): ItemParam[] =>
+const readThreadItems = (threadId: string): AgentInput[] =>
   readThreadState(threadId).input ?? []
 
-const getText = (content: Extract<ItemParam, { type: 'message' }>['content']) =>
+const getText = (content: Extract<AgentInput, { type: 'message' }>['content']) =>
   typeof content === 'string'
     ? content
     : content.flatMap(part => 'text' in part ? [part.text] : []).join(' ')
 
 const getThreadName = (threadId: string) => {
-  const message = readThreadItems(threadId).find((item): item is Extract<ItemParam, { role: 'user', type: 'message' }> =>
+  const message = readThreadItems(threadId).find((item): item is Extract<AgentInput, { role: 'user', type: 'message' }> =>
     item.type === 'message' && item.role === 'user',
   )
   const text = message == null ? '' : getText(message.content).trim()

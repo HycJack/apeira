@@ -1,4 +1,4 @@
-import type { CreateAgentOptions, ItemParam, Runner } from '@apeira/core'
+import type { AgentInput, CreateAgentOptions, Runner } from '@apeira/core'
 
 import type { RetainedMessage } from './split'
 
@@ -31,11 +31,11 @@ export interface CompactHistoryOptions {
 }
 
 export interface CompactHistoryResult {
-  input: readonly ItemParam[]
+  input: readonly AgentInput[]
   summary: string
 }
 
-const extractAssistantSummary = (items: readonly ItemParam[]): string => {
+const extractAssistantSummary = (items: readonly AgentInput[]): string => {
   for (const item of items.toReversed()) {
     if (item.type !== 'message' || item.role !== 'assistant')
       continue
@@ -50,7 +50,7 @@ const extractAssistantSummary = (items: readonly ItemParam[]): string => {
 }
 
 const splitWithEmergencyPreserve = (
-  items: readonly ItemParam[],
+  items: readonly AgentInput[],
   preserveTurns: number,
   contextLength: number,
 ) => {
@@ -71,18 +71,18 @@ const splitWithEmergencyPreserve = (
 export const assembleCompactedInput = (
   summary: string,
   retainedUserMessages: RetainedMessage[],
-  preservedTurns: readonly ItemParam[],
-): ItemParam[] => [
+  preservedTurns: readonly AgentInput[],
+): AgentInput[] => [
   ...retainedUserMessages.map(retained => user(retained.text)),
   developer(`<context_summary>\n${summary}\n</context_summary>`),
   ...preservedTurns,
 ]
 
 export const hardTruncateInput = (
-  items: readonly ItemParam[],
+  items: readonly AgentInput[],
   preserveTurns: number,
   contextLength: number,
-): ItemParam[] => {
+): AgentInput[] => {
   const { preserved } = splitWithEmergencyPreserve(items, preserveTurns, contextLength)
 
   return [
@@ -98,7 +98,7 @@ export const executeCompact = async ({
   maxRetainedUserTokens,
   preserveTurns,
   signal,
-}: CompactHistoryOptions & { input: readonly ItemParam[] }): Promise<CompactHistoryResult> => {
+}: CompactHistoryOptions & { input: readonly AgentInput[] }): Promise<CompactHistoryResult> => {
   const initialSplit = splitHistory(input, preserveTurns)
   if (!initialSplit.hasEnoughTurns || initialSplit.compressible.length === 0)
     return { input, summary: '' }
