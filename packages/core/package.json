@@ -56,5 +56,8 @@
     "@xsai/shared-chat": "catalog:xsai",
     "@xsai/stream-text": "catalog:xsai",
     "yocto-queue": "catalog:"
+  },
+  "devDependencies": {
+    "@moeru/std": "catalog:"
   }
 }
