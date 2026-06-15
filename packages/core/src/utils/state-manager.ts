@@ -1,7 +1,5 @@
 import type { AgentState } from '../types/state'
 
-import { merge } from '@moeru/std'
-
 export interface AgentStateManager {
   get: () => Readonly<AgentState>
   set: (next: ((prev: Readonly<AgentState>) => AgentState) | AgentState) => void
@@ -16,6 +14,6 @@ export const createAgentStateManager = (initialState: AgentState): AgentStateMan
     set: nextState =>
       state = structuredClone(typeof nextState === 'function' ? nextState(state) : nextState),
     update: nextState =>
-      state = structuredClone(merge(state, nextState)),
+      state = structuredClone({ ...state, ...nextState }),
   }
 }
