@@ -55,7 +55,7 @@ character card.
 
 Invalid greeting indices fall back to `first_mes`. The greeting is added only
 when starting with empty conversation history and is restored after
-`agent.clear()`.
+`agent.reset()`.
 
 Set `state.userName` to control `{{user}}`. It defaults to `User`.
 

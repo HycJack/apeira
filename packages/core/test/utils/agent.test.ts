@@ -380,7 +380,7 @@ describe('queue', () => {
     expect(inputs.at(-1)).toEqual([boundary, user('next')])
   })
 
-  it('clears pending input and aborts active turn', async () => {
+  it('resets pending input and aborts active turn', async () => {
     const { agent } = createTestAgent({ delayMs: 100 })
     const events: AgentEvent[] = []
     const unsubscribe = agent.subscribe('apeira', (event) => {
@@ -390,12 +390,12 @@ describe('queue', () => {
     agent.send(user('first'))
     await sleep(10)
     agent.send(user('second'))
-    await agent.clear()
+    await agent.reset()
 
     await sleep(150)
     unsubscribe()
 
-    expect(events.some(e => e.type === 'turn.aborted' && e.reason === 'cleared')).toBe(true)
+    expect(events.some(e => e.type === 'turn.aborted' && e.reason === 'reset')).toBe(true)
   })
 
   it('waits for an active append before resetting the storage', async () => {
@@ -422,14 +422,14 @@ describe('queue', () => {
 
     agent.send(user('old'))
     await appendStarted
-    const clearing = agent.clear()
+    const clearing = agent.reset()
     releaseAppend()
     await clearing
 
     expect(await agent.storage.read()).toEqual([])
   })
 
-  it('restores initial input and state and emits one cleared event', async () => {
+  it('restores initial input and state and emits one reset event', async () => {
     const { agent } = createTestAgent({
       input: [user('initial')],
       state: { contextLength: 8_000 },
@@ -442,12 +442,12 @@ describe('queue', () => {
     await agent.storage.clear()
     await agent.storage.append(user('changed'))
     agent.state.update({ contextLength: 16_000 })
-    await agent.clear()
+    await agent.reset()
 
     expect(await agent.storage.read()).toEqual([user('initial')])
     expect(agent.state.get()).toEqual({ contextLength: 8_000 })
-    expect(events.filter(event => event.type === 'agent.cleared')).toHaveLength(1)
-    expect(events.find(event => event.type === 'agent.cleared')?.turnId).toBeTruthy()
+    expect(events.filter(event => event.type === 'agent.reset')).toHaveLength(1)
+    expect(events.find(event => event.type === 'agent.reset')?.turnId).toBeTruthy()
   })
 
   it('clears turns queued from a completed-turn listener', async () => {
@@ -457,7 +457,7 @@ describe('queue', () => {
       if (event.type !== 'turn.done')
         return
       agent.send(user('queued'))
-      await agent.clear()
+      await agent.reset()
     })
 
     agent.send(user('first'))
@@ -473,7 +473,7 @@ describe('queue', () => {
     })
 
     agent.state.update({ contextLength: 16_000 })
-    await agent.clear()
+    await agent.reset()
     agent.send(user('after clear'))
     await sleep(50)
 

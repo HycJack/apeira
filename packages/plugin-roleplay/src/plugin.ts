@@ -86,7 +86,7 @@ export const roleplay = (options: RoleplayPluginOptions): AgentPlugin => {
           turnPickCache.clear()
           instructionExtension = ''
         }
-        else if (event.type === 'agent.cleared') {
+        else if (event.type === 'agent.reset') {
           activeTurnId = undefined
           turnPickCache.clear()
           instructionExtension = ''

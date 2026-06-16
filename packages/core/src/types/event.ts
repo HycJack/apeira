@@ -1,17 +1,17 @@
 import type { Event as XSAIEvent } from '@xsai/shared-chat'
 
-export interface AgentClearedEvent {
-  type: 'agent.cleared'
-}
-
 export interface AgentCustomEvent {
   apeira: AgentEvent
 }
 
 export type AgentEvent = WithId<ApeiraEvent | XSAIEvent>
 
+export interface AgentResetEvent {
+  type: 'agent.reset'
+}
+
 export type ApeiraEvent
-  = | AgentClearedEvent
+  = | AgentResetEvent
     | TurnAbortedEvent
     | TurnDoneEvent
     | TurnFailedEvent

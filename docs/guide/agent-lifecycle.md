@@ -76,10 +76,10 @@ agent.interrupt('user interrupted')
 agent.abort('user cancelled')
 ```
 
-**Clear** aborts the running turn, removes queued turns, resets the input history to the original `input`, and resets `state` to its initial value. The running turn emits `turn.aborted` with reason `cleared`.
+**Reset** aborts the running turn, removes queued turns, resets the input history to the original `input`, and resets `state` to its initial value. The running turn emits `turn.aborted` with reason `reset`.
 
 ```ts
-agent.clear()
+agent.reset()
 ```
 
 ## State

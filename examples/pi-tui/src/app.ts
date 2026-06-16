@@ -647,7 +647,7 @@ export const createPiTuiExampleApp = () => {
   }
 
   const handleClearCommand = () => {
-    void agent.clear()
+    void agent.reset()
     entries.length = 0
     assistantEntries.clear()
     reasoningEntries.clear()

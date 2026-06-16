@@ -114,13 +114,13 @@ agent.abort('user cancelled')
 Use `interrupt()` to abort and record a model-visible turn-aborted boundary.
 Use `abort()` + `send()` to abort and submit different input.
 
-Clear the agent:
+Reset the agent:
 
 ```ts
-agent.clear()
+agent.reset()
 ```
 
-`clear()` aborts the running turn, clears queued turns, resets the input
+`reset()` aborts the running turn, clears queued turns, resets the input
 history to the original `input`, and resets `state` to its initial value.
 
 You can also pass an external `AbortSignal` to a single turn:

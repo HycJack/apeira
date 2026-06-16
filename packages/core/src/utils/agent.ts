@@ -16,9 +16,9 @@ import { createAgentStateManager } from './state-manager'
 import { mem } from './storage'
 
 export interface Agent extends AgentChannel, AgentQueue {
-  clear: () => Promise<void>
   init: () => Promise<void>
   interrupt: (reason?: unknown) => Promise<string | undefined>
+  reset: () => Promise<void>
   runner: Runner
   readonly state: Readonly<AgentStateManager>
   stop: () => Promise<void>
@@ -144,19 +144,19 @@ export const createAgent = (options: CreateAgentOptions): Agent => {
     return turnId
   }
 
-  const clear: Agent['clear'] = async () => {
+  const reset: Agent['reset'] = async () => {
     await queue.clear()
     await mutateStorage(async () => storage.reset())
     state.set(options.state ?? {})
-    await channel.emit('apeira', { turnId: crypto.randomUUID(), type: 'agent.cleared' })
+    await channel.emit('apeira', { turnId: crypto.randomUUID(), type: 'agent.reset' })
   }
 
   agent = {
     ...channel,
     ...queue,
-    clear,
     init,
     interrupt,
+    reset,
     runner: options.runner,
     state,
     stop,

@@ -88,7 +88,7 @@ describe('roleplay plugin', () => {
     await agent.init()
     expect(assistantText((await agent.storage.read())[0])).toBe('first')
 
-    await agent.clear()
+    await agent.reset()
 
     expect(assistantText((await agent.storage.read())[0])).toBe('second')
     expect(events.at(-1)).toEqual({ greetingIndex: 0, type: 'session.reset' })
