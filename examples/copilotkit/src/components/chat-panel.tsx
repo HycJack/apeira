@@ -1,8 +1,11 @@
+/* eslint-disable @masknet/browser-no-persistent-storage */
+import type { AgentInput } from '@apeira/core'
 import type { HITLRequestEvent } from '@apeira/plugin-hitl'
 
 import { responses } from '@apeira/core/responses'
 import { agui } from '@apeira/plugin-ag-ui'
 import { hitl } from '@apeira/plugin-hitl'
+import { kv } from '@apeira/storage/kv'
 import {
   CopilotChat,
   CopilotChatConfigurationProvider,
@@ -14,6 +17,7 @@ import { useLLMSettings } from '../hooks/use-llm-settings'
 import { cn } from '../lib/utils'
 import { AbstractApeiraAgent } from '../utils/agent'
 import { AGENT_ID, DEFAULT_INSTRUCTIONS } from '../utils/const'
+import { getThreadStorePrefix } from '../utils/storage'
 import { weatherTool } from '../utils/tools/weather'
 import { ApprovalPanel } from './approval-panel'
 
@@ -28,6 +32,12 @@ interface ChatPanelProps {
 export const ChatPanel = ({ className, onThreadUpdated, threadId }: ChatPanelProps) => {
   const { apiKey, baseURL, model } = useLLMSettings()
   const [approvalRequests, setApprovalRequests] = useState<HITLRequestEvent[]>([])
+
+  const storage = useMemo(() =>
+    kv<AgentInput>({
+      prefix: getThreadStorePrefix(threadId),
+      storage: localStorage,
+    }), [threadId])
 
   const agent = useMemo(() => new AbstractApeiraAgent({
     instructions: DEFAULT_INSTRUCTIONS,
@@ -49,7 +59,8 @@ export const ChatPanel = ({ className, onThreadUpdated, threadId }: ChatPanelPro
         weatherTool,
       ],
     }),
-  }, onThreadUpdated, threadId), [apiKey, baseURL, model, onThreadUpdated, threadId])
+    storage,
+  }, onThreadUpdated, threadId), [apiKey, baseURL, model, onThreadUpdated, storage, threadId])
 
   useEffect(() => {
     const unsubscribe = agent.subscribeHitl(threadId, (event) => {

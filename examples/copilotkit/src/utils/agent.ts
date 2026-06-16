@@ -1,4 +1,3 @@
-/* eslint-disable @masknet/browser-no-persistent-storage */
 import type { Agent, AgentInput, CreateAgentOptions } from '@apeira/core'
 import type { AGUIEvent } from '@apeira/plugin-ag-ui'
 import type { HITLEvent } from '@apeira/plugin-hitl'
@@ -13,20 +12,13 @@ import {
 } from '@copilotkit/react-core/v2'
 import { Observable } from 'rxjs'
 
-import { AGENT_ID, AGENT_NAME } from './const'
+import { AGENT_ID } from './const'
 
 type PersistedMessageItem = Extract<AgentInput, { type: 'message' }>
-
-interface PersistedThreadState {
-  input?: AgentInput[]
-}
 
 type PersistedUserMessageItem = Extract<PersistedMessageItem, { role: 'user' }>
 type UserContentPart = Exclude<Extract<Message, { role: 'user' }>['content'], string>[number]
 type UserMediaContentPart = Extract<UserContentPart, { type: 'audio' | 'document' | 'image' | 'video' }>
-
-const getStorageKey = (threadId: string) =>
-  JSON.stringify([AGENT_NAME, threadId])
 
 const toDataUrl = (mimeType: string, value: string) =>
   `data:${mimeType};base64,${value}`
@@ -217,28 +209,8 @@ const toUserMessageContent = (value: PersistedUserMessageItem['content']): Extra
   return content.length > 0 ? content : toMessageText(value)
 }
 
-const readPersistedInput = (threadId: string): AgentInput[] => {
-  try {
-    const raw = localStorage.getItem(getStorageKey(threadId))
-    if (raw == null)
-      return []
-
-    const state = JSON.parse(raw) as PersistedThreadState
-    return state.input ?? []
-  }
-  catch {
-    return []
-  }
-}
-
-const persistInput = (threadId: string, input: readonly AgentInput[]) => {
-  localStorage.setItem(getStorageKey(threadId), JSON.stringify({ input }))
-}
-
-const readPersistedMessages = (threadId: string): Message[] => {
-  const items = readPersistedInput(threadId)
-
-  return items.flatMap((item): Message[] => {
+const toMessages = (items: readonly AgentInput[]): Message[] =>
+  items.flatMap((item): Message[] => {
     // TODO
     // eslint-disable-next-line ts/switch-exhaustiveness-check
     switch (item.type) {
@@ -288,7 +260,6 @@ const readPersistedMessages = (threadId: string): Message[] => {
         return []
     }
   })
-}
 
 export class AbstractApeiraAgent extends AbstractAgent {
   private readonly agent: Agent
@@ -303,19 +274,15 @@ export class AbstractApeiraAgent extends AbstractAgent {
     super({
       agentId: AGENT_ID,
       description: 'Apeira browser agent',
-      initialMessages: readPersistedMessages(threadId),
       threadId,
     })
     this.agentOptions = agentOptions
-    this.agent = createAgent({
-      ...agentOptions,
-      input: readPersistedInput(threadId),
-    })
+    this.agent = createAgent(agentOptions)
     this.onThreadUpdated = onThreadUpdated
   }
 
   approve(toolCallId: string) {
-    approveToolCall(this.agent, { toolCallId })
+    void approveToolCall(this.agent, { toolCallId })
   }
 
   override clone(): this {
@@ -325,7 +292,7 @@ export class AbstractApeiraAgent extends AbstractAgent {
   }
 
   reject(toolCallId: string, reason?: string) {
-    rejectToolCall(this.agent, { reason, toolCallId })
+    void rejectToolCall(this.agent, { reason, toolCallId })
   }
 
   override run(input: RunAgentInput) {
@@ -377,7 +344,6 @@ export class AbstractApeiraAgent extends AbstractAgent {
               break
           }
 
-          persistInput(this.threadId, this.agent.getInput())
           this.onThreadUpdated?.(this.threadId)
 
           if (!subscriber.closed)
@@ -412,27 +378,32 @@ export class AbstractApeiraAgent extends AbstractAgent {
 
   protected override connect(_input: RunAgentInput) {
     return new Observable<BaseEvent>((subscriber: Subscriber<BaseEvent>) => {
-      subscriber.next({
-        timestamp: Date.now(),
-        type: EventType.RUN_STARTED,
-      })
-
-      const messages = readPersistedMessages(this.threadId)
-
-      if (messages.length > 0) {
+      void (async () => {
         subscriber.next({
-          messages,
           timestamp: Date.now(),
-          type: EventType.MESSAGES_SNAPSHOT,
+          type: EventType.RUN_STARTED,
         })
-      }
 
-      subscriber.next({
-        timestamp: Date.now(),
-        type: EventType.RUN_FINISHED,
+        const messages = toMessages(await this.agent.storage.read())
+
+        if (messages.length > 0) {
+          this.setMessages(messages)
+          subscriber.next({
+            messages,
+            timestamp: Date.now(),
+            type: EventType.MESSAGES_SNAPSHOT,
+          })
+        }
+
+        subscriber.next({
+          timestamp: Date.now(),
+          type: EventType.RUN_FINISHED,
+        })
+
+        subscriber.complete()
+      })().catch((error) => {
+        subscriber.error(error instanceof Error ? error : new Error(String(error)))
       })
-
-      subscriber.complete()
     })
   }
 }
