@@ -8,6 +8,7 @@ The agent starts with the optional initial history passed to `storage`.
 
 ```ts twoslash
 import type { AgentInput } from 'apeira'
+
 import { createAgent, mem } from 'apeira'
 import { responses } from 'apeira/responses'
 

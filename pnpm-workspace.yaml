@@ -38,6 +38,8 @@ catalog:
   '@radix-ui/react-slot': ^1.2.5
   '@radix-ui/react-tooltip': ^1.2.9
   '@risuai/ccardlib': ^0.4.2
+  '@shikijs/magic-move': ^4.2.0
+  '@shikijs/vitepress-twoslash': ^4.2.0
   '@types/node': ^25.9.2
   '@types/react': ^19.2.17
   '@types/react-dom': ^19.2.3
@@ -63,8 +65,6 @@ catalog:
   sanitize-html: ^2.17.4
   shiki: ^3.22.0
   tailwind-merge: ^3.6.0
-  '@shikijs/magic-move': ^4.2.0
-  '@shikijs/vitepress-twoslash': ^4.2.0
   tinyrainbow: ^3.1.0
   tsx: ^4.22.4
   turndown: ^7.2.4

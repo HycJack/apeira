@@ -5,21 +5,23 @@ import { useData } from 'vitepress'
 const { frontmatter } = useData()
 
 const resolveLink = (link?: string) => {
-  if (!link) return undefined
-  if (link.startsWith('http')) return link
+  if (!link)
+    return undefined
+  if (link.startsWith('http'))
+    return link
   return normalizeLink(link)
 }
 </script>
 
 <template>
-  <section class="home-hero wrapper flex flex-col justify-start items-center gap-6 pt-14 pb-6 bg-[var(--vp-c-bg)]">
-    <div class="w-full sm:w-2xl flex flex-col justify-start items-center gap-10 px-5 sm:px-0">
-      <div class="flex flex-col justify-start items-center gap-4">
+  <section class="home-hero wrapper pb-6 pt-14 bg-[var(--vp-c-bg)] flex flex-col gap-6 items-center justify-start">
+    <div class="px-5 flex flex-col gap-10 w-full items-center justify-start sm:px-0 sm:w-2xl">
+      <div class="flex flex-col gap-4 items-center justify-start">
         <h1 class="home-hero-title text-center text-balance">
           <span class="inline-block">{{ frontmatter.hero.name }}</span>
           <span class="inline-block">{{ frontmatter.hero.text }}</span>
         </h1>
-        <p class="home-hero-tagline self-stretch text-center text-balance">
+        <p class="home-hero-tagline text-center text-balance self-stretch">
           {{ frontmatter.hero.tagline }}
         </p>
       </div>
@@ -29,7 +31,7 @@ const resolveLink = (link?: string) => {
         <code class="home-hero-install-code">pnpm add apeira</code>
       </div>
 
-      <div class="flex flex-wrap items-center justify-center gap-5">
+      <div class="flex flex-wrap gap-5 items-center justify-center">
         <a
           v-for="action in frontmatter.hero.actions"
           :key="action.text"

@@ -1,9 +1,9 @@
 <script setup lang="ts">
+import type { HighlighterCore } from 'shiki/core'
 import { ShikiMagicMove } from '@shikijs/magic-move/vue'
 import { getSingletonHighlighter } from 'shiki'
-import type { HighlighterCore } from 'shiki/core'
-import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useData } from 'vitepress'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 
 import '@shikijs/magic-move/style.css'
 
@@ -40,7 +40,8 @@ const goToNextTab = () => {
 
 const scheduleAutoAdvance = () => {
   clearAutoAdvance()
-  if (!autoPlayEnabled.value || tabs.value.length <= 1) return
+  if (!autoPlayEnabled.value || tabs.value.length <= 1)
+    return
   autoAdvanceTimer = setTimeout(() => {
     goToNextTab()
   }, AUTO_ADVANCE_DELAY)
@@ -73,17 +74,17 @@ onBeforeUnmount(() => {
 <template>
   <section
     v-if="tabs.length"
-    class="wrapper border-t border-stroke dark:border-nickel bg-[var(--vp-c-bg-soft)]"
+    class="wrapper border-stroke dark:border-nickel border-t bg-[var(--vp-c-bg-soft)]"
   >
-    <div class="px-3 py-6 sm:p-10 flex justify-center">
-      <div class="w-full max-w-[62rem] rounded-xl overflow-hidden bg-[#09090b] outline outline-[#27272a]">
-        <div class="flex items-center justify-center px-4 py-3 border-b border-[#27272a] bg-[#18181b]">
-          <div class="flex items-center gap-1">
+    <div class="px-3 py-6 flex justify-center sm:p-10">
+      <div class="outline-[#27272a] outline rounded-xl bg-[#09090b] max-w-[62rem] w-full overflow-hidden">
+        <div class="px-4 py-3 border-b border-[#27272a] bg-[#18181b] flex items-center justify-center">
+          <div class="flex gap-1 items-center">
             <button
               v-for="(tab, index) in tabs"
               :key="tab.id"
               type="button"
-              class="px-3 py-1.5 rounded-md text-sm font-mono transition-colors"
+              class="text-sm font-mono px-3 py-1.5 rounded-md transition-colors"
               :class="index === activeTab
                 ? 'bg-white/10 text-white'
                 : 'text-[#71717a] hover:text-white'"
@@ -93,7 +94,7 @@ onBeforeUnmount(() => {
             </button>
           </div>
         </div>
-        <div class="p-4 sm:p-6 overflow-hidden">
+        <div class="p-4 overflow-hidden sm:p-6">
           <ShikiMagicMove
             v-if="highlighter"
             :highlighter="highlighter"

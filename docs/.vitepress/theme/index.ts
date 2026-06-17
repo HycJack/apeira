@@ -1,4 +1,5 @@
 import type { Theme } from 'vitepress'
+import type { Component } from 'vue'
 
 import TwoslashFloatingVue from '@shikijs/vitepress-twoslash/client'
 
@@ -26,5 +27,5 @@ export default {
     ctx.app.component('Home', Home)
     ctx.app.use(TwoslashFloatingVue)
   },
-  Layout,
+  Layout: Layout as Component,
 } satisfies Theme
