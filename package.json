@@ -21,13 +21,16 @@
     "@eslint-react/eslint-plugin": "catalog:",
     "@moeru/eslint-config": "catalog:",
     "@moeru/tsconfig": "catalog:",
+    "@shikijs/magic-move": "catalog:",
     "@types/node": "catalog:",
     "@unocss/eslint-plugin": "catalog:",
     "@unocss/reset": "catalog:",
+    "@voidzero-dev/vitepress-theme": "catalog:",
     "bumpp": "catalog:",
     "eslint": "catalog:",
     "eslint-plugin-react-refresh": "catalog:",
     "pkgroll": "catalog:",
+    "shiki": "catalog:",
     "tsx": "catalog:",
     "typescript": "catalog:",
     "unocss": "catalog:",
@@ -35,6 +38,7 @@
     "unocss-preset-shadcn": "catalog:",
     "vite": "catalog:",
     "vitepress": "catalog:",
-    "vitest": "catalog:"
+    "vitest": "catalog:",
+    "vue": "catalog:"
   }
 }

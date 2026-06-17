@@ -1,8 +1,8 @@
-import { defineConfig } from 'vitepress'
+import { extendConfig } from '@voidzero-dev/vitepress-theme/config'
 
-export default defineConfig({
-  base: '/apeira/',
-  description: 'A stream-first agent runtime for TypeScript.',
+export default extendConfig({
+  description: 'stream-first Agent Runtime.',
+  head: [['link', { href: 'https://github.com/moeru-ai.png', rel: 'icon', type: 'image/png' }]],
   srcExclude: ['adr/**', 'spark/**'],
 
   themeConfig: {
@@ -56,6 +56,8 @@ export default defineConfig({
     socialLinks: [
       { icon: 'github', link: 'https://github.com/moeru-ai/apeira' },
     ],
+
+    variant: 'voidzero',
   },
 
   title: 'Apeira',

@@ -1,8 +1,11 @@
 {
   "extends": "@moeru/tsconfig/tsconfig.node.json",
+  "compilerOptions": {
+    "types": ["node", "vite/client"]
+  },
   "include": [
     "**/*.config.ts",
     "**/scripts/*.ts",
-    "**/.vitepress/*.ts"
+    "**/.vitepress/**/*.ts"
   ]
 }
