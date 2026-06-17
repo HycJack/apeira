@@ -6,7 +6,7 @@ A runner is a backend adapter that turns an agent's instructions and input histo
 
 Uses the OpenAI [Responses API](https://platform.openai.com/docs/api-reference/responses) via `@xsai-ext/responses`.
 
-```ts
+```ts twoslash
 import { createAgent } from 'apeira'
 import { responses } from 'apeira/responses'
 
@@ -26,7 +26,7 @@ You can pass any option supported by `@xsai-ext/responses` except the ones Apeir
 
 Uses the Chat Completions API via `@xsai/stream-text`.
 
-```ts
+```ts twoslash
 import { createAgent } from 'apeira'
 import { chat } from 'apeira/chat'
 
@@ -105,11 +105,13 @@ Check whether your provider supports the Responses API. If it does, use `respons
 
 Both runners support multi-step turns: after tool calls finish, the runner can automatically submit a follow-up request to the model. By default, Apeira stops after at most 20 steps:
 
-```ts
+```ts twoslash
 import { stepCountAtLeast } from 'apeira'
+import { responses } from 'apeira/responses'
 
 const runner = responses({
   apiKey: process.env.OPENAI_API_KEY,
+  baseURL: 'https://api.openai.com/v1/',
   model: 'gpt-5.5',
   stopWhen: stepCountAtLeast(10),
 })
@@ -117,11 +119,13 @@ const runner = responses({
 
 You can combine conditions:
 
-```ts
+```ts twoslash
 import { and, hasToolCall, stepCountAtLeast } from 'apeira'
+import { chat } from 'apeira/chat'
 
 const runner = chat({
   apiKey: process.env.OPENAI_API_KEY,
+  baseURL: 'https://api.openai.com/v1/',
   model: 'gpt-5.5',
   stopWhen: and(
     stepCountAtLeast(5),
@@ -144,8 +148,8 @@ Available stop helpers:
 
 A runner is any function matching the `Runner` interface:
 
-```ts
-import type { CompletionStep, Runner, RunnerContext, RunnerResult, Tool, Usage } from '@apeira/core'
+```ts twoslash
+import type { Runner } from '@apeira/core'
 
 const myRunner: Runner = async (context) => {
   // You must implement the full pipeline yourself:

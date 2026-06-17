@@ -4,7 +4,7 @@ This page walks through creating an agent, submitting a turn, and consuming the 
 
 ## Create an agent
 
-```ts
+```ts twoslash
 import { createAgent } from 'apeira'
 import { responses } from 'apeira/responses'
 
@@ -24,8 +24,18 @@ const agent = createAgent({
 
 `run()` submits one user turn and returns a `ReadableStream` of events for that turn.
 
-```ts
-import { run } from 'apeira'
+```ts twoslash
+import { createAgent, run } from 'apeira'
+import { responses } from 'apeira/responses'
+
+const agent = createAgent({
+  instructions: 'You are a concise assistant.',
+  runner: responses({
+    apiKey: process.env.OPENAI_API_KEY,
+    baseURL: 'https://api.openai.com/v1/',
+    model: 'gpt-5.5',
+  }),
+})
 
 const stream = run(agent, {
   content: 'Say hello.',
@@ -44,7 +54,19 @@ The stream emits model events (`text.delta`, `tool-call.start`, etc.) and lifecy
 
 Use `send()` when you only want the turn ID and plan to observe events through a global subscription.
 
-```ts
+```ts twoslash
+import { createAgent } from 'apeira'
+import { responses } from 'apeira/responses'
+
+const agent = createAgent({
+  instructions: 'You are a concise assistant.',
+  runner: responses({
+    apiKey: process.env.OPENAI_API_KEY,
+    baseURL: 'https://api.openai.com/v1/',
+    model: 'gpt-5.5',
+  }),
+})
+
 const unsubscribe = agent.subscribe('apeira', (event) => {
   console.log(event.turnId, event.type)
 })
@@ -66,10 +88,26 @@ the existing turn ID. If no turn is active, it creates a new top-level turn.
 
 Pass an `AbortSignal` to abort a specific turn:
 
-```ts
+```ts twoslash
+import { createAgent, run } from 'apeira'
+import { responses } from 'apeira/responses'
+
+const agent = createAgent({
+  instructions: 'You are a concise assistant.',
+  runner: responses({
+    apiKey: process.env.OPENAI_API_KEY,
+    baseURL: 'https://api.openai.com/v1/',
+    model: 'gpt-5.5',
+  }),
+})
+
 const controller = new AbortController()
 
-run(agent, input, { signal: controller.signal })
+run(agent, {
+  content: 'Say hello.',
+  role: 'user',
+  type: 'message',
+}, { signal: controller.signal })
 
 controller.abort('cancelled')
 ```

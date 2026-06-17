@@ -2,10 +2,11 @@
 
 Apeira is event-driven. Every emitted event includes the `turnId` of the turn it belongs to.
 
-```ts
-type AgentEvent = (ApeiraEvent | XSAIEvent) & {
-  turnId: string
-}
+```ts twoslash
+import type { AgentEvent } from 'apeira'
+
+const describe = (event: AgentEvent) =>
+  `${event.turnId}: ${event.type}`
 ```
 
 ## Lifecycle events
@@ -35,7 +36,19 @@ Apeira forwards streaming events from the runner and attaches the same `turnId`.
 
 Use the `type` field to narrow the event you care about:
 
-```ts
+```ts twoslash
+import { createAgent } from 'apeira'
+import { responses } from 'apeira/responses'
+
+const agent = createAgent({
+  instructions: 'You are a helpful assistant.',
+  runner: responses({
+    apiKey: process.env.OPENAI_API_KEY,
+    baseURL: 'https://api.openai.com/v1/',
+    model: 'gpt-5.5',
+  }),
+})
+
 agent.subscribe('apeira', (event) => {
   if (event.type === 'turn.failed')
     console.error(event.error)
@@ -49,10 +62,24 @@ agent.subscribe('apeira', (event) => {
 
 `run()` returns a `ReadableStream` that is automatically filtered to the submitted turn.
 
-```ts
-import { run } from 'apeira'
+```ts twoslash
+import { createAgent, run } from 'apeira'
+import { responses } from 'apeira/responses'
 
-const stream = run(agent, input)
+const agent = createAgent({
+  instructions: 'You are a helpful assistant.',
+  runner: responses({
+    apiKey: process.env.OPENAI_API_KEY,
+    baseURL: 'https://api.openai.com/v1/',
+    model: 'gpt-5.5',
+  }),
+})
+
+const stream = run(agent, {
+  content: 'Say hello.',
+  role: 'user',
+  type: 'message',
+})
 
 for await (const event of stream) {
   if (event.type === 'turn.done')
@@ -66,7 +93,19 @@ The stream closes after `turn.done`, `turn.failed`, or `turn.aborted`.
 
 `subscribe('apeira', ...)` receives all core events from all turns.
 
-```ts
+```ts twoslash
+import { createAgent } from 'apeira'
+import { responses } from 'apeira/responses'
+
+const agent = createAgent({
+  instructions: 'You are a helpful assistant.',
+  runner: responses({
+    apiKey: process.env.OPENAI_API_KEY,
+    baseURL: 'https://api.openai.com/v1/',
+    model: 'gpt-5.5',
+  }),
+})
+
 const unsubscribe = agent.subscribe('apeira', event =>
   console.log(event.turnId, event.type))
 

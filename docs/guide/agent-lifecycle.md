@@ -4,17 +4,60 @@ An Apeira agent keeps an append-only input log and runs submitted turns one at a
 
 ## Input history
 
-The agent starts with the optional `input` passed to `createAgent()`.
+The agent starts with the optional initial history passed to `storage`.
 
-```ts
+```ts twoslash
+import type { AgentInput } from 'apeira'
+import { createAgent, mem } from 'apeira'
+import { responses } from 'apeira/responses'
+
 const agent = createAgent({
-  input: [
+  instructions: 'You are a helpful assistant.',
+  runner: responses({
+    apiKey: process.env.OPENAI_API_KEY,
+    baseURL: 'https://api.openai.com/v1/',
+    model: 'gpt-5.5',
+  }),
+  storage: mem<AgentInput>([
     {
       content: 'The user\'s name is Alice.',
       role: 'user',
       type: 'message',
     },
-  ],
+  ]),
+})
+```
+
+Initial history seeds the agent's input log. When a turn starts, Apeira appends the new input and passes the accumulated history to the configured runner. On success, the model output is appended to the history.
+
+You can read the current accumulated input at any time:
+
+```ts twoslash
+import { createAgent, mem } from 'apeira'
+import { responses } from 'apeira/responses'
+
+const agent = createAgent({
+  instructions: 'You are a helpful assistant.',
+  runner: responses({
+    apiKey: process.env.OPENAI_API_KEY,
+    baseURL: 'https://api.openai.com/v1/',
+    model: 'gpt-5.5',
+  }),
+  storage: mem(),
+})
+
+const currentInput = await agent.storage.read()
+```
+
+## Queueing
+
+Top-level turns on the same agent are serialized. If `run()` is called while another turn is running, the new turn waits until the running turn finishes.
+
+```ts twoslash
+import { createAgent, run } from 'apeira'
+import { responses } from 'apeira/responses'
+
+const agent = createAgent({
   instructions: 'You are a helpful assistant.',
   runner: responses({
     apiKey: process.env.OPENAI_API_KEY,
@@ -22,22 +65,12 @@ const agent = createAgent({
     model: 'gpt-5.5',
   }),
 })
-```
 
-Initial `input` seeds the agent's history. When a turn starts, Apeira appends the new input and passes the accumulated history to the configured runner. On success, the model output is appended to the history.
-
-You can read the current accumulated input at any time:
-
-```ts
-const currentInput = agent.getInput()
-```
-
-## Queueing
-
-Top-level turns on the same agent are serialized. If `run()` is called while another turn is running, the new turn waits until the running turn finishes.
-
-```ts
-import { run } from 'apeira'
+const input = {
+  content: 'Hello.',
+  role: 'user',
+  type: 'message',
+} as const
 
 const first = run(agent, input)
 const second = run(agent, input) // waits for first
@@ -45,9 +78,27 @@ const second = run(agent, input) // waits for first
 
 Different agents can run concurrently:
 
-```ts
-const agentA = createAgent({ ...options })
-const agentB = createAgent({ ...options })
+```ts twoslash
+import { createAgent, run } from 'apeira'
+import { responses } from 'apeira/responses'
+
+const options = {
+  instructions: 'You are a helpful assistant.',
+  runner: responses({
+    apiKey: process.env.OPENAI_API_KEY,
+    baseURL: 'https://api.openai.com/v1/',
+    model: 'gpt-5.5',
+  }),
+} as const
+
+const agentA = createAgent(options)
+const agentB = createAgent(options)
+
+const input = {
+  content: 'Hello.',
+  role: 'user',
+  type: 'message',
+} as const
 
 run(agentA, input) // starts immediately
 run(agentB, input) // starts immediately, runs in parallel
@@ -66,19 +117,55 @@ top-level turn.
 
 **Interrupt** aborts the active turn and records a model-visible `<turn_aborted>` boundary in the input history. The queue continues.
 
-```ts
+```ts twoslash
+import { createAgent } from 'apeira'
+import { responses } from 'apeira/responses'
+
+const agent = createAgent({
+  instructions: 'You are a helpful assistant.',
+  runner: responses({
+    apiKey: process.env.OPENAI_API_KEY,
+    baseURL: 'https://api.openai.com/v1/',
+    model: 'gpt-5.5',
+  }),
+})
+
 agent.interrupt('user interrupted')
 ```
 
 **Abort** stops the running turn without recording a boundary.
 
-```ts
+```ts twoslash
+import { createAgent } from 'apeira'
+import { responses } from 'apeira/responses'
+
+const agent = createAgent({
+  instructions: 'You are a helpful assistant.',
+  runner: responses({
+    apiKey: process.env.OPENAI_API_KEY,
+    baseURL: 'https://api.openai.com/v1/',
+    model: 'gpt-5.5',
+  }),
+})
+
 agent.abort('user cancelled')
 ```
 
-**Reset** aborts the running turn, removes queued turns, resets the input history to the original `input`, and resets `state` to its initial value. The running turn emits `turn.aborted` with reason `reset`.
+**Reset** aborts the running turn, removes queued turns, resets the input history to the original `storage`, and resets `state` to its initial value. The running turn emits `turn.aborted` with reason `reset`.
 
-```ts
+```ts twoslash
+import { createAgent } from 'apeira'
+import { responses } from 'apeira/responses'
+
+const agent = createAgent({
+  instructions: 'You are a helpful assistant.',
+  runner: responses({
+    apiKey: process.env.OPENAI_API_KEY,
+    baseURL: 'https://api.openai.com/v1/',
+    model: 'gpt-5.5',
+  }),
+})
+
 agent.reset()
 ```
 
@@ -86,7 +173,10 @@ agent.reset()
 
 Agent `state` is a plain object that plugins and instructions can read and write.
 
-```ts
+```ts twoslash
+import { createAgent } from 'apeira'
+import { responses } from 'apeira/responses'
+
 const agent = createAgent({
   instructions: state => `You are helping ${state.userName ?? 'a user'}.`,
   runner: responses({

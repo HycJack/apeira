@@ -1,8 +1,21 @@
+import { transformerTwoslash } from '@shikijs/vitepress-twoslash'
 import { extendConfig } from '@voidzero-dev/vitepress-theme/config'
 
 export default extendConfig({
   description: 'stream-first Agent Runtime.',
   head: [['link', { href: 'https://github.com/moeru-ai.png', rel: 'icon', type: 'image/png' }]],
+  markdown: {
+    codeTransformers: [
+      transformerTwoslash({
+        twoslashOptions: {
+          compilerOptions: {
+            types: ['node'],
+          },
+        },
+      }),
+    ],
+    languages: ['js', 'jsx', 'ts', 'tsx', 'sh', 'bash', 'shell'],
+  },
   srcExclude: ['adr/**', 'spark/**'],
 
   themeConfig: {

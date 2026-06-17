@@ -1,6 +1,7 @@
 {
   "extends": "@moeru/tsconfig/tsconfig.node.json",
   "compilerOptions": {
+    "lib": ["ESNext", "DOM", "DOM.Iterable", "DOM.AsyncIterable"],
     "types": ["node", "vite/client"]
   },
   "include": [

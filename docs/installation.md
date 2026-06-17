@@ -33,7 +33,7 @@ pnpm add @apeira/core
 
 Run a quick check that the package loads:
 
-```ts
+```ts twoslash
 import { createAgent } from 'apeira'
 
 console.log(typeof createAgent) // 'function'
