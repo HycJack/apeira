@@ -1,4 +1,4 @@
-import type { AgentInput } from '@apeira/core'
+import type { AgentEntry } from '@apeira/core'
 
 import type { RoleplayEvent } from '../src'
 
@@ -16,16 +16,18 @@ const runner = responses({
   model: 'test',
 })
 
-const assistantText = (item: AgentInput | undefined) => {
-  if (item?.type !== 'message' || item.role !== 'assistant' || !Array.isArray(item.content))
+const assistantText = (item: AgentEntry | undefined) => {
+  const input = item?.type === 'input' ? (item as AgentEntry<'input'>).data : undefined
+  if (input?.type !== 'message' || input.role !== 'assistant' || !Array.isArray(input.content))
     return undefined
-  const part = item.content[0]
+  const part = input.content[0]
   return part != null && 'text' in part ? part.text : undefined
 }
 
 describe('roleplay plugin', () => {
   it('initializes the selected greeting', async () => {
     const agent = createAgent({
+      initialState: { userName: 'Alice' },
       instructions: '',
       plugins: [roleplay({
         card: createV3Card({
@@ -35,7 +37,6 @@ describe('roleplay plugin', () => {
         greetingIndex: 1,
       })],
       runner,
-      state: { userName: 'Alice' },
     })
     const events: RoleplayEvent[] = []
     agent.subscribe('roleplay', event => events.push(event))
@@ -60,7 +61,9 @@ describe('roleplay plugin', () => {
       storage: mem([restored]),
     })
     await agent.init()
-    expect(await agent.storage.read()).toEqual([restored])
+    expect(await agent.storage.read()).toEqual([
+      expect.objectContaining({ data: restored, type: 'input' }),
+    ])
 
     const emptyAgent = createAgent({
       instructions: '',
@@ -90,7 +93,8 @@ describe('roleplay plugin', () => {
 
     await agent.reset()
 
-    expect(assistantText((await agent.storage.read())[0])).toBe('second')
+    const inputs = (await agent.storage.read()).filter(e => e.type === 'input')
+    expect(assistantText(inputs[0])).toBe('second')
     expect(events.at(-1)).toEqual({ greetingIndex: 0, type: 'session.reset' })
     random.mockRestore()
   })
@@ -98,6 +102,7 @@ describe('roleplay plugin', () => {
   it('assembles instructions and temporary character input without persisting it', async () => {
     const mock = createMockFetch()
     const agent = createAgent({
+      initialState: { userName: 'Alice' },
       instructions: '',
       plugins: [roleplay({
         card: createV3Card({
@@ -117,7 +122,6 @@ describe('roleplay plugin', () => {
         fetch: mock.fetch,
         model: 'test',
       }),
-      state: { userName: 'Alice' },
     })
     const events: RoleplayEvent[] = []
     agent.subscribe('roleplay', event => events.push(event))
@@ -157,7 +161,9 @@ describe('roleplay plugin', () => {
     })
     expect(JSON.stringify(mock.bodies[0])).not.toContain('Shown to the user, not the model.')
     expect((await agent.storage.read()).some(item =>
-      item.type === 'message' && item.role === 'system')).toBe(false)
+      item.type === 'input'
+      && item.data.type === 'message'
+      && item.data.role === 'system')).toBe(false)
     const assembled = events.find(event => event.type === 'prompt.assembled')
     expect(assembled?.type).toBe('prompt.assembled')
     if (assembled?.type === 'prompt.assembled') {
@@ -229,6 +235,7 @@ describe('roleplay plugin', () => {
     const main = createMockFetch()
     const summarizer = createMockFetch('summary')
     const agent = createAgent({
+      initialState: { contextLength: 1_000 },
       instructions: '',
       plugins: [
         compact({
@@ -256,7 +263,6 @@ describe('roleplay plugin', () => {
         fetch: main.fetch,
         model: 'test',
       }),
-      state: { contextLength: 1_000 },
       storage: mem([
         user('old one'),
         {
@@ -284,6 +290,8 @@ describe('roleplay plugin', () => {
     }
     expect(main.bodies[0]?.input).toContainEqual(developer('<context_summary>\nsummary\n</context_summary>'))
     expect((await agent.storage.read()).some(item =>
-      item.type === 'message' && item.role === 'system')).toBe(false)
+      item.type === 'input'
+      && item.data.type === 'message'
+      && item.data.role === 'system')).toBe(false)
   })
 })

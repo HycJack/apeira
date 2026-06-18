@@ -4,7 +4,7 @@ import type { HITLEvent } from '@apeira/plugin-hitl'
 import type { BaseEvent, Message, RunAgentInput } from '@copilotkit/react-core/v2'
 import type { Subscriber } from 'rxjs'
 
-import { createAgent, run } from '@apeira/core'
+import { createAgent, run, toAgentInput } from '@apeira/core'
 import { approveToolCall, rejectToolCall } from '@apeira/plugin-hitl'
 import {
   AbstractAgent,
@@ -384,7 +384,7 @@ export class AbstractApeiraAgent extends AbstractAgent {
           type: EventType.RUN_STARTED,
         })
 
-        const messages = toMessages(await this.agent.storage.read())
+        const messages = toMessages(toAgentInput(await this.agent.storage.read()))
 
         if (messages.length > 0) {
           this.setMessages(messages)

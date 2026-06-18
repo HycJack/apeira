@@ -4,7 +4,7 @@ import { stepCountAtLeast } from '@xsai/shared-chat'
 import { describe, expect, it } from 'vitest'
 
 import { chat } from '../../src/chat'
-import { createAgent, run, user } from '../../src/index'
+import { createAgent, run, toAgentInput, user } from '../../src/index'
 import { responses } from '../../src/responses'
 import { createAgentChannel } from '../../src/utils/channel'
 import { createMockFetch } from '../_shared'
@@ -102,21 +102,23 @@ describe('chat', () => {
     for await (const event of run(agent, user('hi')))
       void event
 
-    expect(await agent.storage.read()).toEqual([
-      user('hi'),
-      expect.objectContaining({
-        content: 'hello',
-        role: 'assistant',
-        type: 'message',
-      }),
-    ])
+    const entries = await agent.storage.read()
+    const inputs = toAgentInput(entries)
+    expect(inputs).toContainEqual(user('hi'))
+    expect(inputs).toContainEqual(expect.objectContaining({
+      content: 'hello',
+      role: 'assistant',
+      type: 'message',
+    }))
   })
 
   it('injects instructions, forwards events, and returns embedded Chat output', async () => {
     const mock = createChatMockFetch()
     const channel = createAgentChannel()
     const events: AgentEvent[] = []
-    channel.subscribe('apeira', event => events.push(event))
+    channel.subscribe('apeira', (event) => {
+      events.push(event)
+    })
     const runner = chat({
       apiKey: 'test',
       baseURL: 'https://test',

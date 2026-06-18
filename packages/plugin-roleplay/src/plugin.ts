@@ -8,7 +8,7 @@ import type {
 } from './types'
 import type { CBSContext } from './utils/cbs'
 
-import { assistant, system } from '@apeira/core'
+import { assistant, entry, system, toAgentInput } from '@apeira/core'
 
 import { name, version } from '../package.json'
 import { renderCBS } from './utils/cbs'
@@ -60,8 +60,9 @@ export const roleplay = (options: RoleplayPluginOptions): AgentPlugin => {
     const rendered = renderCBS(selected.greeting, createCBSContext(new Map())).text
 
     const history = await activeAgent.storage.read()
-    if (history.length === 0 && rendered.length > 0)
-      await activeAgent.storage.append(assistant(rendered))
+    const inputs = toAgentInput(history)
+    if (inputs.length === 0 && rendered.length > 0)
+      await activeAgent.storage.append(entry('input', assistant(rendered)))
 
     return rendered.length > 0
   }

@@ -1,23 +1,24 @@
 import type { Tool } from '@xsai/shared-chat'
 
-import type { Agent, AgentEvent, AgentInput, AgentPluginOption, AgentState } from '../../src/index'
+import type { Agent, AgentEntry, AgentEvent, AgentInput, AgentPluginOption, AgentState, AgentStorage } from '../../src/index'
 
 import { stepCountAtLeast } from '@xsai-ext/responses'
 import { describe, expect, it, vi } from 'vitest'
 
-import { createAgent, developer, mem, run, user } from '../../src/index'
+import { createAgent, developer, entry, mem, run, user } from '../../src/index'
 import { responses } from '../../src/responses'
 import { createMockFetch, sleep } from '../_shared'
 
 const createTestAgent = (opts?: {
   delayMs?: number
+  initialState?: AgentState
   input?: AgentInput[]
   instructions?: ((state: Readonly<AgentState>) => string) | string
   plugins?: AgentPluginOption[]
-  state?: AgentState
 }) => {
   const mock = createMockFetch({ delayMs: opts?.delayMs ?? 0 })
   const agent = createAgent({
+    initialState: opts?.initialState,
     instructions: opts?.instructions ?? 'You are a test assistant.',
     plugins: opts?.plugins,
     runner: responses({
@@ -27,7 +28,6 @@ const createTestAgent = (opts?: {
       model: 'test-model',
       stopWhen: stepCountAtLeast(1),
     }),
-    state: opts?.state,
     storage: mem(opts?.input),
   })
   return { agent, ...mock }
@@ -36,7 +36,9 @@ const createTestAgent = (opts?: {
 describe('createAgent', () => {
   it('creates an agent with initial input', async () => {
     const { agent } = createTestAgent({ input: [user('hello')] })
-    expect(await agent.storage.read()).toEqual([user('hello')])
+    expect(await agent.storage.read()).toEqual([
+      expect.objectContaining({ data: user('hello'), type: 'input' }),
+    ])
   })
 
   it('returns empty input when none provided', async () => {
@@ -45,9 +47,90 @@ describe('createAgent', () => {
   })
 
   it('returns the current agent state', () => {
-    const { agent } = createTestAgent({ state: { contextLength: 8_000 } })
+    const { agent } = createTestAgent({ initialState: { contextLength: 8_000 } })
 
     expect(agent.state.get()).toEqual({ contextLength: 8_000 })
+  })
+
+  it('restores the latest state from storage when initializing', async () => {
+    const storage = mem()
+    await storage.append(entry('state', { contextLength: 16_000 }))
+    await storage.append(entry('state', { contextLength: 24_000 }))
+
+    const agent = createAgent({
+      initialState: { contextLength: 8_000 },
+      instructions: 'test',
+      runner: async () => ({ output: [] }),
+      storage,
+    })
+
+    expect(agent.state.get()).toEqual({ contextLength: 8_000 })
+    await agent.init()
+    expect(agent.state.get()).toEqual({ contextLength: 24_000 })
+  })
+
+  it('resets restoring flag even when storage.read fails during init', async () => {
+    const error = new Error('storage read failed')
+    let shouldFailRead = true
+    const items: AgentEntry[] = []
+    const storage: AgentStorage<AgentEntry> = {
+      append: async (...next) => { items.push(...next) },
+      clear: async () => { items.length = 0 },
+      read: () => {
+        if (shouldFailRead) {
+          shouldFailRead = false
+          throw error
+        }
+        return items
+      },
+      reset: async () => { items.length = 0 },
+    }
+    const agent = createAgent({
+      initialState: { contextLength: 8_000 },
+      instructions: 'test',
+      runner: async () => ({ output: [] }),
+      storage,
+    })
+
+    await expect(agent.init()).rejects.toThrow(error)
+    agent.state.update({ contextLength: 16_000 })
+    await Promise.resolve()
+
+    const latestState = items.findLast((e): e is AgentEntry<'state'> => e.type === 'state')
+    expect(latestState?.data.contextLength).toBe(16_000)
+  })
+
+  it('waits for pending state writes before loading latest state', async () => {
+    let releaseAppend!: () => void
+    let signalAppend!: () => void
+    const appendBlocked = new Promise<void>(resolve => releaseAppend = resolve)
+    const appendStarted = new Promise<void>(resolve => signalAppend = resolve)
+    const items: AgentEntry[] = []
+    const storage: AgentStorage<AgentEntry> = {
+      append: async (...next) => {
+        signalAppend()
+        await appendBlocked
+        items.push(...next)
+      },
+      clear: async () => { items.length = 0 },
+      read: () => items,
+      reset: async () => { items.length = 0 },
+    }
+    const agent = createAgent({
+      initialState: { contextLength: 8_000 },
+      instructions: 'test',
+      runner: async () => ({ output: [] }),
+      storage,
+    })
+
+    agent.state.update({ contextLength: 16_000 })
+    await appendStarted
+
+    const initPromise = agent.init()
+    releaseAppend()
+    await initPromise
+
+    expect(agent.state.get()).toEqual({ contextLength: 16_000 })
   })
 
   it('replaces input with a cloned value', async () => {
@@ -55,15 +138,15 @@ describe('createAgent', () => {
     const nextInput = [user('new')]
 
     await agent.storage.clear()
-    await agent.storage.append(...nextInput)
+    await agent.storage.append(entry('input', nextInput[0]))
     nextInput[0] = user('mutated')
 
-    expect(await agent.storage.read()).toEqual([user('new')])
+    expect(await agent.storage.read()).toEqual([expect.objectContaining({ data: user('new'), type: 'input' })])
   })
 
   it('replaces nested state patches with cloned values', () => {
     const { agent } = createTestAgent({
-      state: {
+      initialState: {
         nested: { first: true },
       } as AgentState,
     })
@@ -81,7 +164,7 @@ describe('createAgent', () => {
   })
 
   it('merges state patches', () => {
-    const { agent } = createTestAgent({ state: { contextLength: 8_000 } })
+    const { agent } = createTestAgent({ initialState: { contextLength: 8_000 } })
 
     agent.state.update({ contextLength: 16_000 })
     expect(agent.state.get()).toEqual({ contextLength: 16_000 })
@@ -372,7 +455,7 @@ describe('queue', () => {
 
     await sleep(20)
 
-    expect(await agent.storage.read()).toEqual([boundary])
+    expect(await agent.storage.read()).toContainEqual(expect.objectContaining({ data: boundary, type: 'input' }))
 
     agent.send(user('next'))
     await sleep(150)
@@ -403,9 +486,9 @@ describe('queue', () => {
     let signalAppend!: () => void
     const appendBlocked = new Promise<void>(resolve => releaseAppend = resolve)
     const appendStarted = new Promise<void>(resolve => signalAppend = resolve)
-    const items: AgentInput[] = []
-    const storage = {
-      append: async (...next: AgentInput[]) => {
+    const items: AgentEntry[] = []
+    const storage: AgentStorage<AgentEntry> = {
+      append: async (...next) => {
         signalAppend()
         await appendBlocked
         items.push(...next)
@@ -426,13 +509,13 @@ describe('queue', () => {
     releaseAppend()
     await clearing
 
-    expect(await agent.storage.read()).toEqual([])
+    expect(items.some(item => item.type === 'input')).toBe(false)
   })
 
   it('restores initial input and state and emits one reset event', async () => {
     const { agent } = createTestAgent({
+      initialState: { contextLength: 8_000 },
       input: [user('initial')],
-      state: { contextLength: 8_000 },
     })
     const events: AgentEvent[] = []
     agent.subscribe('apeira', (event) => {
@@ -440,11 +523,18 @@ describe('queue', () => {
     })
 
     await agent.storage.clear()
-    await agent.storage.append(user('changed'))
+    await agent.storage.append(entry('input', user('changed')))
     agent.state.update({ contextLength: 16_000 })
     await agent.reset()
 
-    expect(await agent.storage.read()).toEqual([user('initial')])
+    const entries = await agent.storage.read()
+    expect(entries).toContainEqual(expect.objectContaining({ data: user('initial'), type: 'input' }))
+    expect(entries).toContainEqual(expect.objectContaining({ data: { contextLength: 8_000 }, type: 'state' }))
+    expect(entries).not.toContainEqual(expect.objectContaining({ data: { contextLength: 16_000 }, type: 'state' }))
+    expect(entries.some(e =>
+      e.type === 'event'
+      && (e as AgentEntry<'event'>).data.type === 'agent.reset',
+    )).toBe(true)
     expect(agent.state.get()).toEqual({ contextLength: 8_000 })
     expect(events.filter(event => event.type === 'agent.reset')).toHaveLength(1)
     expect(events.find(event => event.type === 'agent.reset')?.turnId).toBeTruthy()
@@ -468,8 +558,8 @@ describe('queue', () => {
 
   it('uses reset state for a turn sent immediately after clear', async () => {
     const { agent, instructions } = createTestAgent({
+      initialState: { contextLength: 8_000 },
       instructions: state => String(state.contextLength),
-      state: { contextLength: 8_000 },
     })
 
     agent.state.update({ contextLength: 16_000 })
