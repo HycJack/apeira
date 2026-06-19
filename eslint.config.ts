@@ -10,6 +10,7 @@ export default defineConfig({
   })
   .append({
     rules: {
+      '@masknet/browser-no-persistent-storage': 'off',
       '@masknet/jsx-prefer-test-id': 'off',
     },
   })

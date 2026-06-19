@@ -1,15 +1,19 @@
 # Plugins
 
-Plugins extend the agent lifecycle through a simple hook interface. Every feature beyond the core runtime — skills, storage, UI bridges — is a plugin.
+Plugins extend the agent lifecycle through a simple hook interface. They provide optional capabilities such as skills, compaction, tool approval, MCP integration, and UI bridges. Runners and storage backends are separate extension points.
 
-For the full plugin interface and API details, see [Plugin API](/advanced/plugin-api).
+::: warning Not yet published
+The plugin packages are not published yet. Stay tuned.
+:::
+
+For the full plugin interface and API details, see [AgentPlugin](/reference/agent-plugin).
 
 ## Using plugins
 
 ```ts
+import { createAgent } from '@apeira/core'
+import { responses } from '@apeira/core/responses'
 import { skills } from '@apeira/plugin-skills'
-import { createAgent } from 'apeira'
-import { responses } from 'apeira/responses'
 
 const agent = createAgent({
   instructions: 'You are a helpful assistant.',

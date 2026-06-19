@@ -1,9 +1,9 @@
-# Events
+# Event
 
 Apeira is event-driven. Every emitted event includes the `turnId` of the turn it belongs to.
 
 ```ts twoslash
-import type { AgentEvent } from 'apeira'
+import type { AgentEvent } from '@apeira/core'
 
 const describe = (event: AgentEvent) =>
   `${event.turnId}: ${event.type}`
@@ -37,8 +37,8 @@ Apeira forwards streaming events from the runner and attaches the same `turnId`.
 Use the `type` field to narrow the event you care about:
 
 ```ts twoslash
-import { createAgent } from 'apeira'
-import { responses } from 'apeira/responses'
+import { createAgent } from '@apeira/core'
+import { responses } from '@apeira/core/responses'
 
 const agent = createAgent({
   instructions: 'You are a helpful assistant.',
@@ -63,8 +63,8 @@ agent.subscribe('apeira', (event) => {
 `run()` returns a `ReadableStream` that is automatically filtered to the submitted turn.
 
 ```ts twoslash
-import { createAgent, run } from 'apeira'
-import { responses } from 'apeira/responses'
+import { createAgent, run } from '@apeira/core'
+import { responses } from '@apeira/core/responses'
 
 const agent = createAgent({
   instructions: 'You are a helpful assistant.',
@@ -94,8 +94,8 @@ The stream closes after `turn.done`, `turn.failed`, or `turn.aborted`.
 `subscribe('apeira', ...)` receives all core events from all turns.
 
 ```ts twoslash
-import { createAgent } from 'apeira'
-import { responses } from 'apeira/responses'
+import { createAgent } from '@apeira/core'
+import { responses } from '@apeira/core/responses'
 
 const agent = createAgent({
   instructions: 'You are a helpful assistant.',
@@ -113,3 +113,7 @@ unsubscribe()
 ```
 
 The returned function removes the listener. Listener errors are silently ignored — one subscriber cannot break event delivery to others.
+
+## Custom channels
+
+Plugins can emit and listen on their own channels using `agent.emit()` and `agent.subscribe()`. The `'apeira'` channel carries core events; any other string is a custom channel. See [AgentChannel](/reference/agent-channel) for the channel design and how to add typed custom events.

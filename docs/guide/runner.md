@@ -1,4 +1,4 @@
-# Runners
+# Runner
 
 A runner is a backend adapter that turns an agent's instructions and input history into a stream of events. Apeira ships with two built-in runners: `responses()` for the OpenAI Responses API, and `chat()` for Chat Completions. You can also write your own.
 
@@ -7,8 +7,8 @@ A runner is a backend adapter that turns an agent's instructions and input histo
 Uses the OpenAI [Responses API](https://platform.openai.com/docs/api-reference/responses) via `@xsai-ext/responses`.
 
 ```ts twoslash
-import { createAgent } from 'apeira'
-import { responses } from 'apeira/responses'
+import { createAgent } from '@apeira/core'
+import { responses } from '@apeira/core/responses'
 
 const agent = createAgent({
   instructions: 'You are a concise assistant.',
@@ -27,8 +27,8 @@ You can pass any option supported by `@xsai-ext/responses` except the ones Apeir
 Uses the Chat Completions API via `@xsai/stream-text`.
 
 ```ts twoslash
-import { createAgent } from 'apeira'
-import { chat } from 'apeira/chat'
+import { createAgent } from '@apeira/core'
+import { chat } from '@apeira/core/chat'
 
 const agent = createAgent({
   instructions: 'You are a concise assistant.',
@@ -49,9 +49,9 @@ You can use [`@xsai-ext/providers`](https://xsai.js.org/docs/packages-ext/provid
 ### Predefined providers
 
 ```ts
+import { createAgent } from '@apeira/core'
+import { chat } from '@apeira/core/chat'
 import { openai } from '@xsai-ext/providers'
-import { createAgent } from 'apeira'
-import { chat } from 'apeira/chat'
 
 const agent = createAgent({
   runner: chat({
@@ -67,9 +67,9 @@ Predefined providers read the API key from environment variables (e.g. `process.
 For runtime-agnostic code or explicit keys, use the `create` entry:
 
 ```ts
+import { createAgent } from '@apeira/core'
+import { responses } from '@apeira/core/responses'
 import { createGoogle } from '@xsai-ext/providers/create'
-import { createAgent } from 'apeira'
-import { responses } from 'apeira/responses'
 
 const google = createGoogle('foo-bar-baz')
 
@@ -83,7 +83,7 @@ const agent = createAgent({
 The spread object includes `apiKey`, `baseURL`, and `model`, so you can mix in extra options:
 
 ```ts
-import { stepCountAtLeast } from 'apeira'
+import { stepCountAtLeast } from '@apeira/core'
 
 const agent = createAgent({
   runner: chat({
@@ -106,8 +106,8 @@ Check whether your provider supports the Responses API. If it does, use `respons
 Both runners support multi-step turns: after tool calls finish, the runner can automatically submit a follow-up request to the model. By default, Apeira stops after at most 20 steps:
 
 ```ts twoslash
-import { stepCountAtLeast } from 'apeira'
-import { responses } from 'apeira/responses'
+import { stepCountAtLeast } from '@apeira/core'
+import { responses } from '@apeira/core/responses'
 
 const runner = responses({
   apiKey: process.env.OPENAI_API_KEY,
@@ -120,8 +120,8 @@ const runner = responses({
 You can combine conditions:
 
 ```ts twoslash
-import { and, hasToolCall, stepCountAtLeast } from 'apeira'
-import { chat } from 'apeira/chat'
+import { and, hasToolCall, stepCountAtLeast } from '@apeira/core'
+import { chat } from '@apeira/core/chat'
 
 const runner = chat({
   apiKey: process.env.OPENAI_API_KEY,

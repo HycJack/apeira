@@ -213,6 +213,12 @@ importers:
       '@apeira/core':
         specifier: 'workspace:'
         version: link:packages/core
+      '@apeira/session':
+        specifier: 'workspace:'
+        version: link:packages/session
+      '@apeira/storage':
+        specifier: 'workspace:'
+        version: link:packages/storage
       '@eslint-react/eslint-plugin':
         specifier: 'catalog:'
         version: 5.8.16(eslint@10.4.1(jiti@2.7.0))(typescript@6.0.3)
@@ -427,6 +433,12 @@ importers:
       '@apeira/core':
         specifier: 'workspace:'
         version: link:../core
+      '@apeira/session':
+        specifier: 'workspace:'
+        version: link:../session
+      '@apeira/storage':
+        specifier: 'workspace:'
+        version: link:../storage
 
   packages/core:
     dependencies:

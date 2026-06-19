@@ -2,14 +2,13 @@
 layout: home
 
 hero:
-  # preheading:
-  ## name:
+  # name: Apeira
   text: stream-first Agent Runtime.
   ## tagline:
   actions:
     - theme: brand
       text: Get Started
-      link: /getting-started
+      link: /overview
     - theme: alt
       text: View on GitHub
       link: https://github.com/moeru-ai/apeira
@@ -20,7 +19,7 @@ terminal:
       label: run
       language: typescript
       code: |
-        import { createAgent, run, user } from 'apeira'
+        import { createAgent, responses, run, user } from 'apeira'
 
         const agent = createAgent({
           instructions: 'You are a concise assistant.',
@@ -37,7 +36,7 @@ terminal:
       label: subscribe
       language: typescript
       code: |
-        import { createAgent, user } from 'apeira'
+        import { createAgent, responses, user } from 'apeira'
 
         const agent = createAgent({
           instructions: 'You are a concise assistant.',
@@ -48,7 +47,7 @@ terminal:
           }),
         })
 
-        agent.subscribe('apeira', (event) =>
+        agent.subscribe('apeira', event =>
           console.log(event.turnId, event.type)
         )
 
@@ -57,10 +56,16 @@ terminal:
 features:
   - title: Stream-first
     details: Submit a turn and consume its lifecycle and model events as a ReadableStream.
-  - title: Small runtime
-    details: Apeira keeps the core focused on turn queueing, aborts, and event delivery.
+  - title: Plugin-first
+    details: Only install what you need. Plugins, runners, and storage adapters keep optional capabilities outside the core runtime.
   - title: xsAI-based
-    details: Model calls, tools, steps, and streaming events are powered by @xsai-ext/responses.
+    details: Model calls, tools, steps, and streaming events are powered by xsAI and work with any OpenAI-compatible endpoint.
+  - title: Append-only history
+    details: Every turn forks the input log, runs on a working copy, and merges only successful episodes back.
+  - title: Session branches
+    details: Optional tree-shaped durable history with checkout, fork, and rebase via @apeira/session.
+  - title: Interrupt
+    details: Cancel individual turns, interrupt active work while preserving context, or reset the agent to a clean baseline.
 ---
 
 <Home />

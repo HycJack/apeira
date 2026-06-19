@@ -52,28 +52,12 @@ declare module '@apeira/core' {
   }
 }
 
-export interface CloneOptions {
-  checkout?: EntryId | RefName
-  from?: EntryId | RefName
-  refs?: 'active' | 'all' | readonly RefName[]
-  sessionStorage: AgentStorage<AgentEntry>
-}
 export interface CreateSessionOptions {
   defaultRef?: RefName
   sessionStorage: AgentStorage<AgentEntry>
 }
-
 // eslint-disable-next-line sonarjs/redundant-type-aliases
 export type EntryId = string
-
-export interface EventOptions {
-  parentId?: EntryId
-}
-
-export interface ForkOptions {
-  checkout?: boolean
-  from?: EntryId | RefName
-}
 
 export type Head
   = | { name: RefName, type: 'ref' }
@@ -96,9 +80,9 @@ export interface Session {
   buildState: (target?: EntryId | RefName) => Promise<Readonly<AgentState>>
 
   checkout: (target?: EntryId | RefName) => Promise<void>
-  clone: (options: CloneOptions) => Promise<Session>
-  event: (event: AgentEvent, options?: EventOptions) => Promise<AgentEntry>
-  fork: (name: RefName, options?: ForkOptions) => Promise<void>
+  clone: (options: SessionCloneOptions) => Promise<Session>
+  event: (event: AgentEvent, options?: SessionEventOptions) => Promise<AgentEntry>
+  fork: (name: RefName, options?: SessionForkOptions) => Promise<void>
   head: () => Promise<Head>
   path: (target?: EntryId | RefName) => Promise<readonly AgentEntry[]>
 
@@ -107,9 +91,16 @@ export interface Session {
   read: () => Promise<SessionSnapshot>
   rebase: (name: RefName, onto?: EntryId | RefName) => Promise<RebaseResult>
   refs: () => Promise<ReadonlyMap<RefName, EntryId | undefined>>
-  readonly sessionStorage: AgentStorage<AgentEntry>
 
+  readonly sessionStorage: AgentStorage<AgentEntry>
   readonly storage: AgentStorage<AgentEntry>
+}
+
+export interface SessionCloneOptions {
+  checkout?: EntryId | RefName
+  from?: EntryId | RefName
+  refs?: 'active' | 'all' | readonly RefName[]
+  sessionStorage: AgentStorage<AgentEntry>
 }
 
 export type SessionErrorCode
@@ -119,6 +110,15 @@ export type SessionErrorCode
     | 'not_found'
     | 'storage'
     | 'unknown'
+
+export interface SessionEventOptions {
+  parentId?: EntryId
+}
+
+export interface SessionForkOptions {
+  checkout?: boolean
+  from?: EntryId | RefName
+}
 
 export interface SessionMetadata {
   createdAt: string

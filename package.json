@@ -19,6 +19,8 @@
   "devDependencies": {
     "@antfu/eslint-config": "catalog:",
     "@apeira/core": "workspace:",
+    "@apeira/session": "workspace:",
+    "@apeira/storage": "workspace:",
     "@eslint-react/eslint-plugin": "catalog:",
     "@moeru/eslint-config": "catalog:",
     "@moeru/tsconfig": "catalog:",

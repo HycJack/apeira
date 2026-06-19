@@ -20,8 +20,8 @@ export default extendConfig({
 
   themeConfig: {
     nav: [
-      { link: '/getting-started', text: 'Getting Started' },
-      { link: '/guide/first-turn', text: 'Guide' },
+      { link: '/overview', text: 'Get Started' },
+      { link: '/guide/agent', text: 'Guide' },
       { link: '/plugins/', text: 'Plugins' },
     ],
 
@@ -30,17 +30,21 @@ export default extendConfig({
     sidebar: [
       {
         items: [
-          { link: '/getting-started', text: 'Overview' },
-          { link: '/installation', text: 'Installation' },
+          { link: '/overview', text: 'Overview' },
+          { link: '/quickstart', text: 'Quickstart' },
         ],
         text: 'Getting Started',
       },
       {
         items: [
-          { link: '/guide/first-turn', text: 'First Turn' },
-          { link: '/guide/runners', text: 'Runners' },
-          { link: '/guide/agent-lifecycle', text: 'Agent Lifecycle' },
-          { link: '/guide/events', text: 'Events' },
+          { link: '/guide/agent', text: 'Agent' },
+          { link: '/guide/input', text: 'Input' },
+          { link: '/guide/state', text: 'State' },
+          { link: '/guide/event', text: 'Event' },
+          { link: '/guide/runner', text: 'Runner' },
+          { link: '/guide/storage', text: 'Storage' },
+          { link: '/guide/entry', text: 'Entry' },
+          { link: '/guide/session', text: 'Session' },
         ],
         text: 'Guide',
       },
@@ -59,10 +63,13 @@ export default extendConfig({
       },
       {
         items: [
-
-          { link: '/advanced/plugin-api', text: 'Plugin API' },
+          { link: '/reference/', text: 'Overview' },
+          { link: '/reference/agent-channel', text: 'AgentChannel' },
+          { link: '/reference/agent-plugin', text: 'AgentPlugin' },
+          { link: '/reference/agent-queue', text: 'AgentQueue' },
+          { link: '/reference/agent-state-manager', text: 'AgentStateManager' },
         ],
-        text: 'Advanced',
+        text: 'Reference',
       },
     ],
 

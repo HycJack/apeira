@@ -7,11 +7,11 @@ import type {
 } from '@apeira/core'
 
 import type {
-  CloneOptions,
   CreateSessionOptions,
   Head,
   Session,
   SessionCheckoutEvent,
+  SessionCloneOptions,
   SessionForkEvent,
   SessionRebaseEvent,
   SessionSnapshot,
@@ -40,7 +40,7 @@ type BranchChangeHandler = (payload: SessionCheckoutEvent | SessionForkEvent | S
 
 const resolveCloneRefs = (
   snapshot: SessionSnapshot,
-  options: CloneOptions,
+  options: SessionCloneOptions,
 ): string[] => {
   if (options.refs === 'all')
     return [...snapshot.refs.keys()]
