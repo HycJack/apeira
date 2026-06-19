@@ -2,7 +2,6 @@
   "name": "@apeira/session",
   "type": "module",
   "version": "0.0.5",
-  "private": true,
   "description": "Tree-shaped durable sessions for Apeira agents.",
   "author": "Moeru AI",
   "license": "MIT",
