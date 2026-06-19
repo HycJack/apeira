@@ -84,8 +84,8 @@ export const useThreads = () => {
   const touchThread = useCallback((threadId: string) => {
     const update = async () => {
       const storage = kv<AgentEntry>({
+        backend: localStorage,
         prefix: getThreadStorePrefix(threadId),
-        storage: localStorage,
       })
       const items = await storage.read()
 

@@ -62,9 +62,9 @@ const agent = createAgent({
   instructions: 'You are a helpful assistant.',
   runner,
   storage: kv({
+    backend,
     prefix: 'assistant',
     segmentSize: 100,
-    storage: backend,
   }),
 })
 ```

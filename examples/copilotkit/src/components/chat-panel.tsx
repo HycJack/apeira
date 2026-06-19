@@ -35,8 +35,8 @@ export const ChatPanel = ({ className, onThreadUpdated, threadId }: ChatPanelPro
 
   const storage = useMemo(() =>
     kv<AgentEntry>({
+      backend: localStorage,
       prefix: getThreadStorePrefix(threadId),
-      storage: localStorage,
     }), [threadId])
 
   const agent = useMemo(() => new AbstractApeiraAgent({

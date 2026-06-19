@@ -14,7 +14,7 @@ const createMemoryStorage = () => {
 describe('kv', () => {
   it('append and read', async () => {
     const backend = createMemoryStorage()
-    const storage = kv<string>({ storage: backend })
+    const storage = kv<string>({ backend })
 
     await storage.append('a', 'b')
     await storage.append('c')
@@ -24,8 +24,8 @@ describe('kv', () => {
 
   it('serializes concurrent appends with the same storage and prefix', async () => {
     const backend = createMemoryStorage()
-    const first = kv<string>({ storage: backend })
-    const second = kv<string>({ storage: backend })
+    const first = kv<string>({ backend })
+    const second = kv<string>({ backend })
 
     await Promise.all([
       first.append('a'),
@@ -37,7 +37,7 @@ describe('kv', () => {
 
   it('splits items into segments', async () => {
     const backend = createMemoryStorage()
-    const storage = kv<number>({ segmentSize: 2, storage: backend })
+    const storage = kv<number>({ backend, segmentSize: 2 })
 
     await storage.append(1, 2, 3, 4, 5)
 
@@ -50,7 +50,7 @@ describe('kv', () => {
 
   it('clears all segments and head', async () => {
     const backend = createMemoryStorage()
-    const storage = kv<number>({ segmentSize: 2, storage: backend })
+    const storage = kv<number>({ backend, segmentSize: 2 })
 
     await storage.append(1, 2, 3)
     await storage.clear()
@@ -63,7 +63,7 @@ describe('kv', () => {
 
   it('returns empty before any append', async () => {
     const backend = createMemoryStorage()
-    const storage = kv<string>({ storage: backend })
+    const storage = kv<string>({ backend })
 
     expect(await storage.read()).toEqual([])
     expect(backend.getItem('apeira:head')).toBe('0')

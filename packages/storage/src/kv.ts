@@ -3,11 +3,11 @@ import type { AgentEntry, AgentStorage, MaybePromise } from '@apeira/core'
 import { createKeyedQueue } from './utils/keyed-queue'
 
 export interface KVStoreOptions {
+  backend: StorageLike
   /** @default `apeira` */
   prefix?: string
   /** @default `100` */
   segmentSize?: number
-  storage: StorageLike
 }
 
 export interface StorageLike {
@@ -56,7 +56,7 @@ export const kv = <T = AgentEntry>(options: KVStoreOptions): AgentStorage<T> => 
   const segmentKey = (seg: number) => segmentKeyOf(prefix, seg)
 
   const getHead = async (): Promise<null | number> => {
-    const raw = await options.storage.getItem(headKey)
+    const raw = await options.backend.getItem(headKey)
 
     if (raw == null)
       return null
@@ -66,10 +66,10 @@ export const kv = <T = AgentEntry>(options: KVStoreOptions): AgentStorage<T> => 
   }
 
   const setHead = async (seg: number) =>
-    options.storage.setItem(headKey, String(seg))
+    options.backend.setItem(headKey, String(seg))
 
   const readSegment = async (seg: number): Promise<T[]> => {
-    const raw = await options.storage.getItem(segmentKey(seg))
+    const raw = await options.backend.getItem(segmentKey(seg))
 
     if (raw == null)
       return []
@@ -78,10 +78,10 @@ export const kv = <T = AgentEntry>(options: KVStoreOptions): AgentStorage<T> => 
   }
 
   const writeSegment = async (seg: number, items: readonly T[]) =>
-    options.storage.setItem(segmentKey(seg), encode(items))
+    options.backend.setItem(segmentKey(seg), encode(items))
 
   const removeSegment = async (seg: number) =>
-    options.storage.removeItem(segmentKey(seg))
+    options.backend.removeItem(segmentKey(seg))
 
   const clearSegments = async () => {
     const head = await getHead()
@@ -121,7 +121,7 @@ export const kv = <T = AgentEntry>(options: KVStoreOptions): AgentStorage<T> => 
   }
 
   return {
-    append: async (...items) => queueOf(options.storage)(prefix, async () => {
+    append: async (...items) => queueOf(options.backend)(prefix, async () => {
       if (items.length === 0)
         return
 
@@ -152,9 +152,9 @@ export const kv = <T = AgentEntry>(options: KVStoreOptions): AgentStorage<T> => 
       await setHead(head)
     }),
 
-    clear: async () => queueOf(options.storage)(prefix, clearSegments),
+    clear: async () => queueOf(options.backend)(prefix, clearSegments),
 
-    read: async () => queueOf(options.storage)(prefix, async () => {
+    read: async () => queueOf(options.backend)(prefix, async () => {
       const head = await getAndInitializeHead()
 
       if (head === 0)
